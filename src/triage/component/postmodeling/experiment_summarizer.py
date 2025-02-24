@@ -11,7 +11,7 @@ from matplotlib.lines import Line2D
 from triage.component.timechop.plotting import visualize_chops_plotly
 from triage.component.timechop import Timechop
 from triage.component.audition.plotting import plot_cats
-from triage.component.postmodeling.postmodeling_analyzer import PostmodelingAnalyzer
+# from triage.component.postmodeling.postmodeling_analyzer import PostmodelingAnalyzer
 
 model_name_abbrev = {
     'DummyClassifier': 'Dummy',
@@ -74,11 +74,17 @@ def get_most_recent_experiment_hash(engine):
 
 
 
-class ExperimentSummary:
+class ExperimentReport:
     
-    def __init__(self, engine, experiment_hashes):
+    def __init__(self, engine, experiment_hashes, performance_priority_metric, threshold, bias_priority_metric, bias_priority_groups):
         self.engine = engine
         self.experiment_hashes = experiment_hashes
+        
+        # TODO - consider expanding to multiple metrics and/or thresholds
+        self.performance_metric = performance_priority_metric
+        self.threshold = threshold
+        self.bias_metric = bias_priority_metric
+        self.bias_groups = bias_priority_groups
     
     
     def timesplits(self):
@@ -92,7 +98,7 @@ class ExperimentSummary:
         q = f'''
             select 
                 config
-            from triage_metadata.experiments where experiment_hash = '{self.experiment_hash[0]}'
+            from triage_metadata.experiments where experiment_hash = '{self.experiment_hashes[0]}'
         '''
 
         experiment_config = pd.read_sql(q, self.engine).at[0, 'config']
@@ -381,13 +387,19 @@ class ExperimentSummary:
         
         return df[df['mean (%)'] > 0]
     
-    def model_performance(self, metric, parameter, generate_plot=True):
+    def model_performance(self, metric=None, parameter=None, generate_plot=True):
         """ Generate an Audition type plot to display predictive performance over time for all model groups
         
         Args:
             metric (str): The metric we are intersted in (suppores 'precision@', 'recall@', 'auc_roc')
             parameter (str): The threshold, supports percentile ('_pct') and absolute ('_abs') thresholds
         """
+        
+        if metric is None:
+            metric = self.performance_metric
+        
+        if parameter is None: 
+            parameter = self.threshold
         
         # fetch model groups
         q = f'''
@@ -459,7 +471,14 @@ class ExperimentSummary:
         
         return df
     
-    def model_performance_subsets(self, parameter, metric, generate_plot=True):
+    def model_performance_subsets(self, metric=None, parameter=None, generate_plot=True):
+        
+        if metric is None:
+            metric = self.performance_metric
+        
+        if parameter is None: 
+            parameter = self.threshold
+        
         q = f'''
             select 
                 case when e.subset_hash is null then 'full_cohort' 
@@ -584,7 +603,7 @@ class ExperimentSummary:
         
         if model_group_ids is None: 
             # logging.warning('No model groups specified. Usign all model group ids')
-            model_group_ids = summarize_model_groups(self.engine, self.experiment_hashes).model_group_id.tolist()
+            model_group_ids = self.model_groups().model_group_id.tolist()
             
             if not model_group_ids:
                 logging.warning('No model groups belong to the experiment! Returning None')
@@ -808,6 +827,16 @@ class ExperimentSummary:
         
         '''
         
+        if metric is None: 
+            metric = self.performance_metric
+        
+        if parameter is None: 
+            parameter = self.threshold
+            
+        if equity_metric is None:
+            equity_metric = self.bias_metric
+        
+        
         stats = self.experiment_stats()
           
         if stats['implemented_fewer_splits'] == 1:
@@ -837,7 +866,7 @@ class ExperimentSummary:
         performance = self.model_performance(metric=metric, parameter=parameter, generate_plot=False)
         best_performance = performance.groupby(['model_group_id', 'model_type']).mean()['metric_value'].max()
         best_model_group = performance.groupby(['model_group_id', 'model_type']).mean()['metric_value'].idxmax()[0]
-        best_model_type = performance.groupby(['model_group_id', 'model_type']).mean()['metric_value'].idxmax()[0]
+        best_model_type = performance.groupby(['model_group_id', 'model_type']).mean()['metric_value'].idxmax()[1]
             
         print(f"Your models acheived a best average {metric}{parameter} of {round(best_performance, 3)} over the {stats['validation_splits']} validation splits, with the Model Group {best_model_group},{best_model_type}. Note that model selection is more nuanced than average predictive performance over time. You could use Audition for model selection.")
         
@@ -862,7 +891,8 @@ class ExperimentSummary:
         equity_metrics = self.efficiency_and_equity(
             efficiency_metric=metric,
             equity_metric=equity_metric,
-            parameter=parameter
+            parameter=parameter,
+            generate_plot=False
         )
         
         grpobj = equity_metrics[(equity_metrics.baserate > 0) & (equity_metrics.model_group_id == best_model_group)].groupby('attribute_name')
@@ -872,31 +902,6 @@ class ExperimentSummary:
             print(", ".join(f"{k}: {round(v, 3)}" for k, v, in d.to_dict().items()))
         
         
-    
-def visualize_validation_splits(engine, experiment_hash):
-    """Generate an interactive plot of the time splits used for cross validation
-
-    Args:
-        engine (SQLAlchemy): DB engine
-        experiment_hash (str): Experiment hash we are interested in  
-    """
-    
-    q = f'''
-        select 
-            config
-        from triage_metadata.experiments where experiment_hash = '{experiment_hash}'
-    '''
-
-    experiment_config = pd.read_sql(q, engine).at[0, 'config']
-    
-    
-    chops = Timechop(**experiment_config['temporal_config'])
-    splits = len(chops.chop_time())
-
-    print(f'There are {splits} train-validation splits')
-    visualize_chops_plotly(
-        chops
-    )
     
 
 def load_config(engine, experiment_hash):
@@ -930,181 +935,6 @@ def load_report_parameters_from_config(engine, experiment_hash):
     return d 
   
     
-def summarize_cohorts(engine, experiment_hash, generate_plots=True):
-    """Generate a summary of cohorts (size, baserate)
-
-    Args:
-        engine (SQLAlchemy): Database engine
-        experiment_hash (str): a list of experiment hashes
-    """
-    
-    get_labels_table_query = f"""
-    select distinct labels_table_name from triage_metadata.triage_runs 
-    where run_hash = '{experiment_hash}'
-    """
-
-    labels_table = pd.read_sql(get_labels_table_query, engine).labels_table_name.iloc[0]
-    print(labels_table)
-    cohort_query = f"""
-        select 
-        label_name, 
-        label_timespan, 
-        as_of_date, 
-        count(distinct entity_id) as cohort_size, 
-        avg(label) as baserate 
-        from public.{labels_table}
-        group by 1,2,3 order by 1,2,3
-    """
-
-    df = pd.read_sql(cohort_query, engine)
-    
-    if generate_plots:
-        fig, ax1 = plt.subplots(figsize=(7, 3), dpi=100)
-
-        color='darkblue'
-        sns.lineplot(
-            data=df,
-            x='as_of_date',
-            y='cohort_size',
-            ax=ax1,
-            label='',
-            color=color
-        )
-
-        ax1.axhline(y=df.cohort_size.mean(), color=color, alpha=0.4, linestyle='--', label='mean cohort size')
-        ax1.set_title('Cohort Size and Baserate Over Time')
-        ax1.set_xlabel('Time')
-        ax1.set_ylabel('Cohort Size', color=color)
-        ax1.tick_params(axis='y', labelcolor=color)
-
-        ax2 = ax1.twinx()
-        color='firebrick'
-
-        sns.lineplot(
-            data=df,
-            x='as_of_date',
-            y='baserate',
-            ax=ax2,
-            color=color
-        )
-        ax2.set_ylabel('Baserate (%)', color=color)
-        ax2.tick_params(axis='y', labelcolor=color)
-        ax2.axhline(y=df.baserate.mean(), color=color, alpha=0.4, linestyle='--')
-                
-    return df
-
-    # dfs = list()
-    # for table in labels_tables:
-    #     cohort_query = """
-    #         select 
-    #         label_name, 
-    #         label_timespan, 
-    #         as_of_date, 
-    #         count(distinct entity_id) as cohort_size, 
-    #         avg(label) as baserate 
-    #         from public.{}
-    #         group by 1,2,3 order by 1,2,3
-    #     """
-        
-    #     df = pd.read_sql(cohort_query.format(table), engine)
-        
-    #     dfs.append(df)
-        
-    # return dfs[0].append(dfs[1:], ignore_index=True)
-
-
-def summarize_model_groups(engine, experiment_hashes):
-    """Generate a summary of all the model groups (types and hyperparameters) built in the experiment
-
-    Args:
-        engine (SQLAlchemy): Database engine
-        experiment_hashes (List[str]): List of experiment hashes
-    """
-            
-    mg_query_selected_exp = ''' 
-        select 
-            model_group_id, 
-            model_type, 
-            hyperparameters,
-            count(distinct model_id) as num_models, 
-            count(distinct train_end_time) as num_time_splits
-        from triage_metadata.experiment_models join triage_metadata.models using(model_hash)
-        where experiment_hash in ('{}')
-        group by 1, 2, 3
-        order by 2
-    '''
-
-    model_groups = pd.read_sql(mg_query_selected_exp.format("','".join(experiment_hashes)), engine)
-    
-    #TODO - highlight model groups that don't have the "correct" number of models built. 
-    # Some model objects can be missing, and some train_end_times can have multiple models
-    
-    return model_groups
-
-
-def list_all_features(engine, experiment_hash):
-    """ Generate a dataframe containing all the features that were built in an experimet
-    
-    Args:
-        engine (SQLAlchemy): Database engine
-        experiment_hash (str): Hash of the experiment 
-            Limiting this to one experiment hash based on the assumption that if the feature 
-            spaces are different the experiment hashes shouldn't be lumped together 
-    """
-    
-    q = f'''
-        select 
-            config
-        from triage_metadata.experiments where experiment_hash = '{experiment_hash}'
-    '''
-
-    experiment_config = pd.read_sql(q, engine).at[0, 'config']
-    
-    all_features = list()
-
-    for fg in experiment_config['feature_aggregations']:
-        
-        for agg in fg.get('aggregates', {}):
-            d = dict()
-            d['feature_group'] = fg['prefix']
-            if isinstance(agg['quantity'], dict):
-                d['feature_name'] = list(agg['quantity'].keys())[0]
-                
-            else:
-                d['feature_name'] = agg['quantity']
-        
-            d['metrics'] = ', '.join(agg['metrics'])
-            d['time_horizons'] = ', '.join(fg['intervals'])
-            d['feature_type'] = 'continuous_aggregate'
-            
-            if agg.get('imputation') is None: 
-                imp = fg.get('aggregates_imputation')
-            else:
-                imp = agg.get('imputation')
-            d['imputation'] = json.dumps(imp)
-            # d['num_predictors'] = len(agg['metrics']) * len(fg['intervals'])
-            all_features.append(d)
-            
-        for cat in fg.get('categoricals', {}):
-            d = dict()
-            d['feature_group'] = fg['prefix']
-            d['feature_name'] = cat['column']
-            d['metrics'] = ', '.join(cat['metrics'])
-            d['time_horizons'] = ', '.join(fg['intervals'])
-            d['feature_type'] = 'categorical_aggregate'
-            
-            if agg.get('imputation') is None: 
-                imp = fg.get('categoricals_imputation')
-            else:
-                imp = agg.get('imputation')
-            d['imputation'] = json.dumps(imp)
-            # d['num_predictors'] = 'number of categories'
-            all_features.append(d)
-            
-    all_features = pd.DataFrame(all_features).sort_values('feature_group', ignore_index=True)
-    
-    return all_features
-
 
 def list_all_models(engine, experiment_hashes):
     """ List all of the models built in the experiment
