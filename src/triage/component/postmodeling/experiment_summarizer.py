@@ -11,6 +11,8 @@ from matplotlib.lines import Line2D
 from triage.component.timechop.plotting import visualize_chops_plotly
 from triage.component.timechop import Timechop
 from triage.component.audition.plotting import plot_cats
+
+from triage.component.postmodeling.model_analyzer import ModelAnalyzer
 # from triage.component.postmodeling.postmodeling_analyzer import PostmodelingAnalyzer
 
 model_name_abbrev = {
@@ -57,8 +59,36 @@ def list_all_experiments(engine):
     
     return pd.read_sql(q, engine)
 
+def load_config(engine, experiment_hash):
+    "return the experiment config"
+    
+    q = f'''
+        select 
+        config 
+        from triage_metadata.experiments
+        where experiment_hash = '{experiment_hash}'
+    '''
+    
+    return pd.read_sql(q, engine).config.at[0]
+    
 
-
+def load_report_parameters_from_config(engine, experiment_hash):
+    config = load_config(engine, experiment_hash=experiment_hash)
+    
+    d = dict()
+    d['performance_metric'] = config['scoring'].get('priority_metric')
+    d['threshold'] = config['scoring'].get('priority_parameter')
+    
+    bias_audit = config.get('bias_audit')
+    d['bias_metric'] = None
+    d['priority_groups'] = None 
+    
+    if bias_audit is not None:
+        d['bias_metric'] = bias_audit.get('priority_metric')
+        d['priority_groups'] = bias_audit.get('priority_groups')
+    
+    return d 
+  
 def get_most_recent_experiment_hash(engine):
     q = '''
         select 
@@ -71,6 +101,63 @@ def get_most_recent_experiment_hash(engine):
     logging.info(f'Using the experiment hash: {experiment_hash}')
     
     return experiment_hash
+
+
+def model_groups_w_best_mean_performance(engine, experiment_hashes, metric, parameter, n_model_groups):
+    """ Return the model groups with the best mean performance """
+    
+    q = f'''
+        with models as (
+            select 
+                distinct model_id, train_end_time, model_group_id, model_type, hyperparameters
+            from triage_metadata.experiment_models join triage_metadata.models using(model_hash)
+            where experiment_hash in ('{"','".join(experiment_hashes)}')   
+        )
+        select 
+            m.model_group_id, 
+            model_type, 
+            hyperparameters,
+            avg(stochastic_value) as mean_metric_value
+        from models m left join test_results.evaluations e 
+            on m.model_id = e.model_id
+            and e.metric = '{metric}'
+            and e.parameter = '{parameter}'
+            and e.subset_hash = ''
+        group by 1, 2, 3
+        limit {n_model_groups};
+    '''
+    
+    df = pd.read_sql(q, engine)
+    
+    return df.model_group_id.tolist(), df
+
+
+def get_best_hp_config_for_each_model_type(engine, experiment_hashes, metric, parameter):
+        
+    q = f'''
+        with avg_perf as (
+            select 
+                model_group_id, model_type, hyperparameters, avg(stochastic_value) as mean_performance
+            from triage_metadata.experiment_models join triage_metadata.models m using(model_hash)
+                left join test_results.evaluations e
+                on m.model_id = e.model_id
+                and e.metric = '{metric}'
+                and e.parameter = '{parameter}'
+                and e.subset_hash = ''
+            where experiment_hash in ('{"','".join(experiment_hashes)}') 
+            and model_type not like '%%Dummy%%'
+            group by 1, 2, 3    
+        )
+        select distinct on(model_type)
+        model_group_id, model_type, hyperparameters, mean_performance
+        from avg_perf
+        order by model_type, mean_performance desc
+    '''
+
+    best_models = pd.read_sql(q, engine).set_index('model_group_id').sort_values(by='mean_performance', ascending=False)
+    best_models['model_type'] = best_models['model_type'].str.split('.').apply(lambda x: x[-1])
+        
+    return best_models
 
 
 
@@ -205,7 +292,7 @@ class ExperimentReport:
 
         # TODO - add code to plot subset size relative to the cohort size
             
-        return df
+        return df.set_index('subset_hash')
         
     def model_groups(self):
         """Generate a summary of all the model groups (types and hyperparameters) built in the experiment
@@ -595,11 +682,23 @@ class ExperimentReport:
             
         return df
                        
-    def efficiency_and_equity(self, efficiency_metric, equity_metric, parameter, groups=None, model_group_ids=None, bias_metric_tolerance=0.2, generate_plot=True):
+    def efficiency_and_equity(self, efficiency_metric=None, equity_metric=None, parameter=None, groups=None, model_group_ids=None, bias_metric_tolerance=0.2, generate_plot=True):
         ''' Plot the performanc metric against the bias metric for all or selected models.
             Args:
                 
         '''
+        
+        if efficiency_metric is None:
+            efficiency_metric = self.performance_metric
+        
+        if equity_metric is None:
+            equity_metric = self.bias_metric
+            
+        if parameter is None:
+            parameter = self.threshold
+            
+        if groups is None:
+            groups = self.bias_groups
         
         if model_group_ids is None: 
             # logging.warning('No model groups specified. Usign all model group ids')
@@ -902,657 +1001,35 @@ class ExperimentReport:
             print(", ".join(f"{k}: {round(v, 3)}" for k, v, in d.to_dict().items()))
         
         
-    
-
-def load_config(engine, experiment_hash):
-    "return the experiment config"
-    
-    q = f'''
-        select 
-        config 
-        from triage_metadata.experiments
-        where experiment_hash = '{experiment_hash}'
-    '''
-    
-    return pd.read_sql(q, engine).config.at[0]
-    
-
-def load_report_parameters_from_config(engine, experiment_hash):
-    config = load_config(engine, experiment_hash=experiment_hash)
-    
-    d = dict()
-    d['performance_metric'] = config['scoring'].get('priority_metric')
-    d['threshold'] = config['scoring'].get('priority_parameter')
-    
-    bias_audit = config.get('bias_audit')
-    d['bias_metric'] = None
-    d['priority_groups'] = None 
-    
-    if bias_audit is not None:
-        d['bias_metric'] = bias_audit.get('priority_metric')
-        d['priority_groups'] = bias_audit.get('priority_groups')
-    
-    return d 
-  
-    
-
-def list_all_models(engine, experiment_hashes):
-    """ List all of the models built in the experiment
-    
-    Args:
-        engine (SQLAlchemy): Database engine
-        experiment_hashes (List[str]): List of experiment hashes
-    """
-    
-    q = f''' 
-        select 
-            model_id,
-            model_group_id,
-            model_type,
-            hyperparameters,
-            train_end_time
-        from triage_metadata.experiment_models join triage_metadata.models using(model_hash)
-        where experiment_hash in ('{"','".join(experiment_hashes)}')
-        order by model_type
-        '''
-
-    return pd.read_sql(q, engine)
-
-
-def plot_performance_all_models(engine, experiment_hashes, metric, parameter, **kw):
-    """ Generate an Audition type plot to display predictive performance over time for all model groups
-    
-    Args:
-        engine (SQLAlchemy): Database engine
-        experiment_hashes (List[str]): List of experiment hashes
-        metric (str): The metric we are intersted in (suppores 'precision@', 'recall@', 'auc_roc')
-        parameter (str): The threshold, supports percentile ('_pct') and absolute ('_abs') thresholds
-    """
-    
-    # fetch model groups
-    q = f'''
-        with models as (
-            select 
-                distinct model_id, 
-                train_end_time, 
-                model_group_id, 
-                model_type, 
-                hyperparameters
-            from triage_metadata.experiment_models join triage_metadata.models using(model_hash)
-            where experiment_hash in ('{"','".join(experiment_hashes)}')   
+    def precision_recall_curves(self, plot_size=(3,3)):
+        
+        n_splits = self.experiment_stats()['validation_splits']
+        n_groups = len(self.model_groups())     
+        
+        # n_groups x n_splits grid 
+        fig, axes = plt.subplots(
+            n_groups, 
+            n_splits,
+            figsize=(n_splits*plot_size[0], n_groups*plot_size[1])
         )
-        select 
-            m.model_id, 
-            train_end_time::date as train_end_time_dt,
-            to_char(train_end_time, 'YYYY-MM-DD') as train_end_time,
-            model_type, 
-            model_group_id,
-            stochastic_value as metric_value
-        from models m left join test_results.evaluations e 
-        on m.model_id = e.model_id
-        and e.metric = '{metric}'
-        and e.parameter = '{parameter}'
-        and e.subset_hash = ''
-    '''
-
-
-    df = pd.read_sql(q, engine)
-    df['train_end_time'] = pd.to_datetime(df.train_end_time, format='%Y-%m-%d')
-    
-    models_per_train_end_time = df.groupby(['model_group_id', 'train_end_time']).count()['model_id']
-    
-    if models_per_train_end_time[models_per_train_end_time > 1].empty:
-        pass 
-    else: 
-        print(f'model groups with morel than one modelid per train end time: \n{models_per_train_end_time[models_per_train_end_time > 1]}' )
-    
-    # using the audition plotting base here
-    plot_cats(
-        frame=df,
-        x_col='train_end_time',
-        y_col='metric_value',
-        cat_col='model_type',
-        grp_col='model_group_id',
-        highlight_grp=None,
-        title=f'Model Performance Over Time - {metric}{parameter}',
-        x_label='Time',
-        y_label=f'Value - {metric}{parameter}',
-        cmap_name="tab10",
-        figsize=[12, 4],
-        dpi=150,
-        x_ticks=list(df.train_end_time.unique()),
-        y_ticks=None,
-        x_lim=None,
-        y_lim=(0, 1.1),
-        legend_loc=None,
-        legend_fontsize=12,
-        label_fontsize=12,
-        title_fontsize=12,
-        label_fcn=None,
-        path_to_save=None,
-        alpha=0.4,
-        colordict=None,
-        styledict=None
-    )
-    sns.despine()
-    
-    
-def summarize_all_model_performance():
-    pass
-    
-
-def list_all_subsets(engine, experiment_hashes):
-    
-    q = f'''
-        select 
-            distinct s.subset_hash, s.config, s.config ->> 'name' as subset_name,
-            s.config ->> 'name'::text||'_'||s.subset_hash as table_name
-        from triage_metadata.experiment_models join triage_metadata.models using(model_hash)
-            left join test_results.evaluations e using(model_id)
-                inner join triage_metadata.subsets s on e.subset_hash = s.subset_hash 
-        where experiment_hash in ('{"','".join(experiment_hashes)}')
-    '''
-    
-    df = pd.read_sql(q, engine)
-    df['table_name'] = df.table_name.apply(lambda x: f'subet_{x}')
-
-    # TODO - add code to plot subset size relative to the cohort size
         
-    return df
+        axes = axes.flatten()
         
-    
-
-def plot_subset_performance(engine, experiment_hashes, parameter, metric):
-
-    q = f'''
-        select 
-            case when e.subset_hash is null then 'full_cohort' 
-            else s.config ->> 'name' 
-            end as "subset",
-            e.subset_hash,
-            m.model_id,
-            m.model_group_id,
-            m.model_type,
-            m.train_end_time::date,
-            e.stochastic_value as metric_value
-        from triage_metadata.experiment_models join triage_metadata.models m using(model_hash)
-            left join test_results.evaluations e
-            on m.model_id = e.model_id
-            and e.parameter = '{parameter}'
-            and e.metric = '{metric}'
-                left join triage_metadata.subsets s on e.subset_hash = s.subset_hash 
-        where experiment_hash in ('{"','".join(experiment_hashes)}')
-    '''
-    
-    df = pd.read_sql(q, engine)
-    
-    if df.empty:
-        return None
-    
-    df['model_type_child'] = df.apply(lambda x: _format_model_name(x['model_type'], x['model_group_id']), axis=1)
-    df['model_type_short'] = df.apply(lambda x: x['model_type'].split('.')[-1], axis=1)
-    # df.apply(lambda x: _format_model_name(x['model_type']) + ': ' + str(x['model_group_id']), axis=1) 
-    
-    
-    get_labels_table_query = f"""
-    select distinct labels_table_name from triage_metadata.triage_runs 
-    where run_hash = '{experiment_hashes[0]}'
-    """
-
-    labels_table = pd.read_sql(get_labels_table_query, engine).labels_table_name.iloc[0]
-    
-    grpobj = df.groupby('subset')
-
-    for grp, gdf in grpobj:
-        fig, axes = plt.subplots(1, 2, figsize=(10,4), dpi=100)
-        fig.suptitle(f'Subset Name: {grp}')
+        grp_obj = self.models().groupby('model_group_id')
         
-        # Plotting the subsetsize and the baserate
-        subset_table_name = 'subset_' + gdf['subset'].iloc[0] + '_' + gdf['subset_hash'].iloc[0]
-        q = f'''
-            select 
-            as_of_date::date, count(entity_id) as subset_size, avg(label)*100 as baserate
-            from {labels_table} inner join {subset_table_name} using(entity_id, as_of_date)
-            group by 1
-            order by 1
-        '''
-        subset_size = pd.read_sql(q, engine)
-        
-        # Subset sizes over time
-        color='tab:blue'
-        sns.barplot(
-            data=subset_size,
-            x='as_of_date',
-            y='subset_size',
-            ax=axes[0],
-            alpha=0.5,
-            color=color
-        )
-        axes[0].tick_params(axis='x', rotation=90)
-        axes[0].set_title(f'Subset Size & Baserate')
-        axes[0].set_xlabel('Time')
-        axes[0].set_ylabel('Subset size', color=color)
-        axes[0].tick_params(axis='y', labelcolor=color)
-        axes[0].axhline(y=subset_size.subset_size.mean(), color=color, alpha=0.4, linestyle='--')
-        
-        
-        ax2 = axes[0].twinx()
-        color='tab:red'
-        
-        sns.lineplot(
-            data=subset_size,
-            x=axes[0].get_xticks(),
-            y='baserate',
-            ax=ax2,
-            alpha=0.6,
-            marker='o',
-            markersize=5,
-            color=color
-        )
-        ax2.set_ylabel('Baserate (%)', color=color)
-        ax2.tick_params(axis='y', labelcolor=color)
-        ax2.axhline(y=subset_size.baserate.mean(), color=color, alpha=0.4, linestyle='--')
-        
-        colors={x: sns.color_palette().as_hex()[i] for i, x in enumerate(sorted(df.model_type_short.unique()))}
-        legend_handles=[ Line2D([0], [0], label=k, color=v) for k, v in colors.items() ]
-
-        model_groups = gdf.groupby('model_group_id')
-        
-        for mod_type, model_grp_df in model_groups:
-            model_grp_df = model_grp_df.sort_values('train_end_time')
-
-            # print(model_grp_df.head())
-            model_type = model_grp_df.model_type_short.iloc[0]
+        ax_idx = 0
+        for _, gdf in grp_obj:
+            model_ids = gdf.model_id.tolist()
             
-            model_grp_df.plot(x='train_end_time', y='metric_value', color=colors[model_type], ax=axes[1], alpha=0.4)
-            
-            # ticklabels = list(gdf.train_end_time.unique())
-            # axes[1].set_xticklabels(ticklabels, rotation=45)
-            axes[1].legend(handles=legend_handles, loc='upper left', frameon=False, ncol=1, fontsize='small', bbox_to_anchor=[1, 1])
-            axes[1].tick_params(axis='x', rotation=90)
-            axes[1].set_ylabel(f'{metric}{parameter}')
-            axes[1].set_xlabel('Time')
-            # axes[1].set_ylim(0, 0.3)
-            axes[1].set_title(f'Model Performance')    
-        
-        plt.tight_layout()        
-
-
-    
-def model_groups_w_best_mean_performance(engine, experiment_hashes, metric, parameter, n_model_groups):
-    """ Return the model groups with the best mean performance """
-    
-    q = f'''
-        with models as (
-            select 
-                distinct model_id, train_end_time, model_group_id, model_type, hyperparameters
-            from triage_metadata.experiment_models join triage_metadata.models using(model_hash)
-            where experiment_hash in ('{"','".join(experiment_hashes)}')   
-        )
-        select 
-            m.model_group_id, 
-            model_type, 
-            hyperparameters,
-            avg(stochastic_value) as mean_metric_value
-        from models m left join test_results.evaluations e 
-            on m.model_id = e.model_id
-            and e.metric = '{metric}'
-            and e.parameter = '{parameter}'
-            and e.subset_hash = ''
-        group by 1, 2, 3
-        limit {n_model_groups};
-    '''
-    
-    df = pd.read_sql(q, engine)
-    
-    return df.model_group_id.tolist(), df
-
-
-def get_best_hp_config_for_each_model_type(engine, experiment_hashes, metric, parameter):
-        
-    q = f'''
-        with avg_perf as (
-            select 
-                model_group_id, model_type, hyperparameters, avg(stochastic_value) as mean_performance
-            from triage_metadata.experiment_models join triage_metadata.models m using(model_hash)
-                left join test_results.evaluations e
-                on m.model_id = e.model_id
-                and e.metric = '{metric}'
-                and e.parameter = '{parameter}'
-                and e.subset_hash = ''
-            where experiment_hash in ('{"','".join(experiment_hashes)}') 
-            and model_type not like '%%Dummy%%'
-            group by 1, 2, 3    
-        )
-        select distinct on(model_type)
-        model_group_id, model_type, hyperparameters, mean_performance
-        from avg_perf
-        order by model_type, mean_performance desc
-    '''
-
-    best_models = pd.read_sql(q, engine).set_index('model_group_id').sort_values(by='mean_performance', ascending=False)
-    best_models['model_type'] = best_models['model_type'].str.split('.').apply(lambda x: x[-1])
-        
-    return best_models
-    
-
-def plot_performance_against_bias(engine, experiment_hashes, metric, parameter, bias_metric, groups=None, model_group_ids=None, selected_models=None, bias_metric_tolerance=0.2, save_target=None):
-    ''' Plot the performanc metric against the bias metric for all or selected models.
-        Args:
-            engine: DB connection
-            experiment_hashes ([])
-    '''
-    
-    if model_group_ids is None: 
-        logging.warning('No model groups specified. Usign all model group ids')
-        model_group_ids = summarize_model_groups(engine, experiment_hashes).model_group_id.tolist()
-        
-        if not model_group_ids:
-            logging.warning('No model groups belong to the experiment! Returning None')
-            return None
-        
-    # If no groups are specified, we show results for all groups    
-    if groups is None:
-        
-        logging.info('No groups are specified. Showing results for all attributes and their values')
-        groups = dict()
-        
-        q = f'''
-        select 
-            distinct attribute_name, attribute_value  
-        from test_results.aequitas a
-        where attribute_name::varchar in (
-            select replace(jsonb_array_elements(config -> 'bias_audit_config' -> 'attribute_columns')::varchar, '"', '')   as attr
-            from triage_metadata.experiments e 
-            where experiment_hash = '{experiment_hashes[0]}'
-        ) 
-        order by 1, 2
-        '''
-        
-        rg = pd.read_sql(q, engine)
-        
-        if rg.empty:
-            logging.warning('No bias audit config or aequitas calculation was not completed! check the test_results.aequitas table. No plots generated')
-            return
-        
-        groups = dict()
-        for attr, gdf in rg.groupby('attribute_name'):
-            groups[attr] = list(gdf['attribute_value'].unique())
-            
-        logging.debug(f'Plotting bias for following groups and values {rg}')
-        
-    
-    parameter_ae = parameter
-    
-    if 'pct' in parameter:
-        t = round(float(parameter.split('_')[0]) / 100, 2)
-        parameter_ae =  f'{t}_pct'
-        
-    attributes = groups.keys()
-    attribute_values = [v for v_list in groups.values() for v in v_list]
-        
-    q = f'''
-            select 
-                m.model_id,
-                m.model_group_id,
-                m.model_type,
-                m.hyperparameters,
-                m.train_end_time::date,
-                e.metric,
-                e."parameter",
-                e.num_labeled_examples,
-                e.num_positive_labels,
-                e.stochastic_value as "{metric}{parameter}",
-                a.tpr,
-                a.{bias_metric},
-                a.attribute_name,
-                a.attribute_value,
-                a.group_size,
-                a.prev as baserate,
-                total_entities
-            from triage_metadata.experiment_models em join triage_metadata.models m 
-                on em.model_hash = m.model_hash
-                and m.model_group_id in ({", ".join([str(x) for x in model_group_ids])})
-                left join test_results.evaluations e 
-                    on m.model_id = e.model_id 
-                    and e.metric = '{metric}'
-                    and e."parameter" = '{parameter}'
-                    and e.subset_hash = ''
-                        left join test_results.aequitas a 
-                            on m.model_id = a.model_id 
-                            and a."parameter" = '{parameter_ae}'
-                            and a.attribute_name in ('{"','".join(attributes)}')
-                            and a.attribute_value in ('{"','".join(attribute_values)}')
-                            and a.tie_breaker= 'worst' 
-            where experiment_hash in  ('{"','".join(experiment_hashes)}')
-            
-    '''
-    
-    #and a.attribute_value in ('{', '.join(attribute_values)}')
-    metrics = pd.read_sql(q, engine)
-
-    # metrics['Model Class'] = metrics['model_type'].apply(lambda x: x.split('.')[-1])
-    # metrics['model_label'] = metrics.apply(lambda x: f"{x['model_group_id']}: {x['model_type'].split('.')[-1]}", axis=1)
-    metrics['model_label'] = metrics.apply(lambda x: _format_model_name(x['model_type'], x['model_group_id']), axis=1)
-    metrics['model_type_short'] = metrics.apply(lambda x: x['model_type'].split('.')[-1], axis=1)
-    
-        # str(x['model_group_id']) + ': ' + x['model_type']), axis=1) 
-    # Metric means
-    mean = metrics.groupby(['model_label', 'attribute_value', 'model_type_short']).mean()[[f'{metric}{parameter}', f'{bias_metric}']].reset_index().sort_values('model_label')
-    
-    # Metric standard errors
-    sem = metrics.groupby(['model_label', 'attribute_value', 'model_type_short']).sem()[[f'{metric}{parameter}', f'{bias_metric}']].reset_index().sort_values('model_label')
-    labels = sorted(mean.model_label.unique())
-    
-    # n_attrs = sum([len(x) for x in groups.values()])
-    n_attrs = len(attribute_values)
-    ax_cntr = 0
-    # bias_tolerance = 0.2
-    fig, axes = plt.subplots(1, n_attrs, figsize=(4*n_attrs + 1, 4), sharey=True, sharex=True, dpi=100)
-    # colors=sns.color_palette().as_hex()[:len(mean.model_label.unique())]
-    colors={x: sns.color_palette().as_hex()[i] for i, x in enumerate(sorted(metrics.model_type_short.unique()))}
-    legend_handles=[ Line2D([0], [0], label=k, marker='o', color=v) for k, v in colors.items() ]
-
-    
-    for group, attrs in groups.items():
-        for attr in attrs:
-            msk = mean['attribute_value'] == attr
-            x = mean[msk][f'{metric}{parameter}'].tolist()
-            y = mean[msk][f'{bias_metric}'].tolist()
-
-            # mean[msk]['model_type'].tolist()
-
-            msk = sem['attribute_value'] == attr
-            yerr = sem[msk][f'{bias_metric}'].tolist()
-            xerr = sem[msk][f'{metric}{parameter}'].tolist()
-
-            # print(x)
-            
-            for i in range(len(x)):
-                axes[ax_cntr].errorbar(x[i], y[i], yerr[i], xerr[i], fmt=' ', linewidth=1, capsize=2, color=colors[mean[msk]['model_type_short'].iloc[i]], alpha=0.3)
-                axes[ax_cntr].scatter(x[i], y[i], color=colors[mean[msk]['model_type_short'].iloc[i]], label=labels[i], alpha=0.5)
-                # axes[ax_cntr].set(title=f'{group} | {attr}', xlabel='Performance Metric', ylabel='Bias Metric', ylim=[0, 3])
-                axes[ax_cntr].set(title=f'{group} | {attr}', xlabel='Efficiency Metric', ylabel='Equity Metric')
-                axes[ax_cntr].axhline(y=1, color='gray', linestyle='--', alpha=0.1)
-                axes[ax_cntr].axhline(y=1+bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
-                axes[ax_cntr].axhline(y=1-bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
-            ax_cntr += 1
-        axes[-1].legend(handles=legend_handles, bbox_to_anchor=(1,1), loc='upper left', frameon=False)
-        sns.despine()
-        
-    # plt.tight_layout()
-    if save_target is not None: 
-        plt.savefig(save_target, dpi=300, bbox_inces='tight')
-    
-    # Plotting the Group sizes and baserates
-    fig, axes = plt.subplots(1, n_attrs, figsize=(4*n_attrs + 1, 4), sharex=True, sharey=True, dpi=100)
-    ax_cntr=0
-    for group, attrs in groups.items():
-        for attr in attrs:
-            msk = metrics['attribute_value'] == attr
-
-            grouped = metrics[msk].groupby('train_end_time').mean()[['baserate', 'group_size', 'total_entities']].reset_index()
-            color='tab:blue'
-            sns.barplot(
-                data=grouped,
-                x='train_end_time',
-                y='group_size',
-                ax=axes[ax_cntr],
-                alpha=0.8,
-                color=color,
-                label='Group Size'
-            )
-
-            sns.barplot(
-                data=grouped,
-                x='train_end_time',
-                y='total_entities',
-                ax=axes[ax_cntr],
-                alpha=0.2,
-                color='gray',
-                label='Cohort Size'
-            )
-
-            axes[ax_cntr].tick_params(axis='x', rotation=90)
-            axes[ax_cntr].set(xlabel='Time', title=f'{group} | {attr}')
-            axes[ax_cntr].set_ylabel('Entities', color=color)
-            axes[ax_cntr].tick_params(axis='y', labelcolor=color)
-
-            ax2 = axes[ax_cntr].twinx()
-            color='tab:red'
-
-            sns.lineplot(
-                data=grouped,
-                x=axes[ax_cntr].get_xticks(),
-                y='baserate',
-                ax=ax2,
-                alpha=0.6,
-                marker='o',
-                markersize=5,
-                color=color,
-                # label='Baserate'
-            )
-            ax2.set_ylabel('Baserate (%)', color=color)
-            ax2.tick_params(axis='y', labelcolor=color)
-            ax_cntr += 1
-    axes[-1].legend(bbox_to_anchor=(1.1,1.1), loc='upper left', frameon=False)
-    plt.tight_layout()
-    
-    
-    
-    
-    # msk = metrics.attribute_value.str.contains('|'.join(attribute_values))
-
-    # g = sns.FacetGrid(metrics[msk].sort_values('train_end_time'), row='attribute_value', col="train_end_time", hue='model_label', height=2.5)
-    # g.map(sns.scatterplot, f'{metric}{parameter}', f"{bias_metric}")
-    # g.add_legend(title='')
-
-    # # drawing the parity reference line
-    # g.map(plt.axhline, y=1, color='gray', linestyle='--', alpha=0.1)
-
-    # # Drawing the tolerance bounds set
-    # g.map(plt.axhline, y=1+bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
-    # g.map(plt.axhline, y=1-bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
-
-    # g.figure.set_dpi(300)
-    # g.set_titles(template='{row_name}\n{col_name}')
-    # g.set_axis_labels(f"{metric}{parameter}", 'TPR Ratio')
-
-    # g.tight_layout()
-    # g.set(ylim=(0, 1.8))
-
-    
-def plot_prk_curves(engine, experiment_hashes, model_groups=None, step_size=0.01):
-    
-    if model_groups is None:
-        q = f'''
-            select 
-            distinct model_group_id
-            from triage_metadata.experiment_models join triage_metadata.models using(model_hash)
-            where experiment_hash in  ('{"','".join(experiment_hashes)}')        
-        '''
-        
-        model_groups = pd.read_sql(q, engine)['model_group_id'].tolist()
-        
-        if not model_groups:
-            logging.warning('No model groups belong to the experiment! Returning None')
-            return None
-            
-    
-    
-    rep = PostmodelingReport(
-        engine=engine,
-        experiment_hashes=experiment_hashes,
-        model_groups=model_groups
-    )
-    
-    rep.plot_prk_curves(
-        pct_step_size=step_size
-    )
-    
-
-def feature_missingness_stats(engine):
-    """
-    Generates the mean, min, max missingness degree for each feature. 
-    Assumes that the current "features" schema holds the relevant features for the experiment
-    """
-    
-    q = '''
-    select 
-    table_name 
-    from information_schema.tables
-    where table_schema = 'features'
-    and table_name like '%%aggregation_imputed'
-    '''
-
-    feature_tables = pd.read_sql(q, engine)['table_name'].tolist()
-    
-    logging.info(f'Printing only features with missing values')
-    
-    column_names = dict()
-    for table in feature_tables:
-        q = f'''
-            select 
-            column_name
-            FROM information_schema.columns
-            WHERE table_schema = 'features'
-            AND table_name   = '{table}'
-            and (column_name like '%%_imp')   
-        '''
-
-        column_names[table] = pd.read_sql(q, engine).column_name.tolist()
-        
-    results = pd.DataFrame()
-
-    for table_name, columns in column_names.items():
-        # print(table_name)
-        select_clause = '''
-            select 
-            as_of_date,
-            count(distinct entity_id) as cohort_size
-        '''
-        imputation_counts = ''
-        for col in columns:
-            imputation_counts += f'''
-                ,(sum("{col}")::float / count(distinct entity_id)) * 100  as "{col[:-4]}"
-            '''
-        
-        from_clause = f'''
-            from features.{table_name}
-            group by 1
-        '''
-        
-        query = select_clause + imputation_counts + from_clause
-        df = pd.read_sql(query, engine).set_index(['as_of_date', 'cohort_size'])
-
-        if results.empty:
-            results = df
-        else:
-            results = results.join(df)
-            
-    df = pd.concat([results.mean(), results.min(), results.max()], axis=1).fillna(0)
-    df.columns = ['mean (%)', 'min (%)', 'max (%)']
-
-    # df.style.applymap(lambda x: 'background-color : pink' if x>80 else '')
-    
-    return df[df['mean (%)'] > 0] 
+            for mod_id in model_ids:
+                tmp = ModelAnalyzer(engine=self.engine, model_id=mod_id)
+                tmp.plot_precision_recall_curve(
+                    ax=axes[ax_idx]
+                )
+                ax_idx += 1
+                
+            # Making sure that models that aren't built are skipped in the grid
+            if ax_idx % n_splits > 0:
+                ax_idx += (n_splits - (ax_idx % n_splits)) 
+                
+        plt.tight_layout()
