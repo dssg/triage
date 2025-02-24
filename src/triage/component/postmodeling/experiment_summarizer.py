@@ -198,20 +198,7 @@ class ExperimentReport:
         visualize_chops_plotly(
             chops
         )
-        
-    @property
-    def config(self):
-        "return the experiment config"
-    
-        q = f'''
-            select 
-            config 
-            from triage_metadata.experiments
-            where experiment_hash = '{self.experiment_hash[0]}'
-        '''
-        
-        return pd.read_sql(q, self.engine).config.at[0]
-    
+           
     def cohorts(self, generate_plots=True):
         """Generate a summary of cohorts (size, baserate)
 
