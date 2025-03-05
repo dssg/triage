@@ -19,10 +19,10 @@ This step produces an experiment report like the example in `example_name.ipynb`
 ### Generating the Experiment Report
 
 There are two ways to generate the experiment report: 
-A. Automatically generate the report after each Triage experiment run 
-B. Generate the report for an existing experiment Copy the example report file and update the parameters to specify an existing experiment.
+1. Automatically generate the report after each Triage experiment run
+2. Generate the report for an existing experiment
 
-#### A. Generating the report after each Triage experiment run
+#### 1. Generating the report after each Triage experiment run
 
 To generate the experiment report after every Triage experiment run, do the following **before** running your experiment:
 
@@ -76,10 +76,10 @@ To generate the experiment report after every Triage experiment run, do the foll
 
 Once the code is run, you will have a printed summary of the general verifications made on your experiment, an `.html` file and an `.ipynb` file with details on all the verifications made by the process. The `.html` can serve as a report, and the `.ipynb` can serve as a starting point to further postmodeling analysis.  
 
-![temporal figure](https://dssg.github.io/triage/postmodeling/output_summary_verification.png)
+![Summary output](https://dssg.github.io/triage/postmodeling/output_summary_verification.png)
 
 
-#### B. Generating the report for an existing experiment
+#### 2. Generating the report for an existing experiment
 
 If you need to generate the report for an existing experiment, copy the template notebook `triage_experiment_report_template.ipynb` to your project repo and update the following parameters at the top of the notebook: 
 
