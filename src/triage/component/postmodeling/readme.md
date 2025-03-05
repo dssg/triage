@@ -6,6 +6,8 @@ We split the postmodeling process into two steps:
 1. Output verification: to check whether the output of model building looks reasonable (summarizing number of models trained, best average performance observed over validation splits, subset performance, and bias metrics).
 2. Model analysis: to go deeper in exploring the outcomes and predictions of a model and its behavior across time and features in order to choose the right model for deployment.
 
+![Postmodeling flow](https://dssg.github.io/triage/postmodeling/triage_postmodeling_flow_documentation.png)
+
 ## Output verification
 
 This step produces an experiment report like the example in `example_name.ipynb`, based on the template notebook `triage_experiment_report_template.ipynb`. This document summarizes the following information for a particular model-building experiment:
