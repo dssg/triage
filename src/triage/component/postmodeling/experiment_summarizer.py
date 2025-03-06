@@ -103,61 +103,8 @@ def get_most_recent_experiment_hash(engine):
     return experiment_hash
 
 
-def model_groups_w_best_mean_performance(engine, experiment_hashes, metric, parameter, n_model_groups):
-    """ Return the model groups with the best mean performance """
-    
-    q = f'''
-        with models as (
-            select 
-                distinct model_id, train_end_time, model_group_id, model_type, hyperparameters
-            from triage_metadata.experiment_models join triage_metadata.models using(model_hash)
-            where experiment_hash in ('{"','".join(experiment_hashes)}')   
-        )
-        select 
-            m.model_group_id, 
-            model_type, 
-            hyperparameters,
-            avg(stochastic_value) as mean_metric_value
-        from models m left join test_results.evaluations e 
-            on m.model_id = e.model_id
-            and e.metric = '{metric}'
-            and e.parameter = '{parameter}'
-            and e.subset_hash = ''
-        group by 1, 2, 3
-        limit {n_model_groups};
-    '''
-    
-    df = pd.read_sql(q, engine)
-    
-    return df.model_group_id.tolist(), df
 
 
-def get_best_hp_config_for_each_model_type(engine, experiment_hashes, metric, parameter):
-        
-    q = f'''
-        with avg_perf as (
-            select 
-                model_group_id, model_type, hyperparameters, avg(stochastic_value) as mean_performance
-            from triage_metadata.experiment_models join triage_metadata.models m using(model_hash)
-                left join test_results.evaluations e
-                on m.model_id = e.model_id
-                and e.metric = '{metric}'
-                and e.parameter = '{parameter}'
-                and e.subset_hash = ''
-            where experiment_hash in ('{"','".join(experiment_hashes)}') 
-            and model_type not like '%%Dummy%%'
-            group by 1, 2, 3    
-        )
-        select distinct on(model_type)
-        model_group_id, model_type, hyperparameters, mean_performance
-        from avg_perf
-        order by model_type, mean_performance desc
-    '''
-
-    best_models = pd.read_sql(q, engine).set_index('model_group_id').sort_values(by='mean_performance', ascending=False)
-    best_models['model_type'] = best_models['model_type'].str.split('.').apply(lambda x: x[-1])
-        
-    return best_models
 
 
 
@@ -1020,3 +967,60 @@ class ExperimentReport:
                 ax_idx += (n_splits - (ax_idx % n_splits)) 
                 
         plt.tight_layout()
+
+
+    def get_best_hp_config_for_each_model_type(self):
+        
+        q = f'''
+            with avg_perf as (
+                select 
+                    model_group_id, model_type, hyperparameters, avg(stochastic_value) as mean_performance
+                from triage_metadata.experiment_models join triage_metadata.models m using(model_hash)
+                    left join test_results.evaluations e
+                    on m.model_id = e.model_id
+                    and e.metric = '{self.performance_metric}'
+                    and e.parameter = '{self.threshold}'
+                    and e.subset_hash = ''
+                where experiment_hash in ('{"','".join(self.experiment_hashes)}') 
+                and model_type not like '%%Dummy%%'
+                group by 1, 2, 3    
+            )
+            select distinct on(model_type)
+            model_group_id, model_type, hyperparameters, mean_performance
+            from avg_perf
+            order by model_type, mean_performance desc
+        '''
+
+        best_models = pd.read_sql(q, self.engine).set_index('model_group_id').sort_values(by='mean_performance', ascending=False)
+        best_models['model_type'] = best_models['model_type'].str.split('.').apply(lambda x: x[-1])
+            
+        return best_models
+    
+    def model_groups_w_best_mean_performance(self, n_model_groups=5):
+        """ Return the model groups with the best mean performance """
+        
+        q = f'''
+            with models as (
+                select 
+                    distinct model_id, train_end_time, model_group_id, model_type, hyperparameters
+                from triage_metadata.experiment_models join triage_metadata.models using(model_hash)
+                where experiment_hash in ('{"','".join(self.experiment_hashes)}')   
+            )
+            select 
+                m.model_group_id, 
+                model_type, 
+                hyperparameters,
+                avg(stochastic_value) as mean_metric_value
+            from models m left join test_results.evaluations e 
+                on m.model_id = e.model_id
+                and e.metric = '{self.performance_metric}'
+                and e.parameter = '{self.threshold}'
+                and e.subset_hash = ''
+            group by 1, 2, 3
+            limit {n_model_groups};
+        '''
+        
+        df = pd.read_sql(q, self.engine)
+        
+        return df.model_group_id.tolist(), df
+
