@@ -107,6 +107,7 @@ def _fetch_matrices(model_id, project_path, db_conn):
     logging.info(f"extracting predictions from model id: {model_id}")
     predictions = _fetch_scores_labels(model_id, db_conn)
     matrix_uuid = predictions.matrix_uuid.unique()[0]
+    logging.info(f"matrix uuid: {matrix_uuid}")
 
     project_storage = ProjectStorage(project_path)
     matrix_storage_engine = project_storage.matrix_storage_engine()
