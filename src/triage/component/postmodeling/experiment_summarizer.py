@@ -1024,3 +1024,38 @@ class ExperimentReport:
         
         return df.model_group_id.tolist(), df
 
+    def feature_importance(self, plot_size=(3,6), n_features=20):
+        n_splits = self.experiment_stats()['validation_splits']
+        n_groups = len(self.model_groups())     
+        
+        # n_groups x n_splits grid 
+        fig, axes = plt.subplots(
+            n_groups, 
+            n_splits,
+            figsize=(n_splits*plot_size[0], n_groups*plot_size[1])
+        )
+        
+        axes = axes.flatten()
+        
+        grp_obj = self.models().groupby('model_group_id')
+        
+        ax_idx = 0
+        for _, gdf in grp_obj:
+            model_ids = gdf.model_id.tolist()
+            
+            for mod_id in model_ids:
+                tmp = ModelAnalyzer(engine=self.engine, model_id=mod_id)
+                tmp.plot_feature_importance(
+                    ax=axes[ax_idx],
+                    n_top_features=n_features
+                )
+                ax_idx += 1
+                
+            # Making sure that models that aren't built are skipped in the grid
+            if ax_idx % n_splits > 0:
+                ax_idx += (n_splits - (ax_idx % n_splits)) 
+                
+        plt.tight_layout()
+        
+    # def feature_group_importance(self):
+        
