@@ -8,6 +8,8 @@ import seaborn as sns
 import logging
 from matplotlib.lines import Line2D
 
+import warnings
+
 from triage.component.timechop.plotting import visualize_chops_plotly
 from triage.component.timechop import Timechop
 from triage.component.audition.plotting import plot_cats
@@ -1024,37 +1026,61 @@ class ExperimentReport:
         
         return df.model_group_id.tolist(), df
 
-    def feature_importance(self, plot_size=(3,6), n_features=20):
+    def feature_importance(self, plot_size=(2,5), n_features=20):
         n_splits = self.experiment_stats()['validation_splits']
         n_groups = len(self.model_groups())     
-        
-        # n_groups x n_splits grid 
+
+        # n_groups x 1 grid 
         fig, axes = plt.subplots(
-            n_groups, 
-            n_splits,
-            figsize=(n_splits*plot_size[0], n_groups*plot_size[1])
+            n_groups,
+            1,
+            figsize=(plot_size[0], n_groups*plot_size[1])
         )
-        
+
         axes = axes.flatten()
-        
+
         grp_obj = self.models().groupby('model_group_id')
-        
+
         ax_idx = 0
-        for _, gdf in grp_obj:
+        for model_group_id, gdf in grp_obj:
             model_ids = gdf.model_id.tolist()
-            
+
+            feature_importances_group = list()
             for mod_id in model_ids:
                 tmp = ModelAnalyzer(engine=self.engine, model_id=mod_id)
-                tmp.plot_feature_importance(
-                    ax=axes[ax_idx],
-                    n_top_features=n_features
-                )
-                ax_idx += 1
+
+                fi = tmp.get_feature_importances(n_top_features=100)
+
+                feature_importances_group.append(fi)
+
+            feature_importances_group = pd.concat(feature_importances_group)
+                        
+            if len(feature_importances_group.feature.unique()) > 1: 
+                agg_df = feature_importances_group.groupby('feature')['feature_importance'].agg(['mean', 'sem']).nlargest(n_features, 'mean').reset_index()
                 
-            # Making sure that models that aren't built are skipped in the grid
-            if ax_idx % n_splits > 0:
-                ax_idx += (n_splits - (ax_idx % n_splits)) 
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore')
+                    sns.barplot(
+                        data=agg_df,
+                        x='mean',
+                        xerr=agg_df['sem'],
+                        y='feature',
+                        color = 'royalblue',
+                        capsize = 0.5,
+                        ax = axes[ax_idx]
+                    )
+                    
+                    axes[ax_idx].set_title(f'{_format_model_name(tmp.model_type, model_group_id)}')
+                    axes[ax_idx].set_xlabel('')
+                    axes[ax_idx].set_ylabel('')
                 
+            else:
+                fig.delaxes(axes[ax_idx])
+                logging.warning(f'Not a model with multiple features: {model_group_id} ')
+                
+            ax_idx += 1
+
+
         plt.tight_layout()
         
     # def feature_group_importance(self):
