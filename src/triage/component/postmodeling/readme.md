@@ -71,7 +71,7 @@ To generate the experiment report after every Triage experiment run, do the foll
 
       priority_groups:
         'race':
-          - 'Black/African American'
+          - 'African American'
         'gender':
           - 'Female'
     ```
