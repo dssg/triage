@@ -122,7 +122,6 @@ class ExperimentReport:
         self.bias_metric = bias_priority_metric
         self.bias_groups = bias_priority_groups
     
-    
     def timesplits(self):
         """Generate an interactive plot of the time splits used for cross validation
 
@@ -935,8 +934,7 @@ class ExperimentReport:
             print(f'Measuring biases across {attr} groups using {equity_metric} for the best performing model:')
             d = gdf.groupby('attribute_value').mean()[equity_metric]
             print(", ".join(f"{k}: {round(v, 3)}" for k, v, in d.to_dict().items()))
-        
-        
+            
     def precision_recall_curves(self, plot_size=(3,3)):
         
         n_splits = self.experiment_stats()['validation_splits']
