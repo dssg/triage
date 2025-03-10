@@ -21,7 +21,8 @@ from triage.component.postmodeling.error_analysis import generate_error_analysis
 from triage.database_reflection import table_exists
 from triage.component.catwalk.utils import sort_predictions_and_labels
 
-class ModelAnalyzer:
+
+class SingleModelAnalyzer:
 
     id_columns = ['entity_id', 'as_of_date']
 
@@ -1002,8 +1003,8 @@ class ModelAnalyzer:
     
 
         
-
-class PostmodelingAnalyzer: 
+"""This class is still WIP. Proceed with caution"""
+class MultiModelAnalyzer: 
 
     def __init__(self, engine, model_groups, experiment_hashes, project_path=None, train_end_times=None, use_all_model_groups=False) -> None:
         self.model_groups = model_groups
@@ -1157,9 +1158,9 @@ class PostmodelingAnalyzer:
 
             for m in models:
                 if m['model_group_id'] in d:
-                    d[m['model_group_id']][m['train_end_time']] = ModelAnalyzer(m['model_id'], self.engine)
+                    d[m['model_group_id']][m['train_end_time']] = SingleModelAnalyzer(m['model_id'], self.engine)
                 else:
-                    d[m['model_group_id']] = {m['train_end_time']: ModelAnalyzer(m['model_id'], self.engine)}
+                    d[m['model_group_id']] = {m['train_end_time']: SingleModelAnalyzer(m['model_id'], self.engine)}
 
         return d 
     
