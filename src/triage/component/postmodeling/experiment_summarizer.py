@@ -277,7 +277,10 @@ class ExperimentReport:
             order by model_type
             '''
 
-        return pd.read_sql(q, self.engine)        
+        df = pd.read_sql(q, self.engine)
+
+        return df.sort_values(by=['model_group_id', 'train_end_time'])      
+       
      
     def features(self):
         """ Generate a dataframe containing all the features that were built in an experimet
@@ -406,8 +409,10 @@ class ExperimentReport:
         df.columns = ['mean (%)', 'min (%)', 'max (%)']
 
         # df.style.applymap(lambda x: 'background-color : pink' if x>80 else '')
-        
-        return df[df['mean (%)'] > 0]
+        df_ = df[df['mean (%)'] > 0]
+
+        return df_.sort_values(by="mean (%)", ascending=False)
+    
     
     def model_performance(self, metric=None, parameter=None, generate_plot=True):
         """ Generate an Audition type plot to display predictive performance over time for all model groups
@@ -491,7 +496,9 @@ class ExperimentReport:
             )
             sns.despine()     
         
-        return df
+        # sort df by train_end_time
+        return df.sort_values(by="train_end_time")
+    
     
     def model_performance_subsets(self, metric=None, parameter=None, generate_plot=True):
         
@@ -614,9 +621,11 @@ class ExperimentReport:
                     axes[1].set_title(f'Model Performance')    
                 
                 plt.tight_layout()
-            
-        return df
-                       
+
+        # sort df by train_end_time     
+        return df.sort_values(by="train_end_time")
+
+
     def efficiency_and_equity(self, efficiency_metric=None, equity_metric=None, parameter=None, groups=None, model_group_ids=None, bias_metric_tolerance=0.2, generate_plot=True):
         ''' Plot the performanc metric against the bias metric for all or selected models.
             Args:
@@ -730,10 +739,10 @@ class ExperimentReport:
         
         if generate_plot: 
             # Metric means
-            mean = metrics.groupby(['model_label', 'attribute_value', 'model_type_short']).mean()[[f'{efficiency_metric}{parameter}', f'{equity_metric}']].reset_index().sort_values('model_label')
+            mean = metrics.groupby(['model_label', 'attribute_value', 'model_type_short'])[[f'{efficiency_metric}{parameter}', f'{equity_metric}']].mean().reset_index().sort_values('model_label')
             
             # Metric standard errors
-            sem = metrics.groupby(['model_label', 'attribute_value', 'model_type_short']).sem()[[f'{efficiency_metric}{parameter}', f'{equity_metric}']].reset_index().sort_values('model_label')
+            sem = metrics.groupby(['model_label', 'attribute_value', 'model_type_short'])[[f'{efficiency_metric}{parameter}', f'{equity_metric}']].sem().reset_index().sort_values('model_label')
             labels = sorted(mean.model_label.unique())
             
             # n_attrs = sum([len(x) for x in groups.values()])
@@ -779,7 +788,7 @@ class ExperimentReport:
                 for attr in attrs:
                     msk = metrics['attribute_value'] == attr
 
-                    grouped = metrics[msk].groupby('train_end_time').mean()[['baserate', 'group_size', 'total_entities']].reset_index()
+                    grouped = metrics[msk].groupby('train_end_time')[['baserate', 'group_size', 'total_entities']].mean().reset_index()
                     color='tab:blue'
                     sns.barplot(
                         data=grouped,
@@ -827,6 +836,7 @@ class ExperimentReport:
             plt.tight_layout()
         
         return metrics
+    
       
     def experiment_stats(self):
         q = f'''
@@ -845,6 +855,7 @@ class ExperimentReport:
         '''
         
         return pd.read_sql(q, self.engine).to_dict(orient='records')[0]
+    
           
     def generate_summary(self, metric=None, parameter=None, equity_metric=None):
         '''
@@ -898,9 +909,9 @@ class ExperimentReport:
         
         # Model Performance
         performance = self.model_performance(metric=metric, parameter=parameter, generate_plot=False)
-        best_performance = performance.groupby(['model_group_id', 'model_type']).mean()['metric_value'].max()
-        best_model_group = performance.groupby(['model_group_id', 'model_type']).mean()['metric_value'].idxmax()[0]
-        best_model_type = performance.groupby(['model_group_id', 'model_type']).mean()['metric_value'].idxmax()[1]
+        best_performance = performance.groupby(['model_group_id', 'model_type'])['metric_value'].mean().max()
+        best_model_group = performance.groupby(['model_group_id', 'model_type'])['metric_value'].mean().idxmax()[0]
+        best_model_type = performance.groupby(['model_group_id', 'model_type'])['metric_value'].mean().idxmax()[1]
             
         print(f"Your models acheived a best average {metric}{parameter} of {round(best_performance, 3)} over the {stats['validation_splits']} validation splits, with the Model Group {best_model_group},{best_model_type}. Note that model selection is more nuanced than average predictive performance over time. You could use Audition for model selection.")
         
@@ -911,8 +922,8 @@ class ExperimentReport:
         for subset, gdf in grpobj:
             d = dict()
             d['subset'] = subset
-            d['best_perf'] = round(gdf.groupby(['model_group_id', 'model_type']).mean()['metric_value'].max(),3)
-            d['best_mod'] = gdf.groupby(['model_group_id', 'model_type']).mean()['metric_value'].idxmax()
+            d['best_perf'] = round(gdf.groupby(['model_group_id', 'model_type'])['metric_value'].mean().max(),3)
+            d['best_mod'] = gdf.groupby(['model_group_id', 'model_type'])['metric_value'].mean().idxmax()
 
             res.append(d)
             
@@ -935,6 +946,7 @@ class ExperimentReport:
             d = gdf.groupby('attribute_value').mean()[equity_metric]
             print(", ".join(f"{k}: {round(v, 3)}" for k, v, in d.to_dict().items()))
             
+
     def precision_recall_curves(self, plot_size=(3,3)):
         
         n_splits = self.experiment_stats()['validation_splits']
@@ -965,7 +977,8 @@ class ExperimentReport:
             # Making sure that models that aren't built are skipped in the grid
             if ax_idx % n_splits > 0:
                 ax_idx += (n_splits - (ax_idx % n_splits)) 
-                
+
+        plt.show()
         plt.tight_layout()
 
 
@@ -996,6 +1009,7 @@ class ExperimentReport:
             
         return best_models
     
+    
     def model_groups_w_best_mean_performance(self, n_model_groups=5):
         """ Return the model groups with the best mean performance """
         
@@ -1023,6 +1037,7 @@ class ExperimentReport:
         df = pd.read_sql(q, self.engine)
         
         return df.model_group_id.tolist(), df
+    
 
     def feature_importance(self, plot_size=(2,5), n_features=20):
         n_splits = self.experiment_stats()['validation_splits']
@@ -1078,7 +1093,7 @@ class ExperimentReport:
                 
             ax_idx += 1
 
-
+        plt.show()
         plt.tight_layout()
         
     # def feature_group_importance(self):
