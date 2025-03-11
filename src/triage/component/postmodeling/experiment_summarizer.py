@@ -14,7 +14,7 @@ from triage.component.timechop.plotting import visualize_chops_plotly
 from triage.component.timechop import Timechop
 from triage.component.audition.plotting import plot_cats
 
-from triage.component.postmodeling.model_analyzer import ModelAnalyzer
+from triage.component.postmodeling.base import SingleModelAnalyzer
 # from triage.component.postmodeling.postmodeling_analyzer import PostmodelingAnalyzer
 
 model_name_abbrev = {
@@ -956,7 +956,7 @@ class ExperimentReport:
             model_ids = gdf.model_id.tolist()
             
             for mod_id in model_ids:
-                tmp = ModelAnalyzer(engine=self.engine, model_id=mod_id)
+                tmp = SingleModelAnalyzer(engine=self.engine, model_id=mod_id)
                 tmp.plot_precision_recall_curve(
                     ax=axes[ax_idx]
                 )
@@ -1045,7 +1045,7 @@ class ExperimentReport:
 
             feature_importances_group = list()
             for mod_id in model_ids:
-                tmp = ModelAnalyzer(engine=self.engine, model_id=mod_id)
+                tmp = SingleModelAnalyzer(engine=self.engine, model_id=mod_id)
 
                 fi = tmp.get_feature_importances(n_top_features=100)
 
