@@ -342,7 +342,7 @@ class ExperimentReport:
         
         return all_features
 
-    def feature_missingeness(self):
+    def feature_missingness(self):
         """
         Generates the mean, min, max missingness degree for each feature. 
         Assumes that the current "features" schema holds the relevant features for the experiment
