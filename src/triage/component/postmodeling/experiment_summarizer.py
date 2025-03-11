@@ -943,7 +943,7 @@ class ExperimentReport:
         grpobj = equity_metrics[(equity_metrics.baserate > 0) & (equity_metrics.model_group_id == best_model_group)].groupby('attribute_name')
         for attr, gdf in grpobj:
             print(f'Measuring biases across {attr} groups using {equity_metric} for the best performing model:')
-            d = gdf.groupby('attribute_value').mean()[equity_metric]
+            d = gdf.groupby('attribute_value')[equity_metric].mean()
             print(", ".join(f"{k}: {round(v, 3)}" for k, v, in d.to_dict().items()))
             
 
