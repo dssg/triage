@@ -966,6 +966,8 @@ class ExperimentReport:
                 print(f'Measuring biases across {attr} groups using {equity_metric} for the best performing model:')
                 d = gdf.groupby('attribute_value')[equity_metric].mean()
                 print(", ".join(f"{k}: {round(v, 3)}" for k, v, in d.to_dict().items()))
+        else:
+            print(f"No bias audit results were found in the database for the experiment.")
             
 
     def precision_recall_curves(self, plot_size=(3,3)):
