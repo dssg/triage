@@ -1,16 +1,16 @@
 # Postmodeling
 
-This module deals with the analyses we perform once the model building is finished. While the individual analysis pieces are valid for any ML model that is built, the current implementation of this module is tightly coupled to the triage infrastructure. 
+This module helps with the analyses we perform once we finish training models. Choosing the right model for deployment and exploring its predictions and behavior in time is a critical task. Our `postmodeling` module is aimed at helping answer some of these questions by exploring the outcomes and predictions of the model, and going "deeper" into the model behavior. While the current implementation of the module is tightly coupled with the triage infrastructure, the individual analysis pieces are conceptually valid for any ML model. 
 
 We split the postmodeling process into two steps: 
-1. Output verification: to check whether the output of model building looks reasonable (summarizing number of models trained, best average performance observed over validation splits, subset performance, and bias metrics).
-2. Model analysis: to go deeper in exploring the outcomes and predictions of a model and its behavior across time and features in order to choose the right model for deployment.
+1. Output verification: Verifying whether the triage experiment generated the outputs that we intended to create and whether they look reasonable for further analyses. This includes, summarizing the validation splits, features that were built, missing data, models we built trained, performace over some priority metric across the validation splits, subset performance, and bias metrics.
+2. Model deep-dive: Going deeper into (some of the) models and trying to understand what they are learning. This includes, exploring their predictions, predictive performance across different metrics and thresholds, bias audits, crosstabs etc. Typically, we train dozens of model groups (Model type x hyperparameters) and it can be prohibitive to dive deep into all of these. Therefore, it is advisable to use `Audition` to perform some initial model selection and conduct the deeper dive on a handful of model groups.  
 
 ![Postmodeling flow](https://dssg.github.io/triage/postmodeling/triage_postmodeling_flow_documentation.png)
 
 ## Output verification
 
-This step produces an experiment report like the example in `example_name.ipynb`, based on the template notebook `triage_experiment_report_template.ipynb`. This document summarizes the following information for a particular model-building experiment:
+This step produces an experiment summary report like the examples given here --- named `example_experiment_summary_*.ipynb` --- based on the template notebook `experiment_summary_report_template.ipynb`. This document summarizes the following information for a particular model-building experiment:
 - Temporal validation splits
 - Model types and objects that were built
 - Predictors/features that were built and some stats on missingness of each feature
@@ -22,7 +22,7 @@ This step produces an experiment report like the example in `example_name.ipynb`
 
 There are two ways to generate the experiment report: 
 1. Automatically generate the report after each Triage experiment run
-2. Generate the report for an existing experiment
+2. Generate the report for a existing experiment
 
 #### 1. Generating the report after each Triage experiment run
 
@@ -51,7 +51,7 @@ To generate the experiment report after every Triage experiment run, do the foll
 
         shutil.copyfile(template_path, output_path)
 
-        os.system(f'jupyter nbconvert --execute --to notebook {output_path}')
+        os.system(f'jupyter nbconvert --execute --inplace --to notebook {output_path}')
         os.system(f'jupyter nbconvert --to html {output_path}')
     ```
 
@@ -109,54 +109,22 @@ bias_priority_groups = {
 """
 ```
 
-## Model analysis
+## Model Deep-Dive - WIP
 
 After you have verified that the output of the model building process looks reasonable, you can proceed to more deeply explore the outcomes and predictions of a model and its behavior across time and features. 
 
 The model building process usually produces many models, only some of which we want to consider for further exploration. You may want to use a tool like [Audition](https://github.com/dssg/triage/tree/master/src/triage/component/audition) to select a smaller set of models for this analysis step.
 
-**Functionality that we support:**
- - for each model group and time (each model id), show:
-    - PR-k curve
-    - feature importance
-    - bias
-    - list
-       - top k list
-       - list cross-tab
-       - list descriptives
-    - error analysis
- - for each model group, compare
-    - feature importances
-    - list
-    - performance
-    - bias
 
-This report is more iterative (than the experiment report)
+### Saving Predictions of Selected Model Groups
 
-### Generating the Model Analysis Report
+It is likely that you did not save predictions for all the models you built --- This is recommended to prevent database bloat as the `predictions` table can grow pretty quickly. Once you identify the handful of models for further exploration, to enable the deeper dive, we need to save the predictions of those models. We can use the `add_predictions.py` utility to do this. This utility accepts a list of model group ids and an experiment hash, and generates & saves test predictions for the relevant models. 
 
-- postmodeling_report_example_acdhs_housing.ipynb
-- places to change settings
-
-
-
-# Saving Predictions of Selected Models Post Experiment
-
-## Util for Saving Predictions of Selected Model Groups
-
-The script: `add_predictions.py`
-
-config file example: `add_predictions_example_config.py`
-
-This utility accepts a list of model group ids and an experiment hash, and generates & saves test predictions for the relevant models. This util is primarily targetted to be used post-audition for the following use-case:
-1. A large model grid was used in the experiment with `save_predictions=False`
-2. Audition was used to narrow down model_groups of interest & predictions are required for postmodeling
-
-### Usage
+You can use this model either through the CLI or in Python:
 
 **Command Line Inerface**
 
-This util is available with the triage CLI and can be run using the following command
+This module is available on the triage CLI. You can use a config file to provide the inputs to the module. The example of the config is -- `add_predictions_example_config.yaml`
 
 `triage [-d <database_credentials_file>] savepredictions -c <config_file> `
 
@@ -186,3 +154,25 @@ The function can be imported into a python script to add predictions of selected
     )
 
 
+**Functionality that we support:**
+ - for each model group and time (each model id), show:
+    - PR-k curve
+    - feature importance
+    - bias
+    - list
+       - top k list
+       - list cross-tab
+       - list descriptives
+    - error analysis
+ - for each model group, compare
+    - feature importances
+    - list
+    - performance
+    - bias
+
+This report is more iterative (than the experiment report)
+
+### Generating the Model Analysis Report
+
+- postmodeling_report_example_acdhs_housing.ipynb
+- places to change settings
