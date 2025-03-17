@@ -644,17 +644,25 @@ class ExperimentReport:
         if groups is None:
             groups = self.bias_groups
 
-            # check if there are bias audit results in the DB 
+            # check if there are bias audit results in the DB (directly from aequitas table)
             q = f'''
-            select 
-                distinct attribute_name, attribute_value  
-            from test_results.aequitas a
-            where attribute_name::varchar in (
-                select replace(jsonb_array_elements(config -> 'bias_audit_config' -> 'attribute_columns')::varchar, '"', '')   as attr
-                from triage_metadata.experiments e 
-                where experiment_hash = '{self.experiment_hashes[0]}'
-            ) 
-            order by 1, 2
+                with attr_values as (
+                    select distinct 
+                        attribute_name,
+                        attribute_value
+                    from triage_metadata.experiment_models a 
+                    join triage_metadata.models b
+                    using(model_hash)
+                    join test_results.aequitas c 
+                    using (model_id)
+                    where experiment_hash = '{self.experiment_hashes[0]}'
+                )
+
+                select distinct 
+                    attribute_name,
+                    attribute_value
+                from attr_values
+                order by 1,2
             '''
             
             rg = pd.read_sql(q, self.engine)
@@ -663,7 +671,11 @@ class ExperimentReport:
             if rg.empty:
                 logging.warning('No bias audit config or aequitas calculation was not completed! check the test_results.aequitas table. No plots generated')
                 return
-        
+            else: 
+                groups = dict()
+                for attr, gdf in rg.groupby('attribute_name'):
+                    groups[attr] = list(gdf['attribute_value'].unique())
+            
         if model_group_ids is None: 
             # logging.warning('No model groups specified. Usign all model group ids')
             model_group_ids = self.model_groups().model_group_id.tolist()
@@ -677,17 +689,25 @@ class ExperimentReport:
             
             # logging.info('No groups are specified. Showing results for all attributes and their values')
             groups = dict()
-            
+            # we can't trust on what is defined in the config, we take the values directly from the aequitas table
             q = f'''
-            select 
-                distinct attribute_name, attribute_value  
-            from test_results.aequitas a
-            where attribute_name::varchar in (
-                select replace(jsonb_array_elements(config -> 'bias_audit_config' -> 'attribute_columns')::varchar, '"', '')   as attr
-                from triage_metadata.experiments e 
-                where experiment_hash = '{self.experiment_hashes[0]}'
-            ) 
-            order by 1, 2
+                with attr_values as (
+                        select distinct 
+                            attribute_name,
+                            attribute_value
+                        from triage_metadata.experiment_models a 
+                        join triage_metadata.models b
+                        using(model_hash)
+                        join test_results.aequitas c 
+                        using (model_id)
+                        where experiment_hash = '{self.experiment_hashes[0]}'
+                    )
+
+                select distinct 
+                    attribute_name,
+                    attribute_value
+                from attr_values
+                order by 1,2
             '''
             
             rg = pd.read_sql(q, self.engine)
