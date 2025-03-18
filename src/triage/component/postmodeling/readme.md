@@ -6,7 +6,7 @@ We split the postmodeling process into two steps:
 1. Output verification: Verifying whether the triage experiment generated the outputs that we intended to create and whether they look reasonable for further analyses. This includes, summarizing the validation splits, features that were built, missing data, models we built trained, performace over some priority metric across the validation splits, subset performance, and bias metrics.
 2. Model deep-dive: Going deeper into (some of the) models and trying to understand what they are learning. This includes, exploring their predictions, predictive performance across different metrics and thresholds, bias audits, crosstabs etc. Typically, we train dozens of model groups (Model type x hyperparameters) and it can be prohibitive to dive deep into all of these. Therefore, it is advisable to use `Audition` to perform some initial model selection and conduct the deeper dive on a handful of model groups.  
 
-![Postmodeling flow](https://dssg.github.io/triage/postmodeling/triage_postmodeling_flow_documentation.png)
+![Postmodeling flow](https://dssg.github.io/triage/postmodeling/postmodeling_general_flow.png)
 
 ## Output verification
 
@@ -78,8 +78,7 @@ To generate the experiment report after every Triage experiment run, do the foll
 
 Once the code is run, you will have a printed summary of the general verifications made on your experiment, an `.html` file and an `.ipynb` file with details on all the verifications made by the process. The `.html` can serve as a report, and the `.ipynb` can serve as a starting point to further postmodeling analysis.  
 
-![Summary output](https://dssg.github.io/triage/postmodeling/output_summary_verification.png)
-
+You can find an example in the notebook [example_generate_experiment_summary_report_automatically_after_experiment_run.ipynb](example_generate_experiment_summary_report_automatically_after_experiment_run.ipynb)
 
 #### 2. Generating the report for an existing experiment
 
@@ -108,6 +107,8 @@ bias_priority_groups = {
 }
 """
 ```
+
+You can find an example in the notebook [example_experiment_summary_given_experiment_hashes.ipynb](example_experiment_summary_given_experiment_hashes.ipynb) and [example_experiment_summary_report_specific_experiment_wSubsets.ipynb](example_experiment_summary_report_specific_experiment_wSubsets.ipynb).
 
 ## Model Deep-Dive - WIP
 
