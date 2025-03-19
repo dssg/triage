@@ -5,7 +5,7 @@ import logging
 import seaborn as sns
 import matplotlib.table as tab
 import matplotlib.pyplot as plt
-from tabulate import tabulate
+#from tabulate import tabulate
 
 from IPython.display import display
 import itertools
