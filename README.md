@@ -28,7 +28,7 @@ Triage is designed to:
 To install Triage locally, you need:
 
 - Ubuntu/RedHat
-- Python 3.8+
+- Python 3.9+
 - A PostgreSQL 9.6+ database with your source data (events,
   geographical data, etc) loaded.
   - **NOTE**: If your database is PostgreSQL 11+ you will get some
