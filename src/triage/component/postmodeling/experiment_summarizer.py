@@ -957,21 +957,24 @@ class ExperimentReport:
         
         ## Subsets
         subset_performance = self.model_performance_subsets(metric=metric, parameter=parameter, generate_plot=False)
-        grpobj = subset_performance.groupby('subset')
-        res = []
-        for subset, gdf in grpobj:
-            d = dict()
-            d['subset'] = subset
-            d['best_perf'] = round(gdf.groupby(['model_group_id', 'model_type'])['metric_value'].mean().max(),3)
-            d['best_mod'] = gdf.groupby(['model_group_id', 'model_type'])['metric_value'].mean().idxmax()
+        if subset_performance is not None:
+            grpobj = subset_performance.groupby('subset')
+            res = []
+            for subset, gdf in grpobj:
+                d = dict()
+                d['subset'] = subset
+                d['best_perf'] = round(gdf.groupby(['model_group_id', 'model_type'])['metric_value'].mean().max(),3)
+                d['best_mod'] = gdf.groupby(['model_group_id', 'model_type'])['metric_value'].mean().idxmax()
 
-            res.append(d)
+                res.append(d)
             
-        if len(res) > 0:
-            print(f"You created {len(res)} subsets of your cohort -- {', '.join([x['subset'] for x in res])}")
-            for d in res:
-                print(f"For subset '{d['subset'] }', Model Group {d['best_mod'][0]}, {d['best_mod'][1]} achieved the best average {metric}{parameter} of {d['best_perf']}")
-            
+            if len(res) > 0:
+                print(f"You created {len(res)} subsets of your cohort -- {', '.join([x['subset'] for x in res])}")
+                for d in res:
+                    print(f"For subset '{d['subset'] }', Model Group {d['best_mod'][0]}, {d['best_mod'][1]} achieved the best average {metric}{parameter} of {d['best_perf']}")
+        else:
+            print("No subsets defined.") 
+
         ## Bias
         equity_metrics = self.efficiency_and_equity(
             efficiency_metric=metric,
