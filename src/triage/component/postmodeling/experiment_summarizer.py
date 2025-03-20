@@ -814,9 +814,9 @@ class ExperimentReport:
                         axes[ax_cntr].scatter(x[i], y[i], color=colors[mean[msk]['model_type_short'].iloc[i]], label=labels[i], alpha=0.5)
                         # axes[ax_cntr].set(title=f'{group} | {attr}', xlabel='Performance Metric', ylabel='Bias Metric', ylim=[0, 3])
                         axes[ax_cntr].set(title=f'{group} | {attr}', xlabel='Efficiency Metric', ylabel='Equity Metric')
-                        axes[ax_cntr].axhline(y=1, color='gray', linestyle='--', alpha=0.1)
-                        axes[ax_cntr].axhline(y=1+bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
-                        axes[ax_cntr].axhline(y=1-bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
+                        axes[ax_cntr].axhline(y=1, color='dimgray', linestyle='--', alpha=0.1)
+                        axes[ax_cntr].axhline(y=1+bias_metric_tolerance, color='dimgray', linestyle=':', alpha=0.09)
+                        axes[ax_cntr].axhline(y=1-bias_metric_tolerance, color='dimgray', linestyle=':', alpha=0.09)
                     ax_cntr += 1
                 axes[-1].legend(handles=legend_handles, bbox_to_anchor=(1,1), loc='upper left', frameon=False)
                 sns.despine()
