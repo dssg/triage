@@ -123,7 +123,7 @@ class ModelTrainer:
         module = importlib.import_module(module_name)
         cls = getattr(module, class_name)
         instance = cls(random_state=random_seed, **parameters)
-        logging.debug("Before fitting the model, model instance {instance}")
+        logging.debug(f"Before fitting the model, model instance {instance}")
 
         # using a threading backend because the default loky backend doesn't
         # allow for nested parallelization (e.g., multiprocessing at triage level)
