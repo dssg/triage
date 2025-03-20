@@ -530,7 +530,7 @@ class ExperimentReport:
         
         df = pd.read_sql(q, self.engine)
         
-        if df.empty:
+        if (df.empty) or (None in df.subset.unique()):
             return None
         
         df['model_type_child'] = df.apply(lambda x: _format_model_name(x['model_type'], x['model_group_id']), axis=1)
