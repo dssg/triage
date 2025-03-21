@@ -15,10 +15,10 @@ jobs:
       - uses: actions/checkout@master
         with:
           fetch-depth: 0
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v1
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: 3.9
       - run: pip install --upgrade pip && pip install -r requirement/dev.txt
       - run: pip install git+https://github.com/dssg/triage.git@master
       - run: git config user.name 'github-actions[bot]' && git config user.email 'github-actions[bot]@users.noreply.github.com'
