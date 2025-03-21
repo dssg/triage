@@ -5,22 +5,28 @@ on:
     branches:
       - master
     paths:
-      - 'docs/'
+      - 'docs/**'
   
 jobs:
   docs:
     name: Build Docs and Serve to Github Pages
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      
       - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
           python-version: 3.9
-      - run: pip install --upgrade pip && pip install -r requirement/dev.txt
-      - run: pip install git+https://github.com/dssg/triage.git@master
-      - run: git config user.name 'github-actions[bot]' && git config user.email 'github-actions[bot]@users.noreply.github.com'
+      
+      - name: Install dependencies
+        run: | 
+          pip install --upgrade pip && pip install -r requirement/dev.txt
+          pip install git+https://github.com/dssg/triage.git@master
+          git config user.name 'github-actions[bot]' && git config user.email 'github-actions[bot]@users.noreply.github.com'
+      
       - name: Publish docs
         run: mkdocs gh-deploy -f "$(pwd)/docs/mkdocs.yml"
