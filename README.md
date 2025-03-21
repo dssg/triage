@@ -7,7 +7,7 @@ ML/Data Science Toolkit for Social Good and Public Policy Problems
 [![image](https://codecov.io/gh/dssg/triage/branch/master/graph/badge.svg)](https://codecov.io/gh/dssg/triage)
 [![image](https://codeclimate.com/github/dssg/triage.png)](https://codeclimate.com/github/dssg/triage)
 
-Building ML/Data Science systems requires answering many design questions, turning them into modeling choices, which in turn define and machine learning models. Questions such as cohort selection, unit of analysis determination, outcome determination, feature (explanatory variables or predictors) generation, model/classifier training, evaluation, selection, bias audits, interpretation, and list generation are often complicated and hard to make design choices around apriori. In addition, once these choices are made, they have to be combined in different ways throughout the course of a project.
+Building ML/Data Science systems requires answering many design questions, turning them into modeling choices, which in turn define and machine learning models. Questions such as cohort selection, unit of analysis determination, outcome determination, feature (explanatory variables or predictors) generation, model/classifier training, evaluation, selection, bias audits, interpretation, and list generation are often complicated and hard to make design choices around a priori. In addition, once these choices are made, they have to be combined in different ways throughout the course of a project.
 
 Triage is designed to:
 
@@ -17,7 +17,7 @@ Triage is designed to:
 ## Getting Started with Triage
 
 - Are you completely new to Triage? Run through a quick tutorial hosted on google colab (no setup necessary) to see what triage can do!  [Tutorial hosted on Google Colab](https://colab.research.google.com/github/dssg/triage/blob/master/example/colab/colab_triage.ipynb)
-- Runj it locally on an [example problem and data set from Donors Choose](https://github.com/dssg/donors-choose)
+- Run it locally on an [example problem and data set from Donors Choose](https://github.com/dssg/donors-choose)
 - [Dirty Duck Tutorial](https://dssg.github.io/triage/dirtyduck/) - Want a more in-depth walk through of triage's functionality and concepts? Go through the dirty duck tutorial that you can install on your local machine  with sample data
 - [QuickStart Guide](https://dssg.github.io/triage/quickstart/) - Try Triage out with your own project and data
 - [Triage Documentation Site](https://dssg.github.io/triage/) - Used Triage before and want more reference documentation?
@@ -34,11 +34,11 @@ To install Triage locally, you need:
   - **NOTE**: If your database is PostgreSQL 11+ you will get some
     speed improvements. We recommend updating to a recent
     version of PostgreSQL.
-- Ample space on an available disk, (or for example in Amazon Web
-  Services's S3), to store the matrices and models that will be created for your
+- Ample space on an available disk (or for example in Amazon Web
+  Services's S3) to store the matrices and models that will be created for your
   experiments
 
-We recommend starting with a new python virtual environment and pip installing triage there.
+We recommend starting with a new Python virtual environment and pip installing triage there.
 ```bash
 $ virtualenv triage-env
 $ . triage-env/bin/activate
@@ -90,7 +90,7 @@ There are a plethora of options available for experiment running, affecting thin
 
 ## Development
 
-Triag was initially developed at [University of Chicago's Center For Data Science and Public Policy](http://dsapp.uchicago.edu) and is now being maintained at Carnegie Mellon University.
+Triage was initially developed at [University of Chicago's Center For Data Science and Public Policy](http://dsapp.uchicago.edu) and is now being maintained at Carnegie Mellon University.
 
 To build this package (without installation), its dependencies may
 alternatively be installed from the terminal using `pip`:
