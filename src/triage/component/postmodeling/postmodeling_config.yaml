@@ -1,0 +1,10 @@
+error_analysis:
+  # Size of the list.
+  k: [100]
+  
+  # Parameter grid to try on the DecisionTreeClassifier trained for the error analysis.
+  model_params:
+    max_depth: [5]
+
+  # Flag to define if plots are going to be displayed (True) or saved (False)
+  view_plots: False

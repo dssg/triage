@@ -131,6 +131,51 @@ class BuilderBase:
         return query
     
 
+    def _join_no_labels_case(
+        self,
+        right_column_selections,
+        entity_date_table_name,
+        include_index=True,
+        column_override=None,
+    ):
+        """
+            Generates the label query for predict forward, when there are not labels 
+            associated with the matrix. We return 0's as the label. 
+
+            :param right_column_selections: formatted text for the columns to select
+            :param entity_date_table_name: name of table containing all valid entity ids and dates
+
+            :type right_column_selections: str
+            :type entity_date_table_name: str
+
+            :return: postgresql query for the outer join to the entity-dates table
+            :rtype: str
+        """
+        # put everything into the query
+        if include_index:
+            query = f"""
+                SELECT ed.entity_id,
+                    ed.as_of_date{"".join(right_column_selections)}
+                FROM {entity_date_table_name} ed
+                ORDER BY ed.entity_id,
+                        ed.as_of_date
+            """
+        else:
+            query = f"""
+                with r as (
+                    SELECT ed.entity_id,
+                           ed.as_of_date, {"".join(right_column_selections)[2:]}
+                    FROM {entity_date_table_name} ed
+                    ORDER BY ed.entity_id,
+                             ed.as_of_date
+                ) 
+                select {"".join(right_column_selections)[2:] if not column_override else column_override} 
+                from r
+            """
+        
+        return query
+    
+
     def make_entity_date_table(
         self,
         as_of_times,
@@ -188,7 +233,7 @@ class BuilderBase:
         logger.debug(
             f"Creating matrix-specific entity-date table for matrix {matrix_uuid} ",
         )
-        logger.spam(f"with query {query}")
+        logger.debug(f"with query {query}")
         self.db_engine.execute(query)
 
         return table_name
@@ -311,12 +356,16 @@ class MatrixBuilder(BuilderBase):
         feature_queries = self.feature_load_queries(feature_dictionary, entity_date_table_name)
         logger.debug(f"feature queries, number of queries: {len(feature_queries)}")
         
+        # when predict forwarding we don't have labels
+        logger.info(f"Includes labels?: {self.includes_labels}")
+        
         label_query = self.label_load_query(
             label_name,
             label_type,
             entity_date_table_name,
             matrix_metadata["label_timespan"],
         )
+        logger.debug(f"Label query while building the matrix: {label_query}")
 
         output, labels = self.stitch_csvs(feature_queries, label_query, matrix_store, matrix_uuid)
         logger.info(f"matrix stitched, pandas DF returned")
@@ -397,29 +446,36 @@ class MatrixBuilder(BuilderBase):
                 )
             )
 
-        labels_query = self._outer_join_query(
-            right_table_name="{schema}.{table}".format(
-                schema=self.db_config["labels_schema_name"],
-                table=self.db_config["labels_table_name"],
-            ),
-            entity_date_table_name='"{schema}"."{table}"'.format(
-                schema=self.db_config["features_schema_name"],
-                table=entity_date_table_name,
-            ),
-            right_column_selections=", {} as {}".format(label_predicate, label_name),
-            additional_conditions="""AND
-                r.label_name = '{name}' AND
-                r.label_type = '{type}' AND
-                r.label_timespan = '{timespan}'
-            """.format(
-                name=label_name, type=label_type, timespan=label_timespan
-            ),
-            #include_index=False,
-            include_index=True,
-            column_override=label_name
-        )
+        if self.includes_labels:
+            labels_query = self._outer_join_query(
+                right_table_name="{schema}.{table}".format(
+                    schema=self.db_config["labels_schema_name"],
+                    table=self.db_config["labels_table_name"],
+                ),
+                entity_date_table_name='"{schema}"."{table}"'.format(
+                    schema=self.db_config["features_schema_name"],
+                    table=entity_date_table_name,
+                ),
+                right_column_selections=", {} as {}".format(label_predicate, label_name),
+                additional_conditions="""AND
+                    r.label_name = '{name}' AND
+                    r.label_type = '{type}' AND
+                    r.label_timespan = '{timespan}'
+                """.format(
+                    name=label_name, type=label_type, timespan=label_timespan
+                ),
+                #include_index=False,
+                include_index=True,
+                column_override=label_name
+            )
+        else: 
+            labels_query = self._join_no_labels_case(
+                right_column_selections=f", 0 as {label_name}",
+                entity_date_table_name=f'"{self.db_config["features_schema_name"]}"."{entity_date_table_name}"',
+            )
 
         return labels_query
+    
 
     def feature_load_queries(self, feature_dictionary, entity_date_table_name):
         """ Loop over tables in features schema, writing the data from each to a csv. Return the full list of feature 
@@ -501,7 +557,7 @@ class MatrixBuilder(BuilderBase):
         # add label file to filenames
         filenames.append(path_ + "/" + matrix_uuid + "_label.csv")
         
-        # check if the number of rows among all features and label files are the same
+        # check if the number of rows among all features and label -if any- files are the same
         try: 
             assert check_rows_in_files(filenames, matrix_uuid)
         except AssertionError as e: 
@@ -559,6 +615,7 @@ class MatrixBuilder(BuilderBase):
         logger.debug(f"time casting entity_id and as_of_date of matrix with uuid {matrix_uuid} (sec): {(end-start)/60}")
         
         logger.debug(f"getting labels pandas series from polars data frame")
+        
         # getting label series
         labels_pl = df_pl.select(df_pl.columns[-1])
         # convert into pandas series 
@@ -630,5 +687,16 @@ class MatrixBuilder(BuilderBase):
         cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.csv'
         logger.debug(f"removing stitched csv with command {cmd_line}")
         subprocess.run(cmd_line, shell=True)
+        
+        # deleting the compressed CSV when the project path is S3
+        if path_.startswith('/tmp'):
+            cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.csv.gz'
+            logger.debug(f"removing compressed csv with command {cmd_line}")
+            subprocess.run(cmd_line, shell=True)
+            
+            cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.yaml'
+            logger.debug(f"removing matrix metadata file with command {cmd_line}")
+            subprocess.run(cmd_line, shell=True)
+            
         
         

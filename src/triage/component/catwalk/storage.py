@@ -37,6 +37,9 @@ from triage.component.results_schema import (
     TestAequitas,
     TrainAequitas
 )
+import polars as pl
+import pyarrow
+import time
 from triage.util.pandas import downcast_matrix
 
 
@@ -611,7 +614,8 @@ class CSVMatrixStore(MatrixStore):
             path_ = Path("/" + "/".join(parts_path))
         # if it is a S3 storage type
         else:
-            path_ = Path("/tmp/triage_output/matrices")
+            # path_ = Path("/tmp/triage_output/matrices")
+            path_ = Path("/tmp")
             os.makedirs(path_, exist_ok=True)
         
         logger.debug(f"get storage directory path: {path_}")
@@ -689,7 +693,10 @@ class CSVMatrixStore(MatrixStore):
         self.matrix_base_store.client.put_file(lpath=local_path , rpath=remote_path)
 
     def save(self):
+        logging.debug('About to compress')
         self.matrix_base_store.write(gzip.compress(self.full_matrix_for_saving.to_csv(None).encode("utf-8")))
+        logging.debug(f'Compression done! Matrix written')
+        
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
 

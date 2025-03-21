@@ -135,6 +135,7 @@ def plot_cats(
     y_label="",
     cmap_name="tab10",
     figsize=[12, 6],
+    dpi=150,
     x_ticks=None,
     y_ticks=None,
     x_lim=None,
@@ -147,7 +148,7 @@ def plot_cats(
     path_to_save=None,
     alpha=0.4,
     colordict=None,
-    styledict=None,
+    styledict=None
 ):
     """Plot a line plot with each line colored by a category variable.
 
@@ -181,7 +182,7 @@ def plot_cats(
         styledict (dict) -- optional dict mapping categories to styles
 
     """
-    fig, ax = plt.subplots(1, 1, figsize=figsize)
+    fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
 
     # function for parsing cat_col values into more readable legend lables
     if label_fcn is None:

@@ -106,7 +106,7 @@ class ModelTrainer:
         }
         logger.spam(f"Creating model hash from unique data {unique}")
         return filename_friendly_hash(unique)
-
+    
     def _train(self, matrix_store, class_path, parameters, random_seed):
         """Fit a model to a training set. Works on any modeling class that
         is available in this package's environment and implements .fit
@@ -460,7 +460,7 @@ class ModelTrainer:
         train_end_time = matrix_metadata["end_time"]
         training_label_timespan = matrix_metadata["label_timespan"]
         existing_seeds = retrieve_existing_model_random_seeds(self.db_engine, model_group_id, train_end_time, train_matrix_uuid, training_label_timespan, self.experiment_random_seed)
-        logging.debug(f"Existing seeds found -> {existing_seeds}")
+        logging.debug(f"Existing random seeds -> {existing_seeds}")
         if existing_seeds:
             logging.debug(f"Existing random seeds found")
             return existing_seeds[0]
@@ -469,7 +469,6 @@ class ModelTrainer:
             generated_random_seed = generate_python_random_seed()
             logging.debug(f"Generated random seed: {generated_random_seed}")
             return generated_random_seed
-        
 
 
     def generate_train_tasks(self, grid_config, misc_db_parameters, matrix_store=None):

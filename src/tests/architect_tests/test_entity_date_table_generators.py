@@ -4,7 +4,7 @@ import pytest
 import testing.postgresql
 from sqlalchemy.engine import create_engine
 
-from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator
+from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator, SubsetEntityDateTableGenerator
 
 from . import utils
 
@@ -243,3 +243,243 @@ def test_entity_date_table_generator_from_labels():
             )
         )
         assert results == expected_output
+
+
+def test_subset_evens_cohort():
+    input_data = [
+        (1, datetime(2016, 1, 1), True),
+        (1, datetime(2016, 4, 1), False),
+        (1, datetime(2016, 3, 1), True),
+        (2, datetime(2016, 1, 1), False),
+        (2, datetime(2016, 3, 1), True),
+        (3, datetime(2016, 1, 1), True),
+        (4, datetime(2016, 3, 1), True),
+        (4, datetime(2016, 4, 1), True),
+        (5, datetime(2016, 3, 1), True),
+        (5, datetime(2016, 4, 1), True),
+    ]
+
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        utils.create_binary_outcome_events(engine, "events", input_data)
+
+        # create cohort table 
+        engine.execute(
+        """
+            create table cohort (
+                entity_id int,
+                as_of_date date,
+                active bool
+            )
+        """
+        )
+        for row in input_data:
+            engine.execute("insert into cohort values (%s, %s, %s)", row)
+        
+        as_of_dates = [
+
+            datetime(2016, 3, 1),
+            datetime(2016, 4, 1),
+        ]
+        ### test evens
+        subset_generator = SubsetEntityDateTableGenerator(
+            query="select distinct entity_id, outcome_date from events where entity_id %% 2 = 0 and outcome_date < '{as_of_date}'::date",
+            db_engine=engine,
+            entity_date_table_name="exp_hash_subset_entity_date",
+            replace=True,
+            cohort_table="cohort")
+        subset_generator.generate_entity_date_table(as_of_dates)
+        
+        expected_output = [
+            (2, datetime(2016, 3, 1), True),
+            (4, datetime(2016, 4, 1), True),
+        ]
+        results = list(
+            engine.execute(
+                f"""
+                select entity_id, as_of_date, active from {subset_generator.entity_date_table_name}
+                order by entity_id, as_of_date
+            """
+            )
+        )
+
+        assert results == expected_output 
+        utils.assert_index(engine, subset_generator.entity_date_table_name, "entity_id")
+        utils.assert_index(engine, subset_generator.entity_date_table_name, "as_of_date")
+        
+
+
+def test_subset_odds_cohort():
+    input_data = [
+        (1, datetime(2016, 1, 1), True),
+        (1, datetime(2016, 4, 1), False),
+        (1, datetime(2016, 3, 1), True),
+        (2, datetime(2016, 1, 1), False),
+        (2, datetime(2016, 3, 1), True),
+        (3, datetime(2016, 3, 1), True),
+        (4, datetime(2016, 3, 1), True),
+        (4, datetime(2016, 4, 1), True),
+        (5, datetime(2016, 3, 1), True),
+        (5, datetime(2016, 4, 1), True),
+    ]
+    
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        utils.create_binary_outcome_events(engine, "events", input_data)
+
+        # create cohort table 
+        engine.execute(
+        """
+            create table cohort (
+                entity_id int,
+                as_of_date date,
+                active bool
+            )
+        """
+        )
+        for row in input_data:
+            engine.execute("insert into cohort values (%s, %s, %s)", row)
+        
+        as_of_dates = [
+            datetime(2016, 3, 1),
+            datetime(2016, 4, 1),
+        ]
+        ### test odds
+        subset_generator = SubsetEntityDateTableGenerator(
+            query="select distinct entity_id, outcome_date from events where entity_id %% 2 = 1 and outcome_date < '{as_of_date}'::date",
+            db_engine=engine,
+            entity_date_table_name="exp_hash_subset_entity_date",
+            replace=True,
+            cohort_table="cohort")
+        subset_generator.generate_entity_date_table(as_of_dates)
+        
+        expected_output = [
+            (1, datetime(2016, 3, 1), True),
+            (1, datetime(2016, 4, 1), True),
+            (5, datetime(2016, 4, 1), True),
+        ]
+        results = list(
+            engine.execute(
+                f"""
+                select entity_id, as_of_date, active from {subset_generator.entity_date_table_name}
+                order by entity_id, as_of_date
+            """
+            )
+        )
+
+        assert results == expected_output 
+        utils.assert_index(engine, subset_generator.entity_date_table_name, "entity_id")
+        utils.assert_index(engine, subset_generator.entity_date_table_name, "as_of_date")
+
+
+def test_subset_empty():
+    input_data = [
+        (1, datetime(2016, 1, 1), True),
+        (1, datetime(2016, 4, 1), False),
+        (1, datetime(2016, 3, 1), True),
+        (2, datetime(2016, 1, 1), False),
+        (2, datetime(2016, 3, 1), True),
+        (3, datetime(2016, 3, 1), True),
+        (4, datetime(2016, 3, 1), True),
+        (4, datetime(2016, 4, 1), True),
+        (5, datetime(2016, 3, 1), True),
+        (5, datetime(2016, 4, 1), True),
+    ]
+    
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        utils.create_binary_outcome_events(engine, "events", input_data)
+
+        # create cohort table 
+        engine.execute(
+        """
+            create table cohort (
+                entity_id int,
+                as_of_date date,
+                active bool
+            )
+        """
+        )
+        for row in input_data:
+            engine.execute("insert into cohort values (%s, %s, %s)", row)
+        
+        as_of_dates = [
+            datetime(2016, 1, 1),
+        ]
+        ### test evens
+        subset_generator = SubsetEntityDateTableGenerator(
+            query="select distinct entity_id, outcome_date from events where entity_id %% 2 = 1 and outcome_date < '{as_of_date}'::date",
+            db_engine=engine,
+            entity_date_table_name="exp_hash_subset_entity_date",
+            replace=True,
+            cohort_table="cohort")
+        subset_generator.generate_entity_date_table(as_of_dates)
+        
+        expected_output = []
+        results = list(
+            engine.execute(
+                f"""
+                select entity_id, as_of_date, active from {subset_generator.entity_date_table_name}
+                order by entity_id, as_of_date
+            """
+            )
+        )
+
+        assert results == expected_output 
+        utils.assert_index(engine, subset_generator.entity_date_table_name, "entity_id")
+        utils.assert_index(engine, subset_generator.entity_date_table_name, "as_of_date")
+
+
+def test_subset_all_entities_in_cohort():
+    input_data = [
+        (1, datetime(2016, 1, 1), True),
+        (1, datetime(2016, 4, 1), False),
+        (1, datetime(2016, 3, 1), True),
+        (2, datetime(2016, 1, 1), False),
+        (2, datetime(2016, 3, 1), True),
+        (3, datetime(2016, 3, 1), True),
+        (4, datetime(2016, 3, 1), True),
+        (4, datetime(2016, 4, 1), True),
+        (5, datetime(2016, 3, 1), True),
+        (5, datetime(2016, 4, 1), True),
+    ]
+    
+    with testing.postgresql.Postgresql() as postgresql:
+        engine = create_engine(postgresql.url())
+        utils.create_binary_outcome_events(engine, "events", input_data)
+
+        # create cohort table 
+        engine.execute(
+        """
+            create table cohort (
+                entity_id int,
+                as_of_date date,
+                active bool
+            )
+        """
+        )
+        for row in input_data:
+            engine.execute("insert into cohort values (%s, %s, %s)", row)
+        
+        as_of_dates = [
+            datetime(2016, 1, 1),
+        ]
+        ### test evens
+        subset_generator = SubsetEntityDateTableGenerator(
+            query="select distinct entity_id, outcome_date from events where entity_id %% 2 = 0 and outcome_date < '{as_of_date}'::date",
+            db_engine=engine,
+            entity_date_table_name="exp_hash_subset_entity_date",
+            replace=True,
+            cohort_table="cohort")
+        subset_generator.generate_entity_date_table(as_of_dates)
+        
+        expected_output = set([2, 4])
+        results = set(list(
+            engine.execute(
+                f"""
+                select distinct entity_id from {subset_generator.entity_date_table_name}
+            """
+            )
+        ))
+
+        assert results.issubset(expected_output) == True
