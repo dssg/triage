@@ -530,7 +530,7 @@ class ExperimentReport:
         
         df = pd.read_sql(q, self.engine)
         
-        if df.empty:
+        if (df.empty) or (None in df.subset.unique()):
             return None
         
         df['model_type_child'] = df.apply(lambda x: _format_model_name(x['model_type'], x['model_group_id']), axis=1)
@@ -814,9 +814,9 @@ class ExperimentReport:
                         axes[ax_cntr].scatter(x[i], y[i], color=colors[mean[msk]['model_type_short'].iloc[i]], label=labels[i], alpha=0.5)
                         # axes[ax_cntr].set(title=f'{group} | {attr}', xlabel='Performance Metric', ylabel='Bias Metric', ylim=[0, 3])
                         axes[ax_cntr].set(title=f'{group} | {attr}', xlabel='Efficiency Metric', ylabel='Equity Metric')
-                        axes[ax_cntr].axhline(y=1, color='gray', linestyle='--', alpha=0.1)
-                        axes[ax_cntr].axhline(y=1+bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
-                        axes[ax_cntr].axhline(y=1-bias_metric_tolerance, color='gray', linestyle=':', alpha=0.01)
+                        axes[ax_cntr].axhline(y=1, color='dimgray', linestyle='--', alpha=0.1)
+                        axes[ax_cntr].axhline(y=1+bias_metric_tolerance, color='dimgray', linestyle=':', alpha=0.09)
+                        axes[ax_cntr].axhline(y=1-bias_metric_tolerance, color='dimgray', linestyle=':', alpha=0.09)
                     ax_cntr += 1
                 axes[-1].legend(handles=legend_handles, bbox_to_anchor=(1,1), loc='upper left', frameon=False)
                 sns.despine()
@@ -957,21 +957,24 @@ class ExperimentReport:
         
         ## Subsets
         subset_performance = self.model_performance_subsets(metric=metric, parameter=parameter, generate_plot=False)
-        grpobj = subset_performance.groupby('subset')
-        res = []
-        for subset, gdf in grpobj:
-            d = dict()
-            d['subset'] = subset
-            d['best_perf'] = round(gdf.groupby(['model_group_id', 'model_type'])['metric_value'].mean().max(),3)
-            d['best_mod'] = gdf.groupby(['model_group_id', 'model_type'])['metric_value'].mean().idxmax()
+        if subset_performance is not None:
+            grpobj = subset_performance.groupby('subset')
+            res = []
+            for subset, gdf in grpobj:
+                d = dict()
+                d['subset'] = subset
+                d['best_perf'] = round(gdf.groupby(['model_group_id', 'model_type'])['metric_value'].mean().max(),3)
+                d['best_mod'] = gdf.groupby(['model_group_id', 'model_type'])['metric_value'].mean().idxmax()
 
-            res.append(d)
+                res.append(d)
             
-        if len(res) > 0:
-            print(f"You created {len(res)} subsets of your cohort -- {', '.join([x['subset'] for x in res])}")
-            for d in res:
-                print(f"For subset '{d['subset'] }', Model Group {d['best_mod'][0]}, {d['best_mod'][1]} achieved the best average {metric}{parameter} of {d['best_perf']}")
-            
+            if len(res) > 0:
+                print(f"You created {len(res)} subsets of your cohort -- {', '.join([x['subset'] for x in res])}")
+                for d in res:
+                    print(f"For subset '{d['subset'] }', Model Group {d['best_mod'][0]}, {d['best_mod'][1]} achieved the best average {metric}{parameter} of {d['best_perf']}")
+        else:
+            print("No subsets defined.") 
+
         ## Bias
         equity_metrics = self.efficiency_and_equity(
             efficiency_metric=metric,

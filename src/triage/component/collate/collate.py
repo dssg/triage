@@ -725,10 +725,6 @@ class Aggregation:
         # exception if we are
         missing_cols = set(imprules.keys()) - set(nonimpute_cols + impute_cols)
         
-        print(imprules.keys())
-        print(nonimpute_cols)
-        print(impute_cols)
-        
         if len(missing_cols) > 0:
             raise ValueError("Missing columns in get_impute_create: %s" % missing_cols)
 
