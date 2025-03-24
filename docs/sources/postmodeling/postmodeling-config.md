@@ -27,3 +27,4 @@ Configuration for crosstabs in Triage's Postmodeling module. An example `postmod
 - `models_dates_join_query`: don't change the default query unless strictly necessary. It is just validating pairs of (`model_id`, `as_of_date`) in a predictions table
 - `features_query`: features_query must join `models_dates_join_query` with 1 or more features table using `as_of_date`
 - `predictions_query`: the predictions query must return `model_id`, `as_of_date`, `entity_id`, `score`, `label_value`, `rank_abs` and `rank_pct`. It must join `models_dates_join_query` using both `model_id` and `as_of_date`. 
+
