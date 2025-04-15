@@ -200,18 +200,13 @@ class LinearRanker:
     For example, if self.weights=[0.20, 0.80] and self.features=['A', 'B'] then this
     baseline creates a score based on the linear combination and ranks people accordingly
 
-    Attributes
-    ----------
-    features: list of features to rank on. features[0] and features[-1] are the
-        most and least important features
-    weights: list of weights to use in the linear combination
-    feature_importances_: vector in [0,1]^len(features) where a greater value
-        indicates the greater importance of the corresponding feature
+    Args:
+        features (list): list of features to rank on. features[0] and features[-1] are the
+           most and least important features
+        weights (list): list of weights to use in the linear combination
 
-    Methods
-    ----------
-    fit: fill in feature_importances_ and perform sanity checks
-    predict_proba: output scores
+    Returns:
+        scores (array): Numpy array of shape (n, 2) where n is the number of rows in X. 
     """
     def __init__(self, features, weights, random_state=42):
         self.features = features
