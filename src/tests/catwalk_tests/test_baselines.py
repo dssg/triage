@@ -306,19 +306,22 @@ class TestLinearRanker(TestCase):
         )
         assert ranker.feature_importances_ is None
         ranker.fit(x=self.data["X_train"], y=self.data["y_train"])
-        np.testing.assert_array_equal(
-            ranker.feature_importances_, np.array([0.19354839, 0.16129032, 
-                                                   0.12903226, 0.22580645, 
-                                                   0.19354839, 0.09677419])
+        np.testing.assert_almost_equal(
+            ranker.feature_importances_, 
+            np.array([0.19354839, 0.16129032, 
+                      0.12903226, 0.22580645, 
+                      0.19354839, 0.09677419]),
+            decimal=4
         )
 
     def test_predict_proba(self):
-        features = self.features,
-        weights = self.weights
-        ranker = LinearRanker(features, weights)
+        ranker = LinearRanker(self.features, 
+                              self.weights)
         ranker.fit(x=self.data["X_train"], y=self.data["y_train"])
         results = ranker.predict_proba(self.data["X_test"])
-
+        
+        assert results.shape == (8, 2)
+        
         expected_results = np.array([[0.75411428, 0.24588572],
                                      [0.69980399, 0.30019601],
                                      [0.79451361, 0.20548639],
@@ -328,4 +331,7 @@ class TestLinearRanker(TestCase):
                                      [0.51544567, 0.48455433],
                                      [0.63648246, 0.36351754]])
 
-        np.testing.assert_array_equal(results, expected_results)
+        np.testing.assert_almost_equal(results, 
+                                       expected_results, 
+                                       decimal=4)
+        
