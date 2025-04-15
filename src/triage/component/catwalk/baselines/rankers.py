@@ -265,6 +265,6 @@ class LinearRanker:
 
         # Compute the score as a linear combination 
         score = np.array((self.weights * x[self.features]).sum(axis=1))
-        rv = np.array([np.empty(len(score)), score]).T
+        rv = np.array([1-score, score]).T
 
         return rv
