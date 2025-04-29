@@ -614,8 +614,9 @@ class CSVMatrixStore(MatrixStore):
             path_ = Path("/" + "/".join(parts_path))
         # if it is a S3 storage type
         else:
-            # path_ = Path("/tmp/triage_output/matrices")
-            path_ = Path("/tmp")
+            user_id = os.getenv('USER')
+            # path_ = Path("/tmp/$user/")
+            path_ = Path(f"/tmp/{user_id}")
             os.makedirs(path_, exist_ok=True)
         
         logger.debug(f"get storage directory path: {path_}")
