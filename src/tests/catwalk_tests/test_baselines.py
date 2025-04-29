@@ -8,6 +8,7 @@ from numpy.testing import assert_array_equal
 
 from triage.component.catwalk.baselines.rankers import PercentileRankOneFeature
 from triage.component.catwalk.baselines.rankers import BaselineRankMultiFeature
+from triage.component.catwalk.baselines.rankers import LinearRanker
 from triage.component.catwalk.baselines.thresholders import SimpleThresholder
 from triage.component.catwalk.baselines.thresholders import get_operator_method
 from triage.component.catwalk.baselines.thresholders import OPERATOR_METHODS
@@ -49,6 +50,15 @@ def data(request):
 @pytest.fixture(scope="class")
 def rules(request):
     request.cls.rules = ["x1 > 0", "x2 <= 1"]
+
+@pytest.fixture(scope="class")
+def features(request):
+    request.cls.features = ['x1', 'x2', 'x3', 'x4', 'x6', 'x7']
+
+@pytest.fixture(scope="class")
+def weights(request):
+    request.cls.weights = [0.6, 0.5, 0.4, 0.7, 0.6, 0.3]
+
 
 def predict_proba_deprecated(ranker, x):
         """ Generate the rank scores and return these.
@@ -285,3 +295,43 @@ class TestSimpleThresholder(TestCase):
                     [[1, 1, 1, 1, 1, 1, 0, 1], [1, 1, 1, 1, 1, 1, 0, 1]]
                 ).transpose()
             np.testing.assert_array_equal(results, expected_results)
+
+
+@pytest.mark.usefixtures("data", "features", "weights")
+class TestLinearRanker(TestCase):
+    def test_fit(self):
+        ranker = LinearRanker(
+            self.features,
+            self.weights
+        )
+        assert ranker.feature_importances_ is None
+        ranker.fit(x=self.data["X_train"], y=self.data["y_train"])
+        np.testing.assert_almost_equal(
+            ranker.feature_importances_, 
+            np.array([0.19354839, 0.16129032, 
+                      0.12903226, 0.22580645, 
+                      0.19354839, 0.09677419]),
+            decimal=4
+        )
+
+    def test_predict_proba(self):
+        ranker = LinearRanker(self.features, 
+                              self.weights)
+        ranker.fit(x=self.data["X_train"], y=self.data["y_train"])
+        results = ranker.predict_proba(self.data["X_test"])
+        
+        assert results.shape == (8, 2)
+        
+        expected_results = np.array([[0.75411428, 0.24588572],
+                                     [0.69980399, 0.30019601],
+                                     [0.79451361, 0.20548639],
+                                     [0.27090783, 0.72909217],
+                                     [0.39821089, 0.60178911],
+                                     [0.67697988, 0.32302012],
+                                     [0.51544567, 0.48455433],
+                                     [0.63648246, 0.36351754]])
+
+        np.testing.assert_almost_equal(results, 
+                                       expected_results, 
+                                       decimal=4)
+        

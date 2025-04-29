@@ -1,8 +1,10 @@
 import verboselogs, logging
 logger = verboselogs.VerboseLogger(__name__)
-from scipy import stats
 import numpy as np
 import pandas as pd
+
+from scipy import stats
+from collections import defaultdict
 from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
 
 REQUIRED_KEYS = frozenset(["feature", "low_value_high_score"])
@@ -190,3 +192,77 @@ class BaselineRankMultiFeature:
         scores_0 = np.array([1-s for s in scores_1])
 
         return np.array([scores_0, scores_1]).transpose()
+
+
+class LinearRanker:
+    """This baseline objects ranks importance based on a linear combination
+    given by self.weights * self.features.
+    For example, if self.weights=[0.20, 0.80] and self.features=['A', 'B'] then this
+    baseline creates a score based on the linear combination and ranks people accordingly
+
+    Args:
+        features (list): list of features to rank on. features[0] and features[-1] are the
+           most and least important features
+        weights (list): list of weights to use in the linear combination
+
+    Returns:
+        scores (array): Numpy array of shape (n, 2) where n is the number of rows in X. 
+    """
+    def __init__(self, features, weights, random_state=42):
+        self.features = features
+        self.weights = np.array(weights) / sum(np.array(weights))
+        #self.__name__ = 'LinearRanker'
+        self.feature_importances_ = None
+        self.random_state = random_state
+    
+    def _set_feature_importance(self, x):
+        """ Assigns feature importances based on the weights provided.
+        """
+        diff_features = set(self.features).difference(set(x.columns.tolist()))
+        if len(diff_features) > 0:
+            for feature in list(diff_features): 
+                logger.error(f"LinearRanker refers to feature {feature} not included in the training matrix!")
+                raise Exception(f"LinearRanker refers to feature {feature} not included in the training matrix!")
+        
+        # feature importance 
+        df = pd.DataFrame({'feature': self.features, 'weight': self.weights})
+        self.feature_importances_ = np.array(df.weight) 
+       
+
+    def fit(self, x, y):
+        """Run sanity checks and populate self.feature_importances_
+        """
+        # Ensure all the features requested are real features
+        self._set_feature_importance(x) 
+
+        return self
+
+    def predict_proba(self, x):
+        """Returns an n by 2 matrix. The first col is 0 and the second one is
+        the linear combination of self.weights and self.features.
+
+        Args:
+        x: dataframe with multiindex=(joid, as_of_date) and n rows i.e., joid-date pairs
+
+        Returns:
+        np.array of shape (n, 2) where n is the number of rows in X.
+
+        This output has this structure to mimic the behavior of sklearn.model.predic_proba()
+        """ 
+
+        # Change scale of each column from 0 to 1
+        def index_build(feat):
+            perc_99 = x[feat].quantile(0.99)
+            x.loc[x[feat] > perc_99, feat] = perc_99
+            # Apply function to non-zero percentile columns
+            if perc_99 != 0:
+                x[feat] = x[feat]/perc_99
+        
+        for feature in self.features:
+            index_build(feature)
+
+        # Compute the score as a linear combination 
+        score = np.array((self.weights * x[self.features]).sum(axis=1))
+        rv = np.array([1-score, score]).T
+
+        return rv
