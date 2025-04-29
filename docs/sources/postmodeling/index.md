@@ -1,6 +1,6 @@
 # Postmodeling
 
-The bulk of postmodeling is documented on its README. [Read it here](https://github.com/dssg/triage/tree/master/src/triage/component/postmodeling/contrast)
+The bulk of postmodeling is documented on its README. [Read it here](https://github.com/dssg/triage/tree/master/src/triage/component/postmodeling)
 
 ## Crosstabs
 

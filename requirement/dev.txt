@@ -1,8 +1,8 @@
 -r include/build.txt
-bump2version==1.0.1
-mkdocs==1.5.3
+bumpversion==0.6.0 
+mkdocs==1.6.1
 pymdown-extensions==10.8
 mkdocs-material==9.4.6
-mkdocstrings==0.24.0
-mkdocstrings-python==1.7.2
+mkdocstrings==0.29.1
+mkdocstrings-python==1.16.10
 black==22.3.0

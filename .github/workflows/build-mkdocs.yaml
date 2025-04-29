@@ -23,10 +23,9 @@ jobs:
           python-version: 3.9
       
       - name: Install dependencies
-        run: | 
-          pip install --upgrade pip && pip install -r requirement/dev.txt
-          pip install git+https://github.com/dssg/triage.git@master
-          git config user.name 'github-actions[bot]' && git config user.email 'github-actions[bot]@users.noreply.github.com'
+        run: pip install --upgrade pip && pip install -r requirement/dev.txt
+        run: pip install git+https://github.com/dssg/triage.git@master
+        run: git config user.name 'github-actions[bot]' && git config user.email 'github-actions[bot]@users.noreply.github.com'
       
       - name: Publish docs
         run: mkdocs gh-deploy -f "$(pwd)/docs/mkdocs.yml"

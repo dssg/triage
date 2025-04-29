@@ -59,7 +59,6 @@ markdown_extensions:
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde
-  - pymdownx.superfences
 
 extra_javascript:
   - "js/mermaid.min.js"
@@ -69,15 +68,12 @@ extra_css:
   - "triage_docs.css"
 
 plugins: 
+  - search
   - mkdocstrings:
       default_handler: python
-      handlers:
+      handlers: 
         python:
-          rendering:
-            show_source: false
-      watch:
-        - src/triage
-
+          paths: [../src] 
 
 nav:
   - Home: index.md
