@@ -226,8 +226,6 @@ class LinearRanker:
         
         # feature importance 
         df = pd.DataFrame({'feature': self.features, 'weight': self.weights})
-        # normalize weights 
-        df.weight = df.weight / df.weight.sum()
         self.feature_importances_ = np.array(df.weight) 
        
 
