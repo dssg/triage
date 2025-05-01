@@ -375,15 +375,20 @@ class ModelAnalyzer:
 
 
         if matrix_uuid is None:
-            matrix_uuid = self.pred_matrix_uuid
+            matrix_uuids = self.test_matrix_uuid
+            if len(matrix_uuids) > 1:
+                logging.warning(f'Multiple matrices were found for model_id {self.model_id}. Using the first one: {matrix_uuids[0]}')
+            
+            matrix_uuid = matrix_uuids[0]
             logging.debug(f'Matrix uuid set to: {matrix_uuid}')
 
-        predictions = self.get_predictions(matrix_uuid=matrix_uuid, predictions_table=predictions_table)
+        predictions = self.get_predictions(matrix_uuid=matrix_uuid)
 
     
         if predictions.empty:
             logging.error(f'No predictions found for {self.model_id} and {matrix_uuid}. Exiting!')
-            raise ValueError(f'No predictions found {self.model_id} and {matrix_uuid}')
+            return None
+            # raise ValueError(f'No predictions found {self.model_id} and {matrix_uuid}')
 
         # Check whether the table exists
         if table_exists(f'test_results.{table_name}', self.engine):
