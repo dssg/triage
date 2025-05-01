@@ -21,11 +21,10 @@ from triage.component.postmodeling.error_analysis import generate_error_analysis
 from triage.database_reflection import table_exists
 from triage.component.catwalk.utils import sort_predictions_and_labels
 
+id_columns = ['entity_id', 'as_of_date']
 
-class SingleModelAnalyzer:
-
-    id_columns = ['entity_id', 'as_of_date']
-
+class ModelAnalyzer:
+    
     def __init__(self, model_id, engine):
         self.model_id=model_id
         self.engine=engine
@@ -1004,7 +1003,7 @@ class SingleModelAnalyzer:
 
         
 """This class is still WIP. Proceed with caution"""
-class MultiModelAnalyzer: 
+class ModelGroupAnalyzer: 
 
     def __init__(self, engine, model_groups, experiment_hashes, project_path=None, train_end_times=None, use_all_model_groups=False) -> None:
         self.model_groups = model_groups
@@ -1749,3 +1748,12 @@ class MultiModelAnalyzer:
                 model_group_ids=model_groups,
                 plot=plot
             )
+
+
+
+class ModelComparator:
+    pass
+
+
+class ModelGroupComparator:
+    pass
