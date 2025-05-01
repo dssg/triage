@@ -165,6 +165,12 @@ class ModelAnalyzer:
                 threshold (Union[float, int]): The threshold rank for creating the list. Int for 'rank_abs_*' and Float for 'rank_pct_*'
                 matrix_uuid (optional, str): If a list should be generated out of a matrix that were not used to validate the model during the experiment
         """
+        
+        where_clause = f'''where model_id={self.model_id}
+            AND {threshold_type} <= {threshold}'''
+        
+        if matrix_uuid is not None:
+            where_clause += f" AND matrix_uuid='{matrix_uuid}'"
 
         q = f"""
             select 
@@ -178,55 +184,15 @@ class ModelAnalyzer:
                 rank_pct_with_ties,
                 matrix_uuid
             from test_results.predictions
-            where model_id={self.model_id}
-            and {threshold_type} <= {threshold}
+            {where_clause}
         """
 
         top_k = pd.read_sql(q, self.engine)
 
         return top_k
 
-
-    # TODO generalize this function
-    # TODO do we want to allow specifying a dictionary of attributes + values? 
-    def get_aequitas(self, parameter=None, attribute_name=None, subset_hash=None):
-        '''
-        Get aequitas evaluations from the DB
-
-        Args:
-            parameter (str): Optional. The threshold to apply when returning the aequitas evaluations.
-                                  If not specified, all aequitas evaluations will be returned.
-
-            attribute_name (str): Optional. Fetch aequitas evaluations related to a particular attribute.
-
-            subset_hash (str): Optional. For fetching evaluations of a specific subset.    
-        '''
-
-        where_clause = f'WHERE model_id={self.model_id}'
-
-        if subset_hash is not None:
-            where_clause += f" AND 'subset_hash='{subset_hash}'"
-        else:
-            where_clause += f" AND subset_hash=''"
-
-        if parameter is not None:
-            where_clause += f" AND parameter='{parameter}'"
-
-        if attribute_name:
-            where_clause += f" AND attribute_name='{attribute_name}'"
-        
-        # TODO don't return all columns ?
-        q = f"""
-            select
-                * 
-            from test_results.aequitas
-            {where_clause}
-        """
-
-        evaluations = pd.read_sql(q, self.engine)
-
-        return evaluations
-    
+    # TODO: Write a bias function 
+    # This could learn from modeling report bias function
 
     def get_evaluations(self, metrics=None, matrix_uuid=None, subset_hash=None):
         ''' 
@@ -271,7 +237,7 @@ class ModelAnalyzer:
                 subset_hash,
                 metric, 
                 parameter,
-                stochastic_value,
+                stochastic_value as metric_value,
                 num_labeled_above_threshold,               
                 num_positive_labels
             from test_results.evaluations
@@ -279,11 +245,21 @@ class ModelAnalyzer:
         """
 
         evaluations = pd.read_sql(q, self.engine)
-
+        
+        if evaluations.empty:
+            logging.warning(f'No evaluations were found in test_results.evaluations for model_id {self.model_id}. Returning empty dataframe!')
+            
+        if len(evaluations.matrix_uuid.unique()) > 1:
+            logging.warning(f'Evaluations for {len(evaluations.matrix_uuid.unique())} validation matrices were found for model_id {self.model_id}. Please check the evaluations table!')
+        
         return evaluations
 
     def get_feature_importances(self, n_top_features=20):
-
+        """ Get the n most important features for the model
+            Args:
+                n_top_features (int): The number of features to return. Defaults to 20
+        
+        """
         logging.debug(f'Fetching feature importance from db for model id: {self.model_id}')
         features = pd.read_sql(
            f'''
@@ -297,31 +273,28 @@ class ModelAnalyzer:
            and abs(feature_importance) > 0 
            order by rank_abs
            ''', con=self.engine)
+        
+        if features.empty:
+            logging.warning(f'No feature importances were found for model_id {self.model_id}. Returning empty dataframe!')
+        
         return features
     
     def get_feature_group_importances(self):
         """
         Get the top most important feature groups as identified by the maximum importance of any feature in the group
-
+        Returns all feature groups, not limited to the top n groups
         """
-        # TODO this assumes any experiment linked to this model has the same feature aggregations, is this valid?
-        q = f"""
-            select distinct experiment_hash from triage_metadata.models m 
-            left join triage_metadata.experiment_models em on m.model_hash=em.model_hash 
-            where model_group_id={self.model_group_id}
-            """
-        experiment_hashes = pd.read_sql(q, self.engine)
-        experiment_hash = experiment_hashes['experiment_hash'].iloc[0]
-
-        # get feature group names
-        q = f"""
+        
+        # Fetching all the feature groups
+        q = f'''
             select 
-                config->'feature_aggregations' as feature_groups
-            from triage_metadata.experiments where experiment_hash = '{experiment_hash}'
-        """
-
-        feature_groups = [i['prefix'] for i in pd.read_sql(q, self.engine)['feature_groups'].iloc[0]]
-        feature_groups
+            replace(jsonb_object_keys(mat.feature_dictionary), '_aggregation_imputed', '') as feature_group
+            from triage_metadata.models mod left join triage_metadata.matrices mat 
+            on mod.train_matrix_uuid = mat.matrix_uuid 
+            where mod.model_id = {self.model_id}
+        '''
+        feature_groups = pd.read_sql(q, self.engine)['feature_group'].tolist()
+        
         case_part = ''
         for fg in feature_groups:
             case_part = case_part + "\nWHEN feature like '{fg}%%' THEN '{fg}'".format(fg=fg)
@@ -346,6 +319,7 @@ class ModelAnalyzer:
             FROM raw_importances
             GROUP BY feature_group, model_id
         """, con=self.engine)
+        
         return feature_group_importance
 
     def crosstabs_pos_vs_neg(self, project_path, thresholds, matrix_uuid=None, push_to_db=True, table_name='crosstabs', return_df=True, replace=True, predictions_table='test_results.predictions'):
