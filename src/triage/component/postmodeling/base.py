@@ -21,9 +21,11 @@ from triage.component.postmodeling.error_analysis import generate_error_analysis
 from triage.database_reflection import table_exists
 from triage.component.catwalk.utils import sort_predictions_and_labels
 
+from triage.component.postmodeling.add_predictions import add_predictions
+
 from triage.component.postmodeling.utils.plot_functions import (
     plot_score_distribution, plot_score_distribution_by_label, 
-    plot_precision_recall_at_k, plot_feature_importance
+    plot_precision_recall_at_k, plot_feature_importance, plot_pairwise_comparison_heatmap
 )
 id_columns = ['entity_id', 'as_of_date']
 
@@ -41,7 +43,7 @@ class ModelAnalyzer:
                     m.model_group_id,
                     m.hyperparameters,
                     m.model_hash,
-                    m.train_end_time::date,
+                    m.train_end_time,
                     m.train_matrix_uuid,
                     m.training_label_timespan,
                     m.model_type,
@@ -754,6 +756,27 @@ class ModelAnalyzer:
         ax.set_ylim([min_score, max_score])
         return ax
     
+    
+    # NOTE: proceed with caution using this function (reason given inside)
+    def save_predictions(self, project_path, replace=False):
+        """
+        Save the predictions to the project path
+        Args:
+            project_path (str): Path where the experiment artifacts (models and matrices) are stored
+            replace (bool): Whether to replace the existing predictions or not. Defaults to False
+        """
+        
+        # TODO: should we support adding predictions of a single model?
+        # In the current form, this function call will save predictions for all model_ids with same model_group_id and train_end_time
+        # This is not a common scenario (multiple model_ids for same group and time), but it is possible and a class tied to a specific model_id should not trigger actions related to other model_ids
+        add_predictions(
+            db_engine=self.engine,
+            project_path=project_path,
+            model_groups=[self.model_group_id],
+            train_end_times_range= {'range_start_date': self.train_end_time, 'range_end_date': self.train_end_time},
+            replace=replace,
+        )
+        
 
         
 """This class is still WIP. Proceed with caution"""
@@ -1506,8 +1529,95 @@ class ModelGroupAnalyzer:
 
 
 class ModelComparator:
-    pass
-
+    def __init__(self, model_ids, engine):        
+        # Initializing ModelAnalyzer for each model_id
+        self.model_ids = sorted(model_ids)
+        self.models = dict()
+        for model_id in model_ids:
+            self.models[model_id] = ModelAnalyzer(model_id, engine)
+            
+        self.engine = engine
+        
+    def compare_topk(self, threshold_type, threshold, matrix_uuid=None, plot=True, **kwargs):
+        """
+            Compare the top-k lists for the given train_end_times for all model groups considered (pairwise)
+            We compare jaccard, overlap, and rank_correlation
+            
+            Args:
+                threshold_type (str): Type of the ranking to use. Has to be one of the four ranking types used in triage
+                        - rank_pct_no_ties 
+                        - rank_pct_with_ties
+                        - rank_abs_no_ties
+                        - rank_abs_with_ties
+                threshold (Union[float, int]): The threshold rank for creating the list. Int for 'rank_abs_*' and Float for 'rank_pct_*'
+                matrix_uuid (str): The matrix uuid to use in the comparison
+                metrics (List[str], optional): The list of metrics to use in the comparison. Defaults to ['jaccard', 'overlap', 'rank_corr']
+        """
+        
+        topk = dict()
+        for model_id, ma in self.models.items():
+            topk[model_id] = ma.get_top_k(threshold_type, threshold, matrix_uuid)
+            
+            if topk[model_id].empty:
+                logging.warning(f'No prediction saved for the model {model_id}. Excluding from comparison')
+                topk.pop(model_id)
+                continue
+            
+        if topk == {}:
+            logging.error('No prediction saved for the models. Aborting!') 
+            return
+        
+        pairs = list(itertools.combinations(topk.keys(), 2))
+        
+        logging.info(f'Performing {len(pairs)} comparisons')
+        
+        # These are hardcoded for now
+        # metrics=['jaccard', 'overlap', 'rank_corr']
+        metrics=['jaccard', 'overlap']
+        
+        results = dict()
+        # Initializing three data frames to hold pairwise metrics
+        
+        for m in metrics:
+            # Initializing a null dataframe
+            results[m] = pd.DataFrame(np.full((len(self.model_ids), len(self.model_ids)), np.nan), index=self.model_ids, columns=self.model_ids)
+            
+            # Initialize the diagonal with 1 (this is a triagular matrix)
+            np.fill_diagonal(results[m].values, 1)
+            
+        for model_group_pair in pairs:
+            model_group_pair = sorted(model_group_pair)
+            
+            entities_1 = set(topk[model_group_pair[0]].entity_id)
+            entities_2 = set(topk[model_group_pair[1]].entity_id)
+            
+            n_intersect = len(entities_1.intersection(entities_2))
+            n_union = len(entities_1.union(entities_2))
+            
+            results['jaccard'].loc[model_group_pair[1], model_group_pair[0]] = n_intersect/n_union
+            
+            # If the list sizes are not equal, using the smallest list size to calculate simple overlap
+            results['overlap'].loc[model_group_pair[1], model_group_pair[0]] = n_intersect/min(len(entities_1), len(entities_2))
+            
+            # calculating rank correlation
+            # TODO: FIX ME!
+            # results['rank_corr'].loc[model_group_pair[0], model_group_pair[1]] = spearmanr(
+            #     topk[model_group_pair[0]].score.iloc[:], 
+            #     topk[model_group_pair[1]].score.iloc[:]
+            # )[0]
+        
+        if plot:
+            fig, axes = plt.subplots(1, len(metrics), figsize=(6.5, 3))   
+            
+            for i, m in enumerate(metrics):
+                plot_pairwise_comparison_heatmap(df=results[m], metric_name=m, ax=axes[i])
+            
+            fig.suptitle(f'{threshold_type}, top {threshold}')
+            fig.tight_layout()    
+        
+        return results
+        
+        
 
 class ModelGroupComparator:
     pass
