@@ -193,3 +193,33 @@ def plot_feature_importance(feature_importance, ax=None, n_top_features=20, **kw
     
     return ax
     
+    
+def plot_pairwise_comparison_heatmap(df, metric_name, ax=None):
+    """ Plot pairwise comparison metric.
+
+    Args:
+        df (pd.DataFrame): Dataframe with pairwise comparison metric, e.g., jacard similarity between two models
+        metric_name (str): Name of the metric to plot.
+        **kwargs: Additional arguments to pass to the plot
+    """
+    
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(3, 3), dpi=100)
+        
+    sns.heatmap(
+        data=df,
+        cmap='Greens',
+        vmin=0,
+        vmax=1,
+        annot=True,
+        mask=df.isna(),
+        linewidth=0.1,
+        ax=ax
+    )
+    
+    ax.set_title(metric_name)
+    
+    return ax 
+        
+    
+    
