@@ -68,7 +68,8 @@ def _summary_of_models(models_df):
     if len(time_cts[msk]) > 0:
         logging.warning('There are model groups with more than one model per train_end_time. See below: \n {}'.format(time_cts[msk].reset_index()))
         
-    
+        
+# TODO: Add support for adding predictions of a single model_id    
 def add_predictions(db_engine, model_groups, project_path, experiment_hashes=None, train_end_times_range=None, rank_order='worst', replace=True):
     """ For a set of modl_groups generate test predictions and write to DB
         Args:
@@ -162,11 +163,17 @@ def add_predictions(db_engine, model_groups, project_path, experiment_hashes=Non
 
         for model_id in df_grp['model_id'].tolist():
             logging.info('Writing predictions for model_id {}'.format(model_id))
-            predictor.predict(
-                model_id=model_id,
-                matrix_store=test_matrix_store,
-                train_matrix_columns=train_matrix_columns,
-                misc_db_parameters={}
-            )
+            
+            try: 
+                predictor.predict(
+                    model_id=model_id,
+                    matrix_store=test_matrix_store,
+                    train_matrix_columns=train_matrix_columns,
+                    misc_db_parameters={}
+                )
+            except Exception as e:
+                logging.error(f'Error while generating predictions for model_id {model_id}. Error: {str(e)}')
+                continue
+                
 
     logging.info('Successfully generated predictions for {} models!'.format(len(model_matrix_info)))
