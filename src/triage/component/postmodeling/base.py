@@ -1573,8 +1573,6 @@ class ModelComparator:
         return evals
         
         
-        
-        
     def compare_topk(self, threshold_type, threshold, matrix_uuid=None, plot=True, **kwargs):
         """
             Compare the top-k lists for the given train_end_times for all model groups considered (pairwise)
@@ -1622,19 +1620,19 @@ class ModelComparator:
             # Initialize the diagonal with 1 (this is a triagular matrix)
             np.fill_diagonal(results[m].values, 1)
             
-        for model_group_pair in pairs:
-            model_group_pair = sorted(model_group_pair)
+        for model_pair in pairs:
+            model_pair = sorted(model_pair)
             
-            entities_1 = set(topk[model_group_pair[0]].entity_id)
-            entities_2 = set(topk[model_group_pair[1]].entity_id)
+            entities_1 = set(topk[model_pair[0]].entity_id)
+            entities_2 = set(topk[model_pair[1]].entity_id)
             
             n_intersect = len(entities_1.intersection(entities_2))
             n_union = len(entities_1.union(entities_2))
             
-            results['jaccard'].loc[model_group_pair[1], model_group_pair[0]] = n_intersect/n_union
+            results['jaccard'].loc[model_pair[1], model_pair[0]] = n_intersect/n_union
             
             # If the list sizes are not equal, using the smallest list size to calculate simple overlap
-            results['overlap'].loc[model_group_pair[1], model_group_pair[0]] = n_intersect/min(len(entities_1), len(entities_2))
+            results['overlap'].loc[model_pair[1], model_pair[0]] = n_intersect/min(len(entities_1), len(entities_2))
             
             # calculating rank correlation
             # TODO: FIX ME!
@@ -1654,6 +1652,68 @@ class ModelComparator:
         
         return results
         
+    
+    def compare_feature_importance(self, n_top_features=20, plot=True):
+        """ Compare the feature importance of the two models"""
+        
+        feature_importances = dict()
+        
+        for model_id, ma in self.models.items():
+            feature_importances[model_id] = ma.get_feature_importances(n_top_features=n_top_features)
+            
+            if feature_importances[model_id].empty:
+                logging.warning(f'No feature importance values were found for model {model_id}. Excluding from comparison')
+                feature_importances.pop(model_id)
+                continue
+        if feature_importances == {}:
+            logging.error('No feature importance values were found for the models. Aborting!') 
+            return
+        
+        pairs = list(itertools.combinations(feature_importances.keys(), 2))
+        
+        metrics = ['jaccard', 'overlap', 'rank_corr']
+        results = dict()
+        
+        for m in metrics:
+            results[m] = pd.DataFrame(np.full((len(self.model_ids), len(self.model_ids)), np.nan), index=self.model_ids, columns=self.model_ids)
+            
+            # Initialize the diagonal with 1 (this is a triagular matrix)
+            np.fill_diagonal(results[m].values, 1)
+            
+        for model_pair in pairs:
+            model_pair = sorted(model_pair)
+            
+            f1 = set(feature_importances[model_pair[0]].feature)
+            f2 = set(feature_importances[model_pair[1]].feature)
+            
+            if len(f1) != len(f2):
+                logging.warning(f'Feature counts are not equal, skipping rank corr - {model_pair[0]}: {len(f1)}, {model_pair[1]}: {len(f2)}') 
+                results['rank_corr'].loc[model_pair[0], model_pair[1]] = np.nan
+            else:
+                # only returning the corr coefficient, not the p-value 
+                results['rank_corr'].loc[model_pair[0], model_pair[1]] = spearmanr(feature_importances[model_pair[0]].feature.iloc[:], feature_importances[model_pair[1]].feature.iloc[:])[0]
+                
+            
+            inter = f1.intersection(f2)
+            un = f1.union(f2)    
+            results['jaccard'].loc[model_pair[1], model_pair[0]] = len(inter)/len(un)
+
+            # If the list sizes are not equal, using the smallest list size to calculate simple overlap
+            results['overlap'].loc[model_pair[1], model_pair[0]] = len(inter)/ min(len(f1), len(f2))
+
+            # calculating rank correlation
+            feature_importances[model_pair[0]].sort_values('importance', ascending=False, inplace=True)
+            feature_importances[model_pair[1]].sort_values('importance', ascending=False, inplace=True)
+            
+        if plot:
+            fig, axes = plt.subplots(1, len(metrics), figsize=(len(metrics)*3 + 0.3, 3))   
+            
+            for i, m in enumerate(metrics):
+                plot_pairwise_comparison_heatmap(df=results[m], metric_name=m, ax=axes[i])
+            
+            fig.tight_layout()  
+            
+        return results
     
     def compare_score_distribution(self):
         """ Comparing the score distributions of the two models"""
