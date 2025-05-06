@@ -1538,6 +1538,43 @@ class ModelComparator:
             
         self.engine = engine
         
+    def compare_metrics(self, metrics=None, matrix_uuid=None, subset_hash=None, plot=False, **kwargs):
+        """
+            Compare the metrics for the given train_end_times for all model groups considered (pairwise)
+            
+            Args:
+                metrics Dict[str:List]): Optional. The metrics and parameters for evaluations. 
+                                    A dictionary of type {metric:[thresholds]}, e.g., {'precision@': ['100_abs'], 'recall@': ['100_abs']}
+                                    If not specified, all the evaluations will be returned
+                threshold (Union[float, int]): The threshold rank for creating the list. Int for 'rank_abs_*' and Float for 'rank_pct_*'
+                matrix_uuid (str): The matrix uuid to use in the comparison
+        """
+        evals = list()
+        columns = ['metric', 'parameter', 'metric_value']
+
+        # TODO: We can plot the recall curves
+        if plot:
+            pass 
+        
+        evals = None
+        for model_id, ma in self.models.items():        
+            df = ma.get_evaluations(metrics=metrics, matrix_uuid=matrix_uuid, subset_hash=subset_hash, plot_prk=False)[columns]
+            df.rename(columns={'metric_value': model_id}, inplace=True)
+            if evals is None:
+                evals = df
+            else:
+                evals = evals.merge(df, how='inner', on=['metric', 'parameter'])
+            
+        evals.set_index(['metric', 'parameter'], inplace=True)
+        # evals['diff'] = evals[self.model_ids[0]] - evals[self.model_ids[1]]
+        
+        evals = evals.style.highlight_max(axis=1, color='darkgreen', props='color: white; font-weight: bold; background-color: #4CAF50')
+        
+        return evals
+        
+        
+        
+        
     def compare_topk(self, threshold_type, threshold, matrix_uuid=None, plot=True, **kwargs):
         """
             Compare the top-k lists for the given train_end_times for all model groups considered (pairwise)
@@ -1607,7 +1644,7 @@ class ModelComparator:
             # )[0]
         
         if plot:
-            fig, axes = plt.subplots(1, len(metrics), figsize=(6.5, 3))   
+            fig, axes = plt.subplots(1, len(metrics), figsize=(len(metrics) + 0.3, 3))   
             
             for i, m in enumerate(metrics):
                 plot_pairwise_comparison_heatmap(df=results[m], metric_name=m, ax=axes[i])
@@ -1617,7 +1654,12 @@ class ModelComparator:
         
         return results
         
-        
+    
+    def compare_score_distribution(self):
+        """ Comparing the score distributions of the two models"""
+        pass
+    
+     
 
 class ModelGroupComparator:
     pass
