@@ -9,6 +9,9 @@ import numpy as np
 import polars as pl
 import pyarrow
 import time
+import gzip
+import shutil
+import os
 
 from sqlalchemy.orm import sessionmaker
 
@@ -660,10 +663,23 @@ class MatrixBuilder(BuilderBase):
             path (string): _description_
             matrix_uuid (string): _description_
         """
-        cmd_line = "gzip -k " + path + "/" + matrix_uuid + ".csv"
-        logger.debug(f"Generating gzip of full matrix on cmd line with command: {cmd_line}")
-        subprocess.run(cmd_line, shell=True)
-        logger.debug(f"Full matrix {matrix_uuid} compressed and saved!")
+        filename_ = f"{path}/{matrix_uuid}.csv"
+
+        logger.debug(f"About to generate gzip for {matrix_uuid}.csv")
+        try:
+            with open(filename_, 'rb') as f_in:
+                with gzip.open(f"{filename_}.gz", 'wb') as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+                    logger.debug(f"gzip file {matrix_uuid}.csv.gz generated")
+        except FileNotFoundError as e:
+            logger.error(f"File {filename_} not found: {e}")
+        except Exception as e:
+            logger.error(f"An error occurred while generating gzip: {e}")
+        
+        #cmd_line = "gzip -fk " + path + "/" + matrix_uuid + ".csv"
+        #logger.debug(f"Generating gzip of full matrix on cmd line with command: {cmd_line}")
+        #subprocess.run(cmd_line, shell=True)
+        #logger.debug(f"Full matrix {matrix_uuid} compressed and saved!")
 
 
     def remove_unnecessary_files(self, filenames, path_, matrix_uuid):
@@ -679,24 +695,29 @@ class MatrixBuilder(BuilderBase):
         """
         # deleting features and label csvs
         for filename_ in filenames:
-           cmd_line = 'rm ' + filename_ 
+           cmd_line = ['rm', filename_] 
            logger.debug(f"removing files with command {cmd_line}")
-           subprocess.run(cmd_line, shell=True)
+           try:
+               subprocess.run(cmd_line, check=True)
+           except subprocess.CalledProcessError as e:
+               logger.error(f"Error removing file {filename_}: {e}")
 
         # deleting the merged csv
-        cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.csv'
+        cmd_line = ['rm', f'{path_}/{matrix_uuid}.csv']
         logger.debug(f"removing stitched csv with command {cmd_line}")
-        subprocess.run(cmd_line, shell=True)
+        try:
+            subprocess.run(cmd_line, check=True)
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Error removing file {path_}/{matrix_uuid}.csv: {e}")
         
         # deleting the compressed CSV when the project path is S3
         if path_.startswith('/tmp'):
-            cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.csv.gz'
+            cmd_line = ['rm', f'{path_} /{matrix_uuid}.csv.gz']
             logger.debug(f"removing compressed csv with command {cmd_line}")
-            subprocess.run(cmd_line, shell=True)
-            
-            cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.yaml'
-            logger.debug(f"removing matrix metadata file with command {cmd_line}")
-            subprocess.run(cmd_line, shell=True)
+            try:
+                subprocess.run(cmd_line, check=True)
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Error removing file {path_}/{matrix_uuid}.csv.gz: {e}")
             
         
         
