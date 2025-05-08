@@ -44,7 +44,7 @@ with REQUIREMENTS_RQ_PATH.open() as rq_requirements_file:
 
 setup(
     name='triage',
-    version='5.4.0',
+    version='5.5.0',
     description="Risk modeling and prediction",
     long_description=README_PATH.read_text(),
     long_description_content_type="text/markdown",
