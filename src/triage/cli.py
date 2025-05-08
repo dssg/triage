@@ -32,7 +32,7 @@ from triage.experiments import (
 )
 from triage.predictlist import predict_forward_with_existed_model, Retrainer
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
-from triage.component.postmodeling.utils.add_predictions import add_predictions
+from triage.component.postmodeling.add_predictions import add_predictions
 from triage.util.conf import load_query_if_needed
 from triage.util.db import create_engine
 

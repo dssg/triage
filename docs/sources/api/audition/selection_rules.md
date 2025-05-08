@@ -9,9 +9,9 @@ A selection rule can be evaluated by calculating its *regret*, or the difference
 Triage supports 8 model selection rules. Each is represented internally by one of the following functions:
 
 ::: triage.component.audition.selection_rules
-    rendering:
+    options:
         heading_level: 3
-        show_root_toc_entry: False
+        show_root_toc_entry: false
     selection:
         filters: 
             - "!^BoundSelectionRule"
@@ -25,21 +25,21 @@ The arguments of each `add_rule_` method map to the arguments of the correspondi
 
 
 ::: triage.component.audition.rules_maker
-    rendering:
-        show_if_no_docstring: True
-        show_category_heading: False
-        show_root_heading: False
-        show_root_toc_entry: False
+    options:
+        show_if_no_docstring: true
+        show_category_heading: false
+        show_root_heading: false
+        show_root_toc_entry: false
         heading_level: 3
-    selection:
-        members:
-            - SimpleRuleMaker
-            - TwoMetricsRuleMaker
-            - RandomGroupRuleMaker
+        selection:
+            members:
+                - SimpleRuleMaker
+                - TwoMetricsRuleMaker
+                - RandomGroupRuleMaker
   
 ## Selection Grid
 
 ::: triage.component.audition.selection_rule_grid
-    rendering:
+    options:
         heading_level: 3
-        show_root_toc_entry: False
+        show_root_toc_entry: false

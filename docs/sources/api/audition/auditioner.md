@@ -2,9 +2,10 @@ The `Auditioner` class is the main entry point for the Audition module. Users pa
 
 Other methods allow users to define more complex selection rules, list selected models, or plot results from the selection process.
 
-::: triage.component.audition.__init__
-    rendering:
-        show_root_toc_entry: False
-        group_by_category: True
-        show_category_heading: True
-        show_if_no_docstring: True
+::: triage.component.audition
+    options:
+        show_root_toc_entry: false
+        group_by_category: true
+        show_category_heading: true
+        show_if_no_docstring: true
+        

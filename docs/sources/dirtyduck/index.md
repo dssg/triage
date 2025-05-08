@@ -1,10 +1,10 @@
 This is a guide to `Triage`, a machine learning / data science tool initially developed at the [Center for Data Science and Public
-Policy](http://dsapp.uchicago.edu) (DSaPP) at the University of
+Policy](http://datasciencepublicpolicy.org) (DSaPP) at the University of
 Chicago and now being maintained at Carnegie Mellon University.
 
 
 `Triage` helps build ML systems for two [common
-problems](https://dssg.uchicago.edu/data-science-for-social-good-conference-2017/training-workshop-data-science-for-social-good-problem-templates/):
+problems](https://dssgfellowship.org/data-science-for-social-good-conference-2017/training-workshop-data-science-for-social-good-problem-templates/):
 (a) Early warning systems (**EWS** or **EIS**), (b) *resource
 prioritization* (a.k.a "an inspections problem"). These problems require careful thought and design and their formulation and
 implementation are often done incorrectly.
