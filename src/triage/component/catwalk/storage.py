@@ -703,7 +703,7 @@ class CSVMatrixStore(MatrixStore):
 
     def save_tmp_csv(self, output, path_, matrix_uuid, suffix):
         logger.debug(f"saving temporal csv for matrix {matrix_uuid + suffix} ")
-        with open(path_ + "/" + matrix_uuid + suffix, "wb") as fd:  
+        with open(f"{path_}/{matrix_uuid}{suffix}", "wb") as fd:  
             return fd.write(output)
 
 

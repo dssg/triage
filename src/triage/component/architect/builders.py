@@ -556,7 +556,7 @@ class MatrixBuilder(BuilderBase):
         matrix_store.save_tmp_csv(output_, path_, matrix_uuid, "_label.csv")
 
         # add label file to filenames
-        filenames.append(path_ + "/" + matrix_uuid + "_label.csv")
+        filenames.append(f"{path_}/{matrix_uuid}_label.csv")
         
         # check if the number of rows among all features and label -if any- files are the same
         try: 
@@ -598,7 +598,7 @@ class MatrixBuilder(BuilderBase):
         logger.debug(f"about to load csvmatrix with uuid {matrix_uuid} as polars df")
         start = time.time()
         # load as DF with polars
-        filename_ = path_ + '/' + matrix_uuid + '.csv'
+        filename_ = f'{path_}/{matrix_uuid}.csv'
         #df = pd.read_csv(filename_, parse_dates=["as_of_date"])
         df_pl = pl.read_csv(filename_, infer_schema_length=0).with_columns(pl.all().exclude(
             ['entity_id', 'as_of_date']).cast(pl.Float32, strict=False))
