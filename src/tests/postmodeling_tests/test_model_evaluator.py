@@ -1,4 +1,4 @@
-from triage.component.postmodeling.contrast.model_evaluator import ModelEvaluator
+from triage.component.postmodeling.deprecated.model_evaluator import ModelEvaluator
 from triage.component.postmodeling.crosstabs import run_crosstabs
 from tests.utils import (
     sample_config,

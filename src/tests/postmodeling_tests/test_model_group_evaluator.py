@@ -1,4 +1,4 @@
-from triage.component.postmodeling.contrast.model_group_evaluator import ModelGroupEvaluator
+from triage.component.postmodeling.deprecated.model_group_evaluator import ModelGroupEvaluator
 import pandas as pd
 import pytest
 from tests.utils import assert_plot_figures_added

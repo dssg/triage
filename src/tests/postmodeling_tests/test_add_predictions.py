@@ -1,6 +1,6 @@
 import pytest
 
-from triage.component.postmodeling.utils.add_predictions import add_predictions
+from triage.component.postmodeling.add_predictions import add_predictions
 from triage.database_reflection import table_has_data
 
 

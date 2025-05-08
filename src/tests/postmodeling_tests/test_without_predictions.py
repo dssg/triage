@@ -1,5 +1,5 @@
-from triage.component.postmodeling.contrast.model_group_evaluator import ModelGroupEvaluator
-from triage.component.postmodeling.contrast.model_evaluator import ModelEvaluator
+from triage.component.postmodeling.deprecated.model_group_evaluator import ModelGroupEvaluator
+from triage.component.postmodeling.deprecated.model_evaluator import ModelEvaluator
 import pytest
 
 
