@@ -1538,6 +1538,10 @@ class ModelComparator:
             
         self.engine = engine
         
+    def compare_ranking(self):
+        """Compare rankings of the two models - rank_corr"""
+        pass
+    
     def compare_metrics(self, metrics=None, matrix_uuid=None, subset_hash=None, plot=False, **kwargs):
         """
             Compare the metrics for the given train_end_times for all model groups considered (pairwise)
@@ -1714,6 +1718,7 @@ class ModelComparator:
             fig.tight_layout()  
             
         return results
+    
     
     def compare_score_distribution(self):
         """ Comparing the score distributions of the two models"""
