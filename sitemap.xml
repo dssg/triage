@@ -2,232 +2,186 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>http://dssg.github.io/triage/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/db/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/quickstart/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/triage.experiments.base/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/triage.experiments.multicore/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/triage.experiments.singlethreaded/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/triage_project_workflow/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/api/audition/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/api/audition/audition-config/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/api/audition/auditioner/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/api/audition/database-dependencies/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/api/audition/selection_rules/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/api/timechop/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/api/timechop/plotting/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/api/timechop/timechop/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/audition/audition_intro/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/audition/model_selection/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/dirtyduck/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/dirtyduck/aws_batch/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/dirtyduck/choose_your_own_adventure/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/dirtyduck/data_preparation/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/dirtyduck/dirty_duckling/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/dirtyduck/eis/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/dirtyduck/for_the_impatient/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/dirtyduck/infrastructure/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/dirtyduck/inspections/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/dirtyduck/ml_governance/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/dirtyduck/problem_description/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/dirtyduck/triage_intro/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/dirtyduck/who_is_this_tutorial_for/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/experiments/algorithm/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/experiments/architecture/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/experiments/cohort-labels/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/experiments/experiment-config/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/experiments/feature-testing/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/experiments/features/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/experiments/prediction-ranking/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/experiments/running/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/experiments/temporal-validation/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/experiments/upgrade-to-v5/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/experiments/upgrade-to-v6/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/experiments/upgrade-to-v7/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/experiments/upgrade-to-v8/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/postmodeling/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/postmodeling/postmodeling-config/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
     <url>
          <loc>http://dssg.github.io/triage/predictlist/</loc>
-         <lastmod>2022-11-08</lastmod>
-         <changefreq>daily</changefreq>
+         <lastmod>2025-05-08</lastmod>
     </url>
 </urlset>
