@@ -615,7 +615,7 @@ class CSVMatrixStore(MatrixStore):
         # if it is a S3 storage type
         else:
             user_id = os.getenv('USER')
-            path_ = Path(f"/tmp/{user_id}/")
+            path_ = Path(f"/tmp/{user_id}")
             # create directory if it doesn't exist
             os.makedirs(path_, exist_ok=True)
         

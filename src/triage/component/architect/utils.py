@@ -10,6 +10,7 @@ import functools
 import operator
 import tempfile
 import subprocess
+import gzip
 
 import sqlalchemy
 
@@ -19,8 +20,6 @@ from sqlalchemy.orm import sessionmaker
 
 from triage.component.results_schema import Model
 from triage.util.structs import FeatureNameList
-
-
 
 
 def str_in_sql(values):
@@ -328,3 +327,65 @@ def generate_list_of_files_to_remove(filenames, matrix_uuid):
     logging.debug(f"Files to be removed {rm_files}")
     return rm_files
 
+
+def generate_gzip(path, matrix_uuid):
+    """
+    Generates a gzip from the csv file with all the features (doesn't include the label)
+
+    Args:
+        path (string): _description_
+        matrix_uuid (string): _description_
+    """
+    filename_ = f"{path}/{matrix_uuid}.csv"
+
+    logger.debug(f"About to generate gzip for {matrix_uuid}.csv")
+    try:
+        with open(filename_, 'rb') as f_in:
+            with gzip.open(f"{filename_}.gz", 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
+                logger.debug(f"gzip file {matrix_uuid}.csv.gz generated")
+    except FileNotFoundError as e:
+        logger.error(f"File {filename_} not found: {e}")
+    except Exception as e:
+        logger.error(f"An error occurred while generating gzip: {e}")
+
+
+def remove_unnecessary_files(filenames, path_, matrix_uuid):
+    """
+    Removes the csvs generated for each feature, the label csv file,
+    and the csv with all the features and label stitched togheter. 
+    The csv with all merged is being deleted while generating the gzip.
+
+    Args:
+        filenames (list): list of filenames to remove from disk
+        path_ (string): Path 
+        matrix_uuid (string): ID of the matrix
+    """
+    # deleting features and label csvs
+    for filename_ in filenames:
+        cmd_line = ['rm', filename_] 
+        logger.debug(f"removing files with command {cmd_line}")
+        try:
+            subprocess.run(cmd_line, check=True)
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Error removing file {filename_}: {e}")
+
+    # deleting the merged csv
+    cmd_line = ['rm', f'{path_}/{matrix_uuid}.csv']
+    logger.debug(f"removing stitched csv with command {cmd_line}")
+    try:
+        subprocess.run(cmd_line, check=True)
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error removing file {path_}/{matrix_uuid}.csv: {e}")
+    
+    # deleting the compressed CSV when the project path is S3
+    if path_.startswith('/tmp'):
+        filename_ = f"{path_}/{matrix_uuid}.csv.gz"
+        cmd_line = ['rm', filename_]
+        logger.debug(f"About to remove gzip file with command {cmd_line}")
+        try:
+            subprocess.run(cmd_line, check=True)
+            logger.debug(f"gzip file {filename_} removed")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Error removing file {filename_}: {e}")
+            
