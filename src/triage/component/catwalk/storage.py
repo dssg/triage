@@ -637,8 +637,9 @@ class CSVMatrixStore(MatrixStore):
             logging.info("file in S3")
             self.matrix_base_store.download()
             file_in_tmp = True
+            user_id = os.getenv('USER')
             filename = self.matrix_base_store.path.split("/")[-1]
-            filename_ = f"/tmp/{filename}"
+            filename_ = f"/tmp/{user_id}/{filename}"
         else:
             logging.info("file in FS")
             filename_ = str(self.matrix_base_store.path) 
@@ -648,10 +649,6 @@ class CSVMatrixStore(MatrixStore):
         df_pl = pl.read_csv(filename_, infer_schema_length=0).with_columns(pl.all().exclude(
             ['entity_id', 'as_of_date']).cast(pl.Float32, strict=False))
         end = time.time()
-
-        # delete downlowded file from S3 
-        # if file_in_tmp:
-        #     subprocess.run(f"rm {filename_}", shell=True)
 
         logger.debug(f"time for loading matrix as polar df (sec): {(end-start)/60}")
 
@@ -677,6 +674,15 @@ class CSVMatrixStore(MatrixStore):
         df.set_index(["entity_id", "as_of_date"], inplace=True)
         logger.debug(f"df data types: {df.dtypes}")
         logger.spam(f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
+
+        # if the file was downloaded from S3 we delete it! 
+        if file_in_tmp:
+            logger.debug(f"About to delete downloaded file from S3 {filename_}")
+            try:
+                os.remove(filename_)
+                logger.debug(f"Downloaded file from S3 {filename_} deleted")
+            except OSError as e:
+                logger.debug(f"Unexpected error deleting download file from S3 in {filename_}: {e}")
 
         return df
 
