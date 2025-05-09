@@ -640,8 +640,7 @@ class MatrixBuilder(BuilderBase):
         df.set_index(["entity_id", "as_of_date"], inplace=True)
         logger.debug(f"df data types: {df.dtypes}")
         logger.debug(f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
-
-        logger.debug(f"Generating gzip from full matrix csv")
+        # generating gzip file from csv
         generate_gzip(path_, matrix_uuid)
 
         # if matrix store is S3 
