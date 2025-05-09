@@ -338,12 +338,12 @@ def generate_gzip(path, matrix_uuid):
     """
     filename_ = f"{path}/{matrix_uuid}.csv"
 
-    logger.debug(f"About to generate gzip for {matrix_uuid}.csv in {filename_}")
+    logger.debug(f"About to generate gzip for {matrix_uuid}.csv in {"/".join(filename_.split("/")[:-1])}")
     try:
         with open(filename_, 'rb') as f_in:
             with gzip.open(f"{filename_}.gz", 'wb') as f_out:
                 shutil.copyfileobj(f_in, f_out)
-                logger.debug(f"gzip file {matrix_uuid}.csv.gz generated")
+                logger.debug(f"gzip file {filename_}.gz generated")
     except FileNotFoundError as e:
         logger.error(f"File {filename_} not found: {e}")
     except Exception as e:
