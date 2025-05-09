@@ -337,8 +337,8 @@ def generate_gzip(path, matrix_uuid):
         matrix_uuid (string): _description_
     """
     filename_ = f"{path}/{matrix_uuid}.csv"
-
-    logger.debug(f"About to generate gzip for {matrix_uuid}.csv in {"/".join(filename_.split("/")[:-1])}")
+    filepath_ = "/".join(filename_.split("/")[:-1])
+    logger.debug(f"About to generate gzip for {matrix_uuid}.csv in {filepath_}")
     try:
         with open(filename_, 'rb') as f_in:
             with gzip.open(f"{filename_}.gz", 'wb') as f_out:
