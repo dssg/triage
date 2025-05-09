@@ -152,8 +152,11 @@ class S3Store(Store):
         return self.S3FileWrapper(s3file)
     
     def download(self, *args, **kwargs):
-        self.client.download(self.path, "/tmp/")
-        logger.debug(f"File {self.path} downloaded from S3 to /tmp/")
+        """Download the file from S3 to the local filesystem.""" 
+        user_id = os.getenv('USER')
+        filepath_ = f"/tmp/{user_id}"
+        self.client.download(self.path, filepath_)
+        logger.debug(f"File {self.path} downloaded from S3 to {filepath_}")
 
 
 class FSStore(Store):
