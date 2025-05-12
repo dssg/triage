@@ -11,7 +11,7 @@ import matplotlib
 import numpy as np
 import pandas as pd
 import testing.postgresql
-from descriptors import cachedproperty
+from functools import cached_property
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -518,15 +518,15 @@ class CallSpy:
         self.calls = []
         self.signature = signature
 
-    @cachedproperty
+    @cached_property
     def target_path(self):
         return self.signature.split(".")
 
-    @cachedproperty
+    @cached_property
     def target_name(self):
         return self.target_path[-1]
 
-    @cachedproperty
+    @cached_property
     def target_base(self):
         # walk target path until can no longer import it as a module path
         for index in range(len(self.target_path)):
@@ -546,11 +546,11 @@ class CallSpy:
 
         raise ValueError(f"cannot patch signature {self.signature!r}")
 
-    @cachedproperty
+    @cached_property
     def target_object(self):
         return getattr(self.target_base, self.target_name)
 
-    @cachedproperty
+    @cached_property
     def patch(self):
         return mock.patch.object(self.target_base, self.target_name, new=self)
 
