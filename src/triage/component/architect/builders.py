@@ -7,7 +7,6 @@ logger = verboselogs.VerboseLogger(__name__)
 import pandas as pd
 import numpy as np
 import polars as pl
-import pyarrow
 import time
 
 from sqlalchemy.orm import sessionmaker
@@ -21,7 +20,9 @@ from triage.component.architect.utils import (
     check_rows_in_files,
     check_entity_ids_in_files,
     remove_entity_id_and_knowledge_dates,
-    generate_list_of_files_to_remove
+    generate_list_of_files_to_remove,
+    generate_gzip,
+    remove_unnecessary_files,
 )
 from triage.component.catwalk.storage import S3Store
 
@@ -555,7 +556,7 @@ class MatrixBuilder(BuilderBase):
         matrix_store.save_tmp_csv(output_, path_, matrix_uuid, "_label.csv")
 
         # add label file to filenames
-        filenames.append(path_ + "/" + matrix_uuid + "_label.csv")
+        filenames.append(f"{path_}/{matrix_uuid}_label.csv")
         
         # check if the number of rows among all features and label -if any- files are the same
         try: 
@@ -587,13 +588,17 @@ class MatrixBuilder(BuilderBase):
 
         # save joined csvs
         cmd_line = 'paste ' + files + ' -d "," > ' + path_ + "/" + matrix_uuid + ".csv"
-        logger.debug(f"paste CSVs columnwise for matrix {matrix_uuid} cmd line: {cmd_line}")
-        subprocess.run(cmd_line, shell=True)
+        logger.debug(f"About to paste CSVs columnwise for matrix {matrix_uuid} cmd line: {cmd_line}")
+        try:
+            subprocess.run(cmd_line, shell=True, check=True)
+            logger.debug(f"CSV files {files} pasted into {path_}/{matrix_uuid}.csv")
+        except subprocess.CalledProcessError as e:      
+            logger.error(f"Error pasting CSV files {files}: {e}")
         
         logger.debug(f"about to load csvmatrix with uuid {matrix_uuid} as polars df")
         start = time.time()
         # load as DF with polars
-        filename_ = path_ + '/' + matrix_uuid + '.csv'
+        filename_ = f'{path_}/{matrix_uuid}.csv'
         #df = pd.read_csv(filename_, parse_dates=["as_of_date"])
         df_pl = pl.read_csv(filename_, infer_schema_length=0).with_columns(pl.all().exclude(
             ['entity_id', 'as_of_date']).cast(pl.Float32, strict=False))
@@ -635,9 +640,8 @@ class MatrixBuilder(BuilderBase):
         df.set_index(["entity_id", "as_of_date"], inplace=True)
         logger.debug(f"df data types: {df.dtypes}")
         logger.debug(f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
-
-        logger.debug(f"Generating gzip from full matrix csv")
-        self.generate_gzip(path_, matrix_uuid)
+        # generating gzip file from csv
+        generate_gzip(path_, matrix_uuid)
 
         # if matrix store is S3 
         if isinstance(matrix_store.matrix_base_store, S3Store):
@@ -647,56 +651,9 @@ class MatrixBuilder(BuilderBase):
         logger.debug(f"removing csvs files for matrix {matrix_uuid}")
         # addinig _sorted and _fixed files to list of files to rm 
         rm_filenames = generate_list_of_files_to_remove(filenames, matrix_uuid)
-        self.remove_unnecessary_files(rm_filenames, path_, matrix_uuid)
+        remove_unnecessary_files(rm_filenames, path_, matrix_uuid)
 
         return df, labels_series
 
-    
-    def generate_gzip(self, path, matrix_uuid):
-        """
-        Generates a gzip from the csv file with all the features (doesn't include the label)
-
-        Args:
-            path (string): _description_
-            matrix_uuid (string): _description_
-        """
-        cmd_line = "gzip -k " + path + "/" + matrix_uuid + ".csv"
-        logger.debug(f"Generating gzip of full matrix on cmd line with command: {cmd_line}")
-        subprocess.run(cmd_line, shell=True)
-        logger.debug(f"Full matrix {matrix_uuid} compressed and saved!")
-
-
-    def remove_unnecessary_files(self, filenames, path_, matrix_uuid):
-        """
-        Removes the csvs generated for each feature, the label csv file,
-        and the csv with all the features and label stitched togheter. 
-        The csv with all merged is being deleted while generating the gzip.
-
-        Args:
-            filenames (list): list of filenames to remove from disk
-            path_ (string): Path 
-            matrix_uuid (string): ID of the matrix
-        """
-        # deleting features and label csvs
-        for filename_ in filenames:
-           cmd_line = 'rm ' + filename_ 
-           logger.debug(f"removing files with command {cmd_line}")
-           subprocess.run(cmd_line, shell=True)
-
-        # deleting the merged csv
-        cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.csv'
-        logger.debug(f"removing stitched csv with command {cmd_line}")
-        subprocess.run(cmd_line, shell=True)
-        
-        # deleting the compressed CSV when the project path is S3
-        if path_.startswith('/tmp'):
-            cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.csv.gz'
-            logger.debug(f"removing compressed csv with command {cmd_line}")
-            subprocess.run(cmd_line, shell=True)
-            
-            cmd_line = 'rm ' + path_ + "/" + matrix_uuid + '.yaml'
-            logger.debug(f"removing matrix metadata file with command {cmd_line}")
-            subprocess.run(cmd_line, shell=True)
-            
         
         
