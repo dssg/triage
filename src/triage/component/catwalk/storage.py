@@ -152,8 +152,11 @@ class S3Store(Store):
         return self.S3FileWrapper(s3file)
     
     def download(self, *args, **kwargs):
-        self.client.download(self.path, "/tmp/")
-        logger.debug(f"File {self.path} downloaded from S3 to /tmp/")
+        """Download the file from S3 to the local filesystem.""" 
+        user_id = os.getenv('USER')
+        filepath_ = f"/tmp/{user_id}"
+        self.client.download(self.path, filepath_)
+        logger.debug(f"File {self.path} downloaded from S3 to {filepath_}")
 
 
 class FSStore(Store):
@@ -614,8 +617,9 @@ class CSVMatrixStore(MatrixStore):
             path_ = Path("/" + "/".join(parts_path))
         # if it is a S3 storage type
         else:
-            # path_ = Path("/tmp/triage_output/matrices")
-            path_ = Path("/tmp")
+            user_id = os.getenv('USER')
+            path_ = Path(f"/tmp/{user_id}")
+            # create directory if it doesn't exist
             os.makedirs(path_, exist_ok=True)
         
         logger.debug(f"get storage directory path: {path_}")
@@ -636,8 +640,9 @@ class CSVMatrixStore(MatrixStore):
             logging.info("file in S3")
             self.matrix_base_store.download()
             file_in_tmp = True
+            user_id = os.getenv('USER')
             filename = self.matrix_base_store.path.split("/")[-1]
-            filename_ = f"/tmp/{filename}"
+            filename_ = f"/tmp/{user_id}/{filename}"
         else:
             logging.info("file in FS")
             filename_ = str(self.matrix_base_store.path) 
@@ -647,10 +652,6 @@ class CSVMatrixStore(MatrixStore):
         df_pl = pl.read_csv(filename_, infer_schema_length=0).with_columns(pl.all().exclude(
             ['entity_id', 'as_of_date']).cast(pl.Float32, strict=False))
         end = time.time()
-
-        # delete downlowded file from S3 
-        # if file_in_tmp:
-        #     subprocess.run(f"rm {filename_}", shell=True)
 
         logger.debug(f"time for loading matrix as polar df (sec): {(end-start)/60}")
 
@@ -677,6 +678,15 @@ class CSVMatrixStore(MatrixStore):
         logger.debug(f"df data types: {df.dtypes}")
         logger.spam(f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
 
+        # if the file was downloaded from S3 we delete it! 
+        if file_in_tmp:
+            logger.debug(f"About to delete downloaded file from S3 {filename_}")
+            try:
+                os.remove(filename_)
+                logger.debug(f"Downloaded file from S3 {filename_} deleted")
+            except OSError as e:
+                logger.debug(f"Unexpected error deleting download file from S3 in {filename_}: {e}")
+
         return df
 
     def _load_as_df(self):
@@ -702,7 +712,7 @@ class CSVMatrixStore(MatrixStore):
 
     def save_tmp_csv(self, output, path_, matrix_uuid, suffix):
         logger.debug(f"saving temporal csv for matrix {matrix_uuid + suffix} ")
-        with open(path_ + "/" + matrix_uuid + suffix, "wb") as fd:  
+        with open(f"{path_}/{matrix_uuid}{suffix}", "wb") as fd:  
             return fd.write(output)
 
 
