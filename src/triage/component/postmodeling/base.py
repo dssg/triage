@@ -251,13 +251,12 @@ class ModelAnalyzer:
                 subset_hash,
                 metric, 
                 parameter,
-                split_part("parameter", '_', 1)::int as threshold,
-                split_part("parameter", '_', 2) as threshold_type,
                 stochastic_value as metric_value,
                 num_labeled_above_threshold,               
                 num_positive_labels
             from test_results.evaluations
             {where_clause}
+            order by metric, num_labeled_above_threshold
         """
 
         evaluations = pd.read_sql(q, self.engine)
@@ -1609,7 +1608,7 @@ class ModelComparator:
         return results
                 
     
-    def compare_metrics(self, metrics=None, matrix_uuid=None, subset_hash=None, plot=False, **kwargs):
+    def compare_metrics(self, metrics=None, matrix_uuid=None, subset_hash=None, display=True, **kwargs):
         """
             Compare the metrics for the given train_end_times for all model groups considered (pairwise)
             
@@ -1622,10 +1621,6 @@ class ModelComparator:
         """
         evals = list()
         columns = ['metric', 'parameter', 'metric_value']
-
-        # TODO: We can plot the recall curves
-        if plot:
-            pass 
         
         evals = None
         for model_id, ma in self.models.items():        
@@ -1636,12 +1631,19 @@ class ModelComparator:
             else:
                 evals = evals.merge(df, how='inner', on=['metric', 'parameter'])
             
-        evals.set_index(['metric', 'parameter'], inplace=True)
+        # evals.set_index(['metric', 'threshold', 'threshold_type'], inplace=True)
         # evals['diff'] = evals[self.model_ids[0]] - evals[self.model_ids[1]]
+        evals_pct = evals[evals.parameter.str.contains('pct')]
+        evals_abs = evals[evals.parameter.str.contains('abs')]
         
-        evals = evals.style.highlight_max(axis=1, color='darkgreen', props='color: white; font-weight: bold; background-color: #4CAF50')
+        evals_pct.set_index(['metric', 'parameter'], inplace=True)
+        evals_abs.set_index(['metric', 'parameter'], inplace=True)
         
-        return evals
+        if display:
+            return evals_pct.style.highlight_max(axis=1, color='darkgreen', props='color: white; font-weight: bold; background-color: #4CAF50'), \
+            evals_abs.style.highlight_max(axis=1, color='darkgreen', props='color: white; font-weight: bold; background-color: #4CAF50')
+        
+        return evals_pct, evals_abs
         
         
     def compare_topk(self, threshold_type, threshold, matrix_uuid=None, plot=True, **kwargs):
