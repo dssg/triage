@@ -251,6 +251,8 @@ class ModelAnalyzer:
                 subset_hash,
                 metric, 
                 parameter,
+                split_part("parameter", '_', 1)::int as threshold,
+                split_part("parameter", '_', 2) as threshold_type,
                 stochastic_value as metric_value,
                 num_labeled_above_threshold,               
                 num_positive_labels
