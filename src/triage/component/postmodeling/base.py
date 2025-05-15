@@ -14,7 +14,7 @@ from descriptors import cachedproperty
 from sqlalchemy import create_engine
 from sklearn.calibration import calibration_curve
 from sklearn import metrics
-from scipy.stats import spearmanr
+from scipy.stats import spearmanr, kendalltau
 
 from triage.component.catwalk.storage import ProjectStorage
 from triage.component.postmodeling.error_analysis import generate_error_analysis, output_all_analysis
@@ -102,6 +102,9 @@ class ModelAnalyzer:
     def train_label_timespan(self):
         return self.metadata['training_label_timespan']
 
+    def get_model_description(self):
+        pass
+    
     def get_predictions(self, matrix_uuid=None, fetch_null_labels=True, subset_hash=None, plot_distribution=False, **kwargs):
         """ Fetch the predictions for the model from the DB
             Args:
@@ -1537,10 +1540,72 @@ class ModelComparator:
             self.models[model_id] = ModelAnalyzer(model_id, engine)
             
         self.engine = engine
+            
+    def compare_ranking(self, plot=True, k_values=None):
+        """Compare rankings of the two models
         
-    def compare_ranking(self):
-        """Compare rankings of the two models - rank_corr"""
-        pass
+        We calculate: spearman's corr, kendall tau, and at varying thresholds overlap and jaccard similarity
+        
+        """
+        
+        #NOTE: hardcoding k values for now
+        if k_values is None:
+            k_values = np.arange(100, 501, 100)
+        
+        ranks = dict()
+        for model_id, ma in self.models.items():
+            ranks[model_id] = ma.get_predictions()['rank_abs_no_ties']
+            
+        
+        pairs = list(itertools.combinations(self.model_ids, 2))
+        
+        # rank correlation
+        results = dict()
+        results['spearman'] = pd.DataFrame(np.full((len(self.model_ids), len(self.model_ids)), np.nan), index=self.model_ids, columns=self.model_ids)
+        results['kendall'] = pd.DataFrame(np.full((len(self.model_ids), len(self.model_ids)), np.nan), index=self.model_ids, columns=self.model_ids)
+        
+        for k in k_values:
+            results[f'overlap@{k}'] = pd.DataFrame(np.full((len(self.model_ids), len(self.model_ids)), np.nan), index=self.model_ids, columns=self.model_ids)
+            results[f'jaccard@{k}'] = pd.DataFrame(np.full((len(self.model_ids), len(self.model_ids)), np.nan), index=self.model_ids, columns=self.model_ids)
+        
+        for pair in pairs:
+            pair = sorted(pair)
+                        
+            # only returning the corr coefficient, not the p-value
+            results['spearman'].loc[pair[1], pair[0]] = spearmanr(ranks[pair[0]], ranks[pair[1]])[0]
+            results['kendall'] .loc[pair[1], pair[0]] = kendalltau(ranks[pair[0]], ranks[pair[1]])[0]
+            
+            for k in k_values:
+                # calculating jaccard similarity and overlap
+                entities_1 = set(ranks[pair[0]].reset_index().entity_id.iloc[:k])
+                entities_2 = set(ranks[pair[1]].reset_index().entity_id.iloc[:k])
+
+                inter = entities_1.intersection(entities_2)
+                un = entities_1.union(entities_2)    
+                
+                results[f'jaccard@{k}'].loc[pair[1], pair[0]] = len(inter)/len(un)
+
+                # If the list sizes are not equal, using the smallest list size to calculate simple overlap
+                results[f'overlap@{k}'].loc[pair[1], pair[0]] = len(inter)/ min(len(entities_1), len(entities_2))
+        
+        if plot:
+            
+            fig, axes = plt.subplots(1, 2, figsize=(2*3 + 0.3, 3))
+            
+            plot_pairwise_comparison_heatmap(df=results['spearman'], metric_name='spearman', ax=axes[0])
+            plot_pairwise_comparison_heatmap(df=results['kendall'], metric_name='kendall', ax=axes[1])
+            
+            # 2 x k grid -- one row for jaccard and one for overlap
+            fig, axes = plt.subplots(2, len(k_values), figsize=(len(k_values)*3 + 0.3, 3*2))
+            for i, k in enumerate(k_values):
+                plot_pairwise_comparison_heatmap(df=results[f'overlap@{k}'], metric_name=f'overlap@{k}', ax=axes[0, i])
+                plot_pairwise_comparison_heatmap(df=results[f'jaccard@{k}'], metric_name=f'jaccard@{k}', ax=axes[1, i])
+            
+            plt.tight_layout()
+            plt.show()
+            
+        return results
+                
     
     def compare_metrics(self, metrics=None, matrix_uuid=None, subset_hash=None, plot=False, **kwargs):
         """
@@ -1646,7 +1711,7 @@ class ModelComparator:
             # )[0]
         
         if plot:
-            fig, axes = plt.subplots(1, len(metrics), figsize=(len(metrics) + 0.3, 3))   
+            fig, axes = plt.subplots(1, len(metrics), figsize=(len(metrics)*3 + 0.3, 3))   
             
             for i, m in enumerate(metrics):
                 plot_pairwise_comparison_heatmap(df=results[m], metric_name=m, ax=axes[i])
