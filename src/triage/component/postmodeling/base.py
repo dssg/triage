@@ -103,7 +103,8 @@ class ModelAnalyzer:
         return self.metadata['training_label_timespan']
 
     def get_model_description(self):
-        pass
+        desc = f'{self.model_type.split(".")[-1]}: {self.hyperparameters}'
+        return desc
     
     def get_predictions(self, matrix_uuid=None, fetch_null_labels=True, subset_hash=None, plot_distribution=False, **kwargs):
         """ Fetch the predictions for the model from the DB
@@ -1541,6 +1542,12 @@ class ModelComparator:
             self.models[model_id] = ModelAnalyzer(model_id, engine)
             
         self.engine = engine
+        self.models_summary()
+            
+    def models_summary(self):
+        """ Print the model summary for all the models we are comparing"""
+        for model_id, ma in self.models.items():
+            print(f"{model_id} -- {ma.get_model_description()} ")
             
     def compare_ranking(self, plot=True, k_values=None):
         """Compare rankings of the two models
@@ -1796,4 +1803,5 @@ class ModelComparator:
      
 
 class ModelGroupComparator:
-    pass
+    def __init__(self, model_group_ids):
+        pass
