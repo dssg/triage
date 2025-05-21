@@ -1800,7 +1800,8 @@ class ModelComparator:
         """ Comparing the score distributions of the two models"""
         pass
     
-     
+    def compare_equity(self):
+        pass 
 
 class ModelGroupComparator:
     def __init__(self, model_group_ids):
