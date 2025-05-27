@@ -207,6 +207,44 @@ class ModelAnalyzer:
 
     # TODO: Write a bias function 
     # This could learn from modeling report bias function
+    def get_bias_metrics(self, parameter, metric, subset_hash='', attribute_name=None, attribute_value=None, group_size_threshold=0.01):
+        """ Fetch the bias metrics for the model
+        
+            Args:
+                parameter(str): The parameter for cut off
+        """
+        
+        q = f'''
+            SELECT 
+            attribute_name,
+            attribute_value,
+            group_label_pos,
+            group_size,
+            group_size_pct,
+            prev,
+            {metric}, 
+            {metric}_disparity,
+            tpr_ref_group_value 
+            FROM test_results.aequitas a
+            where model_id = {self.model_id}
+            and subset_hash = '{subset_hash}'
+            and "parameter" = '{parameter}'
+            and tie_breaker = 'worst'
+            and group_size::float / total_entities > {group_size_threshold}
+        '''
+        
+        if attribute_name is not None:
+            q += f" and attribute_name='{attribute_name}'"
+        if attribute_value is not None:
+            q += f" and attribute_value='{attribute_value}'"
+                
+        df = pd.read_sql(q, self.engine)
+
+        if df.empty:
+            logging.error(f'No bias metrcis were found for the attributes provided. Returning empty dataframe!')
+            
+        return df
+
 
     def get_evaluations(self, metrics=None, matrix_uuid=None, subset_hash=None, plot_prk=False, **kwargs):
         ''' 
@@ -662,7 +700,8 @@ class ModelAnalyzer:
         error_analysis_results = generate_error_analysis(model_id, connection, project_path=project_path)
         #TODO do we want to 
         return error_analysis_results
-
+    
+ 
     
     # TODO: make this more general purpose
     def plot_bias_threshold_curve(self, attribute_name, attribute_value, bias_metric, ax):
