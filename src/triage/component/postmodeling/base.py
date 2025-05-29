@@ -26,7 +26,8 @@ from triage.component.postmodeling.add_predictions import add_predictions
 
 from triage.component.postmodeling.utils.plot_functions import (
     plot_score_distribution, plot_score_distribution_by_label, 
-    plot_precision_recall_at_k, plot_feature_importance, plot_pairwise_comparison_heatmap
+    plot_precision_recall_at_k, plot_feature_importance, plot_pairwise_comparison_heatmap,
+    plot_bias_metrics_facet_grid
 )
 id_columns = ['entity_id', 'as_of_date']
 
@@ -208,7 +209,7 @@ class ModelAnalyzer:
 
     # TODO: Write a bias function 
     # This could learn from modeling report bias function
-    def get_bias_metrics(self, parameter, metric, subset_hash='', attribute_name=None, attribute_value=None, group_size_threshold=0.01, plot=True):
+    def get_bias_metrics(self, parameter, metric, subset_hash='', attribute_name=None, attribute_value=None, group_size_threshold=0.01, plot=True, tolerance=0.2):
         """ Fetch the bias metrics for the model
         
             Args:
@@ -217,11 +218,12 @@ class ModelAnalyzer:
         
         q = f'''
             SELECT 
+            model_id,
             attribute_name,
             attribute_value,
             group_label_pos,
             group_size,
-            group_size_pct,
+            group_size::float / total_entities AS group_size_pct,
             prev,
             {metric}, 
             {metric}_disparity,
@@ -232,6 +234,7 @@ class ModelAnalyzer:
             and "parameter" = '{parameter}'
             and tie_breaker = 'worst'
             and group_size::float / total_entities > {group_size_threshold}
+            and group_label_pos > 0 -- only fetchig groups with at least one positive label
         '''
         
         if attribute_name is not None:
@@ -242,33 +245,15 @@ class ModelAnalyzer:
         df = pd.read_sql(q, self.engine)
 
         if df.empty:
-            logging.error(f'No bias metrcis were found for the attributes provided. Returning empty dataframe!')
-            
+            logging.error(f'No bias metrcis were found for the provided attributes or attributes have no positive labels or too small group size. Returning empty dataframe!')
             return df
         
         if plot:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                g = sns.FacetGrid(
-                    data=df[df.group_label_pos > 0], 
-                    col='attribute_name',
-                    sharex=True,
-                    sharey=False
-                )
-                
-                g.map(sns.boxplot, 'tpr_disparity', 'attribute_value')
-                g.map(plt.axvline, x=1, linestyle='--', alpha=0.1, color='k')
-                g.map(plt.axvline, x=0.8, linestyle=':', alpha=0.05, color='k')
-                g.map(plt.axvline, x=1.2, linestyle=':', alpha=0.05, color='k')
-                g.set(xlim=(0.1, 1.9))
-                g.set(xlabel=f'{metric.upper()} disparity')
-                g.set(ylabel='')
-                
-                # Updating the subplot titles
-                for ax, title_key in zip(g.axes.flat, g.col_names):
-                    ax.set_title(f'{title_key.capitalize()}')
-                
-                plt.tight_layout()
+            plot_bias_metrics_facet_grid(
+                df=df,
+                tolerance=tolerance,
+                metric=metric
+            )
             
         return df
 
@@ -1866,8 +1851,53 @@ class ModelComparator:
         """ Comparing the score distributions of the two models"""
         pass
     
-    def compare_equity(self):
-        pass 
+    def compare_equity(self, parameter, metric, subset_hash='', attribute_name=None, attribute_value=None, group_size_threshold=0.01, plot=True):
+        """ Compare the equity of the two models
+        
+        Args:
+            parameter (str): The parameter to use in the comparison, e.g., '100_abs', '1_pct', etc.
+            metric (str): The metric to use in the comparison, e.g., 'tpr', 'ppv', etc. 
+                If you say 'tpr', it will use tpr_ratio between groups to calculate disparity
+            subset_hash (str, optional): The subset hash to use in the comparison. Defaults to ''.
+            attribute_name (str, optional): The attribute name to use in the comparison. Defaults to None. 
+                If none, all attributes are considered.
+            attribute_value (str, optional): The attribute value to use in the comparison. Defaults to None. 
+                If none, all values for the attribute are considered.
+            group_size_threshold (float, optional): The threshold for the group size. Defaults to 0.01. 
+                The group size threshold is the minimum percentage of the total population that a group should have to be considered in the comparison.
+            plot (bool, optional): Whether to plot the results. Defaults to True.
+        """
+        
+        bias_metrics = pd.DataFrame()
+        for i, (_, ma) in enumerate(self.models.items()):
+            df = ma.get_bias_metrics(
+                parameter=parameter, 
+                metric=metric, 
+                subset_hash=subset_hash, 
+                attribute_name=attribute_name, 
+                attribute_value=attribute_value, 
+                group_size_threshold=group_size_threshold,
+                plot=False
+            )
+            
+            if i == 0:
+                bias_metrics = df
+            else:
+                bias_metrics = pd.concat([bias_metrics, df], axis=0, ignore_index=True)
+            
+        if plot:
+            plot_bias_metrics_facet_grid(
+                df=bias_metrics, 
+                tolerance=0.1, 
+                metric=metric, 
+                row='model_id'
+            )
+        
+        
+        
+        return bias_metrics
+        
+         
 
 class ModelGroupComparator:
     def __init__(self, model_group_ids):

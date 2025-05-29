@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import warnings
 
 from triage.component.catwalk.utils import sort_predictions_and_labels
 
@@ -221,5 +222,35 @@ def plot_pairwise_comparison_heatmap(df, metric_name, ax=None):
     
     return ax 
         
+        
+def plot_bias_metrics_facet_grid(df, tolerance=0.1, metric='tpr', **kwargs):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        g = sns.FacetGrid(
+            data=df, 
+            col='attribute_name',
+            sharex=True,
+            sharey=False,
+            **kwargs
+        )
+        
+        g.map(sns.boxplot, 'tpr_disparity', 'attribute_value')
+        g.map(plt.axvline, x=1, linestyle='--', alpha=0.1, color='k')
+        g.map(plt.axvline, x=1 - tolerance, linestyle=':', alpha=0.05, color='k')
+        g.map(plt.axvline, x=1 + tolerance, linestyle=':', alpha=0.05, color='k')
+        g.set(xlim=(0.1, df[f'{metric}_disparity'].max() + 0.1))
+        g.set(xlabel=f'{metric.upper()} disparity')
+        g.set(ylabel='')
+        
+        for i, ax in enumerate(g.axes):
+            row_name = g.row_names[i] if g.row_names else ''
+            for j, col in enumerate(g.col_names):
+                title = f'{row_name} | {col.capitalize()}' if row_name else f'{col.capitalize()}'
+                ax[j].set_title(title, fontsize=10)
+           
+        g.figure.set_dpi(200)
+        g.figure.set_size_inches(3.1 * len(g.col_names), 3)
+        
+        plt.tight_layout()
     
     
