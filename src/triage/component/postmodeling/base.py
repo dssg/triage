@@ -5,6 +5,7 @@ import logging
 import seaborn as sns
 import matplotlib.table as tab
 import matplotlib.pyplot as plt
+import warnings
 #from tabulate import tabulate
 
 from IPython.display import display
@@ -207,7 +208,7 @@ class ModelAnalyzer:
 
     # TODO: Write a bias function 
     # This could learn from modeling report bias function
-    def get_bias_metrics(self, parameter, metric, subset_hash='', attribute_name=None, attribute_value=None, group_size_threshold=0.01):
+    def get_bias_metrics(self, parameter, metric, subset_hash='', attribute_name=None, attribute_value=None, group_size_threshold=0.01, plot=True):
         """ Fetch the bias metrics for the model
         
             Args:
@@ -242,6 +243,28 @@ class ModelAnalyzer:
 
         if df.empty:
             logging.error(f'No bias metrcis were found for the attributes provided. Returning empty dataframe!')
+            
+            return df
+        
+        if plot:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                g = sns.FacetGrid(
+                    data=df[df.group_label_pos > 0], 
+                    col='attribute_name',
+                    sharex=True,
+                    sharey=False
+                )
+                
+                g.map(sns.boxplot, 'tpr_disparity', 'attribute_value')
+                g.map(plt.axvline, x=1, linestyle='--', alpha=0.1, color='k')
+                g.map(plt.axvline, x=0.8, linestyle=':', alpha=0.05, color='k')
+                g.map(plt.axvline, x=1.2, linestyle=':', alpha=0.05, color='k')
+                g.set(xlim=(0.1, 1.9))
+                g.set(xlabel=f'{metric.upper()} disparity')
+                g.set(ylabel='')
+                
+                plt.tight_layout()
             
         return df
 
