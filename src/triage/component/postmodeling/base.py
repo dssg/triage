@@ -264,6 +264,10 @@ class ModelAnalyzer:
                 g.set(xlabel=f'{metric.upper()} disparity')
                 g.set(ylabel='')
                 
+                # Updating the subplot titles
+                for ax, title_key in zip(g.axes.flat, g.col_names):
+                    ax.set_title(f'{title_key.capitalize()}')
+                
                 plt.tight_layout()
             
         return df
