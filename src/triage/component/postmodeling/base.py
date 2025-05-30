@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 import warnings
 #from tabulate import tabulate
 
+from aequitas.plot.bubble_disparity_chart import plot_disparity_bubble_chart
+import altair as alt
+
 from IPython.display import display
 import itertools
 
@@ -221,6 +224,7 @@ class ModelAnalyzer:
             model_id,
             attribute_name,
             attribute_value,
+            total_entities,
             group_label_pos,
             group_size,
             group_size::float / total_entities AS group_size_pct,
@@ -246,16 +250,37 @@ class ModelAnalyzer:
 
         if df.empty:
             logging.error(f'No bias metrcis were found for the provided attributes or attributes have no positive labels or too small group size. Returning empty dataframe!')
-            return df
+            return df, None
         
+        plots = None
         if plot:
-            plot_bias_metrics_facet_grid(
-                df=df,
-                tolerance=tolerance,
-                metric=metric
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                if attribute_name is not None: 
+                    plots = plot_disparity_bubble_chart(
+                        disparity_df=df[df[metric] > 0], # Only displaying TPR values that are greater than 0
+                        metrics_list=[metric],
+                        attribute=attribute_name
+                    )
+                    plots.title = f'Disparities on {attribute_name.capitalize()}, Model {self.model_id}'
+                    # The above functtion returns a altair chart
+                    plots.display()
+                
+                else:
+                    attrs = df.attribute_name.unique()
+                    plots = list()
+                    for attr in attrs:
+                        ax = plot_disparity_bubble_chart(
+                            disparity_df=df[df[metric] > 0], # Only displaying TPR values that are greater than 0
+                            metrics_list=[metric],
+                            attribute=attr
+                        )
+                        ax.title = f'Disparities on {attr.capitalize()}, Model {self.model_id}'
+                        plots.append(ax)
+                        
+                        ax.display()
             
-        return df
+        return df, plots
 
 
     def get_evaluations(self, metrics=None, matrix_uuid=None, subset_hash=None, plot_prk=False, **kwargs):
@@ -1599,6 +1624,9 @@ class ModelComparator:
         """ Print the model summary for all the models we are comparing"""
         for model_id, ma in self.models.items():
             print(f"{model_id} -- {ma.get_model_description()} ")
+    
+    # TODO: Recall curves vs Precision curves
+    
             
     def compare_ranking(self, plot=True, k_values=None):
         """Compare rankings of the two models
@@ -1870,7 +1898,7 @@ class ModelComparator:
         
         bias_metrics = pd.DataFrame()
         for i, (_, ma) in enumerate(self.models.items()):
-            df = ma.get_bias_metrics(
+            df, _ = ma.get_bias_metrics(
                 parameter=parameter, 
                 metric=metric, 
                 subset_hash=subset_hash, 
@@ -1884,17 +1912,25 @@ class ModelComparator:
                 bias_metrics = df
             else:
                 bias_metrics = pd.concat([bias_metrics, df], axis=0, ignore_index=True)
-            
+        
         if plot:
-            plot_bias_metrics_facet_grid(
-                df=bias_metrics, 
-                tolerance=0.1, 
-                metric=metric, 
-                row='model_id'
-            )
-        
-        
-        
+
+            attr_grp = bias_metrics.groupby('attribute_name')
+            
+            for attr, attrdf in attr_grp:
+                mod_grp = attrdf.groupby('model_id')
+                for model_id, mdf in mod_grp: 
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        ax = plot_disparity_bubble_chart(
+                            disparity_df=mdf[mdf[metric] > 0], # Only displaying TPR values that are greater than 0
+                            metrics_list=[metric],
+                            attribute=attr
+                        )
+                        
+                        ax.title = f'Disparities on {attr.capitalize()}, Model {model_id}'
+                        ax.display()
+                    
         return bias_metrics
         
          
