@@ -11,7 +11,7 @@ import warnings
 from aequitas.plot.bubble_disparity_chart import plot_disparity_bubble_chart
 import altair as alt
 
-from IPython.display import display
+from IPython.display import display, HTML
 import itertools
 
 from descriptors import cachedproperty
@@ -32,6 +32,9 @@ from triage.component.postmodeling.utils.plot_functions import (
     plot_precision_recall_at_k, plot_feature_importance, plot_pairwise_comparison_heatmap,
     plot_bias_metrics_facet_grid
 )
+
+from triage.component.postmodeling.html_report_builder import ReportBuilder
+
 id_columns = ['entity_id', 'as_of_date']
 
 class ModelAnalyzer:
@@ -1618,12 +1621,21 @@ class ModelComparator:
             self.models[model_id] = ModelAnalyzer(model_id, engine)
             
         self.engine = engine
-        self.models_summary()
+        self.describe_models()
             
-    def models_summary(self):
+    def describe_models(self):
         """ Print the model summary for all the models we are comparing"""
+        mod = list()
         for model_id, ma in self.models.items():
-            print(f"{model_id} -- {ma.get_model_description()} ")
+            d = dict()
+            d['ID'] = model_id
+            d['Type'] = ma.model_type.split(".")[-1]
+            d['Hyperparams'] = str(ma.hyperparameters)
+            mod.append(d)
+        df = pd.DataFrame(mod)
+        display(HTML(df.to_html(escape=False, index=False)))
+        
+        return HTML(df.to_html(escape=False, index=False))
     
     # TODO: Recall curves vs Precision curves
     
@@ -1933,6 +1945,26 @@ class ModelComparator:
                     
         return bias_metrics
         
+    def build_report(self):
+        report = ReportBuilder()
+        report.add_html(self.describe_models())
+        styled_pct, styled_abs = self.compare_metrics(display=False)
+        # report.add_styled_dataframe(styled_pct, title="Percentage Threshold Metrics")
+        report.add_styled_dataframe(styled_abs, title="Absolute Threshold Metrics")
+
+        results = self.compare_ranking(plot=False)
+        report.add_dataframe(results['spearman'], title="Spearman Correlation")
+        report.add_dataframe(results['kendall'], title="Kendall Tau Correlation")
+
+        # # Save plots
+        # fig, axes = plt.subplots(1, 2)
+        # plot_pairwise_comparison_heatmap(results['spearman'], 'Spearman', axes[0])
+        # plot_pairwise_comparison_heatmap(results['kendall'], 'Kendall', axes[1])
+        # report.add_plot(fig, title="Ranking Correlation Heatmaps")
+
+        # Finally write the report
+        report.write()
+                
          
 
 class ModelGroupComparator:
