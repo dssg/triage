@@ -569,6 +569,9 @@ class ModelEvaluator:
             if (protected_df.index.shape != labels.index.shape) or (
                 not protected_df.index.symmetric_difference(labels.index).empty
             ):
+                logging.debug(f'protected_df index shape: {protected_df.index.shape}')
+                logging.debug(f'labels index shape: {labels.index.shape}')
+                logging.debug(f'symmetric diff: {protected_df.index.symmetric_difference(labels.index)}') 
                 raise ValueError("Mismatch between protected_df and labels indices")
 
         df_index = labels.index
