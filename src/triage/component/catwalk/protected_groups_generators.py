@@ -83,7 +83,7 @@ class ProtectedGroupsGenerator:
                     continue
 
             logger.debug(
-                "Generating protected groups for as of date {as_of_date} "
+                f"Generating protected groups for as of date {as_of_date} "
             )
             self.generate(
                 start_date=as_of_date,
