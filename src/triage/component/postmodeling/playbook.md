@@ -57,8 +57,7 @@ Ingredients: You are going to need:
 
 How to cook: To generate the predictions you 
 
-
-~~~
+```python
 from triage.component.postmodeling.add_predictions import add_predictions
 
 # in case your matrices and trained models are stored in S3 buckets
@@ -67,8 +66,9 @@ project_path = 's3://name-of-your-bucket/triage_output/'
 #project_path = "/mnt/data/path/to/your/project/triage_output/' 
 
  add_predictions(db_conn, 
-                 [51, 135],
+                 [51, 135],  #list of model groups, even if you only send 1 model group send it as a list
                  project_path, 
-                 ['f2614123549000597dbda80cb6e629b4', 'e367965c86a197dbf624245d5bea0203'])
-~~~
+                 ['f2614123549000597dbda80cb6e629b4', 'e367965c86a197dbf624245d5bea0203'] # list of experiment hashes associated with the model groups (optional!)
+                )
+```
 
