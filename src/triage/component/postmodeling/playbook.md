@@ -21,7 +21,7 @@ In order to get all this information, you will require to do different type of a
 
 Types of analyses in this playbook: 
 
-+ Crosstabs 
++ [Crosstabs](#crosstabs) 
 + Overlaps 
 + List characteristics 
 + Outcomes on label window 
@@ -34,13 +34,161 @@ Types of analyses in this playbook:
 
 This analysis gives you information about the differences in values of the features used in a particular model, is calcualed as the mean ratio between the top *k* entities and the rest of the list (by default). You can also do crosstabs between the top *k* lists of different models, as long as they share the features used as predictors. 
 
-To generate crosstabs on a particular model (`model_id`) you will need: 
+To generate crosstabs in a particular model (`model_id`) you will need: 
+
+🥕 **Ingredients:** 
 
 + A `model id`
-+ Predictions generated and stored in the database. In case you don't have them you can follow [this recipe]().
-+ A connection to the DB
++ Predictions generated and stored in the database. In case you don't have them you can follow [this recipe](#recipe-generating-predictions-and-storing-them-in-db-after-the-experiment-has-run-in-triage).
++ A connection to the DB. In case you don't have one you can follow [this recipe](#recipe-creating-a-database-engine)
 
+👩‍🍳 **How to cook:** 
 
+```python
+from triage.component.postmodeling.base import SingleModelAnalyzer
+
+# in case your matrices and trained models are stored in S3 buckets
+project_path = 's3://name-of-your-bucket/triage_output/'
+# in case your matrices and trained models are stored in local File System
+#project_path = "/mnt/data/path/to/your/project/triage_output/'
+thresholds = {'rank_abs_no_ties': 100} # top 100 abs 
+
+model_analyzer = SingleModelAnalyzer(model_id_, db_conn)
+model_analyzer.crosstabs_pos_vs_neg(project_path, thresholds)
+```
+
+🍲 **What to look for** 
+
+Triage should have created (or append rows) to the table `crosstabs` in your DB with the crosstabs for all the model ids in your model groups. You can retrieve the calculations with the following snippet of code: 
+
+```python
+q = f"""
+    select 
+        model_group_id,
+        model_id,
+        model_type, 
+        train_end_time, 
+        metric,
+        feature,
+        value 
+    from triage_metadata.experiment_models a 
+    join triage_metadata.models b
+        using (model_hash)
+    join test_results.crosstabs c
+        using (model_id)
+    where experiment_hash in ('{scorecard_simple_threshold_hash}', '{ml_experiments_hash}', '{new_model_all_features_hash}')
+    and model_group_id in ({model_group_scorecard_simple_threshold}, {model_group_original_rf}, {model_group_new_model_all_features})
+    and metric = 'mean_ratio'
+    limit 10
+"""
+
+pd.read_sql(q, db_conn)
+```
+Be aware that crosstabs generates the mean ratios for **all** the features used in your models, it can be overwhelming to go through all features to get relevant information that help you characterize your top *k* entities. We suggest to get the top 20 features with the biggest difference in values between the top *k* and the rest of the list (`mean_ratio` metric in the crosstabs table) and adjust as necessary. 
+
+$\rightarrow$ Bear in mind that some of mean ratios have infinity values (because the denominator was 0), if you don't want to retrieve those and focus only on the features that have the biggest difference you can add a condition when retrieving your results from the DB like the following snippet of code in which we are retrieving for each time split on a model group (each model id) the top 20 most different features ratios. 
+
+```python
+q = f"""
+   with most_diff as (
+        select 
+            model_group_id,
+            model_id,
+            model_type, 
+            train_end_time,
+            dense_rank() over (partition by model_id order by value desc) as rank_, 
+            metric,
+            feature,
+            value 
+        from triage_metadata.experiment_models a 
+        join triage_metadata.models b
+            using (model_hash)
+        join test_results.crosstabs c
+            using (model_id)
+        where experiment_hash in ('{scorecard_simple_threshold_hash}', '{ml_experiments_hash}', '{new_model_all_features_hash}')
+        and model_group_id in ({model_group_scorecard_simple_threshold}, {model_group_original_rf}, {model_group_new_model_all_features})
+        and metric = 'mean_ratio'
+        and value is not null
+        and value != 'infinity'
+    ), 
+
+    top_20 as (
+        select * 
+        from most_diff 
+        where rank_ < 21 
+        and metric in ('mean_ratio', 'mean_predicted_positive', 'mean_predicted_negative', 'support_predicted_positive') 
+    )
+
+    select 
+        model_group_id,
+        model_id, 
+        model_type,
+        train_end_time::date,
+        rank_, 
+        a.metric, 
+        feature,
+        a.value
+    from test_results.crosstabs a 
+    join top_20 b
+        using (model_id, feature) 
+"""
+
+crosstabs = pd.read_sql(q, db_conn)
+```
+
+#### Recipe: Creating a database engine 
+
+To communicate with the database you will need to create a database engine. To create it, you will need: 
+
+🥕 **Ingredients**
+
++ An SQLAlchemy URL **or** a credentials `yaml` file **or** environment variables whith the database credentials 
+
+👩‍🍳 **How to cook:** 
+
+```python 
+from triage.util.db import create_engine
+from sqlalchemy.engine.url import URL
+
+# if credentials are stored in a credentials yaml file
+db_url = URL(
+            'postgres',
+            host=dbconfig['host'],
+            username=dbconfig['user'],
+            database=dbconfig['db'],
+            password=dbconfig['pass'],
+            port=dbconfig['port'],
+        )
+
+# if credentials of the DB are stored in environment variables
+# db_url = URL(
+#     'postgres',
+#     host=os.getenv('PGHOST'),
+#     username=os.getenv('PGUSER'),
+#     database=os.getenv('PGDATABASE'),
+#     password=os.getenv('PGPASSWORD'),
+#     port=os.getenv('PGPORT'),
+# )
+
+db_conn = create_engine(db_url)
+```
+
+🍲 **What to look for** 
+
+You can verify that you created a succesfull connection to your DB with the following python code: 
+
+```python
+q = """
+    select run_hash, start_time
+    from triage_metadata.triage_runs
+    order by 2 desc
+    limit 1 
+    """
+
+pd.read_sql(q, db_conn)
+```
+
+If the code runs, your connection was succesfull!
 
 #### Recipe: Generating predictions and storing them in DB after the experiment has run in Triage
 
@@ -48,14 +196,14 @@ As a good practice, you don't save the predictons of your experiments until you 
 
 To generate predictions for a specified model (`model_id`) you can use the following recipe on a notebook (we suggest the one your are using for your postmodeling analysis 🙂): 
 
-Ingredients: You are going to need: 
+🥕 **Ingredients:** You are going to need: 
 
 + A database connection 
 + The model group that has the model id that you are interested on generating the predictions for (it will generate the predictions for all the timechops, that's why it requires the model group)
 + The model hash (is optional, but is better to put use it)
 + The project path from where your feature matrices and trained models are stored 
 
-How to cook: To generate the predictions you 
+👩‍🍳 **How to cook:** 
 
 ```python
 from triage.component.postmodeling.add_predictions import add_predictions
@@ -72,3 +220,19 @@ project_path = 's3://name-of-your-bucket/triage_output/'
                 )
 ```
 
+🍲 **What to look for** 
+
+Now you can go to your database and confirm that the predictions have been generated and saved in the database with the following sql script: 
+
+```sql
+select as_of_date, count(*)
+from triage_metadata.experiment_models a 
+join triage_metadata.models b
+    using (model_hash)
+join test_predictions.predictions c
+    using (model_id)
+where experiment_hash in ('f2614123549000597dbda80cb6e629b4', 'e367965c86a197dbf624245d5bea0203')
+and group_model_id in (51, 135)
+group by 1
+order by 1
+```
