@@ -227,18 +227,21 @@ class ModelGroupComparison:
             pair_evaluations['model_name'] = pair_evaluations.model_group_id + ' - ' + pair_evaluations.model_type
             pair_evaluations['as_of_date'] = pd.to_datetime(pair_evaluations['as_of_date'])
 
+            model_names_titles_viz = pair_evaluations['model_name'].unique()
+
             # Create the Altair chart
             chart = (
                 alt.Chart(pair_evaluations)
                 .mark_line(point=True)
                 .encode(
-                    x=alt.X('as_of_date:T', title='Prediction date'),
+                    x=alt.X('as_of_date:T', title='as_of_date'),
                     y=alt.Y('value:Q', title='value'),
                     color=alt.Color('model_name:N', title='Model'),
                     tooltip=['model_name', 'as_of_date', 'value']
                 )
                 .facet(
-                    column=alt.Column('metric_threshold:N', title='Metric')
+                    column=alt.Column('metric_threshold:N', 
+                                      title=f'Comparing model_group_id {model_names_titles_viz[0]} with model_group_id {model_names_titles_viz[1]}')
                 )
                 .properties(title='Model Comparison by specified metric')
             )
