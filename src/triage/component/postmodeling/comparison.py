@@ -189,7 +189,7 @@ class ModelGroupComparison:
             - One with the recall@10_pct
 
             Args: 
-                priority_metrics (dict): A dictionary with the metrics of interest as keys, and a list of thresholds of interest.        
+                priority_metrics (dict of str): A dictionary with the metrics of interest as keys, and a list of thresholds of interest.        
         """
         model_group_ids = self.model_group_ids
         db_engine = self.engine
@@ -197,6 +197,7 @@ class ModelGroupComparison:
         # getting all possible pairs to compare 
         if len(model_group_ids) > 1: 
             model_group_pairs_to_compare = get_pairs_models_groups_comparison(model_group_ids)
+            logging.debug(f"Postmodeling: model group pairs to compare: {model_group_pairs_to_compare}")
         else: 
             logging.info(f"There's only one model group, Triage expects at least 2 model group ids to compare.")
             return
@@ -243,8 +244,7 @@ class ModelGroupComparison:
             )
 
             chart.configure_axisX(labelAngle=90)
-
-            return chart
+            chart.display()
 
 
 class ModelComparisonError(ValueError):
