@@ -17,8 +17,7 @@ def get_evaluations_from_model_group(model_group_ids, metrics, parameters, db_en
     """
     model_groups_sql = str(model_group_ids).replace('[','').replace(']','')
     metrics_sql = str(list(metrics)).replace('[','').replace(']','')
-    unique_parameters = {i for element in list(parameters) for i in element}
-    parameters_sql = str(unique_parameters).replace('{','').replace('}','')
+    parameters_sql = str(parameters).replace('{','').replace('}','')
 
     q = f"""
         select
