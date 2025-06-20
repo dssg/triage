@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 import altair as alt
 
-from .utils import get_evaluations_from_model_group, get_pairs_models_groups_comparison
+from .utils import get_evaluations_for_metric, get_pairs_models_groups_comparison
 
 class ModelGroupComparison:
     
@@ -182,7 +182,7 @@ class ModelGroupComparison:
                 priority_metrics = {'precision@': ['100_abs', '10_pct'],
                                     'recall@': ['100_abs', '10_pct']}
             
-            It will create 4 plots for the pair of model groups 15, 16:
+            It will create 4 rows of plots with pair of model group comparisons between model group id 15, 16:
             - One with the precision@100_abs
             - One with the precision@10_pct
             - One with the recall@100_abs 
@@ -205,49 +205,45 @@ class ModelGroupComparison:
         # get list of metrics from dictionary 
         metrics = list(priority_metrics.keys())
         # get set of parameters from dictionary
-        parameters = {i for element in list(priority_metrics.values()) for i in element}
+        parameters = list({i for element in list(priority_metrics.values()) for i in element})
 
         # TODO Validations!  
-        # for each pair plot all metrics in a row
-        for pair in model_group_pairs_to_compare:
-            model_left = pair[0]
-            model_right = pair[1]
-            evaluations_by_model_group_pair = []
+        # Plots for each metric defined a row with all the pair model groups compared
+        for metric in metrics: 
+            parameters = priority_metrics[metric]
+            for parameter in parameters: 
+                # generate an independent plot for each group pair 
+                charts = []
+                for pair in model_group_pairs_to_compare:
+                    pair_evaluations = get_evaluations_for_metric(list(pair), metric, parameter, db_engine)
+                    
+                    # prep for visualization 
+                    pair_evaluations['model_type'] = pair_evaluations.model_type.apply(lambda x: x.split(".")[-1])
+                    pair_evaluations['metric_threshold'] = pair_evaluations.metric + pair_evaluations.parameter
+                    pair_evaluations['model_group_id'] = pair_evaluations.model_group_id.astype(str)
+                    pair_evaluations['model_name'] = pair_evaluations.model_group_id + ' - ' + pair_evaluations.model_type
+                    pair_evaluations['as_of_date'] = pd.to_datetime(pair_evaluations['as_of_date'])
+                    
+                    #plot
+                    chart = ( 
+                        alt.Chart(pair_evaluations)
+                        .mark_line(point=True)
+                        .encode(
+                            x=alt.X('as_of_date:T', title='as_of_date'),
+                            y=alt.Y('value:Q', title='value'),
+                            tooltip=['model_name', 'as_of_date', 'value'],
+                            color='model_name:N'
+                        )
+                        .properties(
+                            title=f'Comparing model_group_id {pair[0]} with model_group_id {pair[1]}'
+                        )
+                    )
 
-            evaluations_by_model_group_pair.append(get_evaluations_from_model_group(model_left, metrics, parameters, db_engine))
-            evaluations_by_model_group_pair.append(get_evaluations_from_model_group(model_right, metrics, parameters, db_engine))
-
-            pair_evaluations = pd.concat(evaluations_by_model_group_pair)
-            pair_evaluations = pair_evaluations.reset_index(drop=True)
-
-            # prep for visualization 
-            pair_evaluations['model_type'] = pair_evaluations.model_type.apply(lambda x: x.split(".")[-1])
-            pair_evaluations['metric_threshold'] = pair_evaluations.metric + pair_evaluations.parameter
-            pair_evaluations['model_group_id'] = pair_evaluations.model_group_id.astype(str)
-            pair_evaluations['model_name'] = pair_evaluations.model_group_id + ' - ' + pair_evaluations.model_type
-            pair_evaluations['as_of_date'] = pd.to_datetime(pair_evaluations['as_of_date'])
-
-            model_names_titles_viz = pair_evaluations['model_name'].unique()
-
-            # Create the Altair chart
-            chart = (
-                alt.Chart(pair_evaluations)
-                .mark_line(point=True)
-                .encode(
-                    x=alt.X('as_of_date:T', title='as_of_date'),
-                    y=alt.Y('value:Q', title='value'),
-                    color=alt.Color('model_name:N', title='Model'),
-                    tooltip=['model_name', 'as_of_date', 'value']
-                )
-                .facet(
-                    column=alt.Column('metric_threshold:N', 
-                                      title=f'Comparing model_group_id {model_names_titles_viz[0]} with model_group_id {model_names_titles_viz[1]}')
-                )
-                .properties(title='Model Comparison by specified metric')
-            )
-
-            chart.configure_axisX(labelAngle=90)
-            chart.display()
+                    charts.append(chart)
+                    
+                row_charts = alt.hconcat(*charts).properties(title=f"{metric}{parameter}")
+                
+                row_charts.display()
 
 
 class ModelComparisonError(ValueError):
