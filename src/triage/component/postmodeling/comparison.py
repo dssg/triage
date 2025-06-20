@@ -199,6 +199,7 @@ class ModelGroupComparison:
             model_group_pairs_to_compare = get_pairs_models_groups_comparison(model_group_ids)
         else: 
             logging.info(f"There's only one model group, Triage expects at least 2 model group ids to compare.")
+            return
 
         # get list of metrics from dictionary 
         metrics = list(priority_metrics.keys())
@@ -242,6 +243,8 @@ class ModelGroupComparison:
             )
 
             chart.configure_axisX(labelAngle=90)
+
+            return chart
 
 
 class ModelComparisonError(ValueError):
