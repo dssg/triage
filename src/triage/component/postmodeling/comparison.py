@@ -1,20 +1,22 @@
 import pandas as pd
+import altair as alt
 import logging
+import seaborn as sns
+import matplotlib.pyplot as plt 
 
 import altair as alt
 
-
+from .utils import get_evaluations_from_model_group, get_pairs_models_groups_comparison
 
 class ModelGroupComparison:
     
     def __init__(self, model_group_ids, engine):
         """
-        Initialize the ModelGroupComparison with model group IDs and a database engine.
+        Initialize the ModelGroupComparison with experiment hashes, model group IDs, and a database engine.
         
         :param model_group_ids: List of model group IDs to compare.
         :param engine: Database engine for executing SQL queries.
         """
-        
         self.model_group_ids = model_group_ids
         self.engine = engine
         
@@ -171,3 +173,76 @@ class ModelGroupComparison:
         )
         
         return chart
+
+    def priority_metrics_overtime(self, priority_metrics):
+        """
+            For each metric of interest defined on a dictionary, it will generates a comparison plot for each model group pair. 
+
+            For example: Given the list of model group ids [15, 16] and the following priority metrics dictionary:
+                priority_metrics = {'precision@': ['100_abs', '10_pct'],
+                                    'recall@': ['100_abs', '10_pct']}
+            
+            It will create 4 plots for the pair of model groups 15, 16:
+            - One with the precision@100_abs
+            - One with the precision@10_pct
+            - One with the recall@100_abs 
+            - One with the recall@10_pct
+
+            Args: 
+                priority_metrics (dict): A dictionary with the metrics of interest as keys, and a list of thresholds of interest.        
+        """
+        model_group_ids = self.model_group_ids
+        db_engine = self.engine
+
+        # getting all possible pairs to compare 
+        if len(model_group_ids) > 1: 
+            model_group_pairs_to_compare = get_pairs_models_groups_comparison(model_group_ids)
+        else: 
+            logging.info(f"There's only one model group, Triage expects at least 2 model group ids to compare.")
+
+        # get list of metrics from dictionary 
+        metrics = list(priority_metrics.keys())
+        # get set of parameters from dictionary
+        parameters = {i for element in list(priority_metrics.values()) for i in element}
+
+        # TODO Validations!  
+        # for each pair plot all metrics in a row
+        for pair in model_group_pairs_to_compare:
+            model_left = pair[0]
+            model_right = pair[1]
+            evaluations_by_model_group_pair = []
+
+            evaluations_by_model_group_pair.append(get_evaluations_from_model_group(model_left, metrics, parameters, db_engine))
+            evaluations_by_model_group_pair.append(get_evaluations_from_model_group(model_right, metrics, parameters, db_engine))
+
+            pair_evaluations = pd.concat(evaluations_by_model_group_pair)
+            pair_evaluations = pair_evaluations.reset_index(drop=True)
+
+            # prep for visualization 
+            pair_evaluations['model_type'] = pair_evaluations.model_type.apply(lambda x: x.split(".")[-1])
+            pair_evaluations['metric_threshold'] = pair_evaluations.metric + pair_evaluations.parameter
+            pair_evaluations['model_group_id'] = pair_evaluations.model_group_id.astype(str)
+            pair_evaluations['model_name'] = pair_evaluations.model_group_id + ' - ' + pair_evaluations.model_type
+            pair_evaluations['as_of_date'] = pd.to_datetime(pair_evaluations['as_of_date'])
+
+            # Create the Altair chart
+            chart = (
+                alt.Chart(pair_evaluations)
+                .mark_line(point=True)
+                .encode(
+                    x=alt.X('as_of_date:T', title='Prediction date'),
+                    y=alt.Y('value:Q', title='value'),
+                    color=alt.Color('model_name:N', title='Model'),
+                    tooltip=['model_name', 'as_of_date', 'value']
+                )
+                .facet(
+                    column=alt.Column('metric_threshold:N', title='Metric')
+                )
+                .properties(title='Model Comparison by specified metric')
+            )
+
+            chart.configure_axisX(labelAngle=90)
+
+
+class ModelComparisonError(ValueError):
+    """Signifies that a something went wrong on the model comparison"""
