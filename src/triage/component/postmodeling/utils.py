@@ -2,6 +2,45 @@ import pandas as pd
 
 from itertools import combinations
 
+
+def get_evaluations_for_metric(model_group_ids, metric, parameter, db_engine): 
+    """ 
+        Retrieves the evaluations associated with a list of model group ids, metric and parameter of interest. 
+
+        Args: 
+            model_group_ids (list): List of model_group_id
+            metric (str): Performance metric of interest
+            parameter (str): Threshold of interest
+
+        Returns:
+            pandas.DataFrame with the evaluation value associated with the metric and threshold defined for the list of models sent 
+    """
+    model_groups_sql = str(model_group_ids).replace('[','').replace(']','')
+    #parameters_sql = str(parameters).replace('[','').replace(']','')
+
+    q = f"""
+        select
+            model_group_id,
+            model_id, 
+            model_type,
+            hyperparameters,
+            evaluation_end_time as as_of_date,
+            metric, 
+            parameter,
+            stochastic_value as value         
+        from triage_metadata.models a
+        join test_results.evaluations b
+        using (model_id) 
+        where model_group_id in ({model_groups_sql})
+        and metric = '{metric}'
+        and parameter = '{parameter}'
+    """
+
+    evaluations_for_model_id = pd.read_sql(q, db_engine)
+
+    return evaluations_for_model_id
+
+
 def get_evaluations_from_model_group(model_group_ids, metrics, parameters, db_engine):
     """
         Gets the the evaluations for specified metrics and parameters generated for specified model groups
@@ -17,7 +56,7 @@ def get_evaluations_from_model_group(model_group_ids, metrics, parameters, db_en
     """
     model_groups_sql = str(model_group_ids).replace('[','').replace(']','')
     metrics_sql = str(list(metrics)).replace('[','').replace(']','')
-    parameters_sql = str(parameters).replace('{','').replace('}','')
+    parameters_sql = str(parameters).replace('[','').replace(']','')
 
     q = f"""
         select
