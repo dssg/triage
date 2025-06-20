@@ -1,0 +1,50 @@
+import pandas as pd 
+
+from itertools import combinations
+
+def get_evaluations_from_model_group(model_group_ids, metrics, parameters, db_engine):
+    """
+        Gets the the evaluations for specified metrics and parameters generated for specified model groups
+
+        Args 
+            model_group_ids (list): A list of model group ids of interest
+            metrics (list): A list of metrics of interes
+            parameters (set): A set of parameters of interest
+
+        Returns
+            evaluations (pd.DataFrame): A pandas data frame with the specified evaluations for the model groups of interest 
+    
+    """
+    model_groups_sql = str(model_group_ids).replace('[','').replace(']','')
+    metrics_sql = str(list(metrics)).replace('[','').replace(']','')
+    unique_parameters = {i for element in list(parameters) for i in element}
+    parameters_sql = str(unique_parameters).replace('{','').replace('}','')
+
+    q = f"""
+        select
+            model_group_id,
+            model_id, 
+            model_type,
+            hyperparameters,
+            evaluation_end_time as as_of_date,
+            metric, 
+            parameter,
+            stochastic_value as value         
+        from triage_metadata.models a
+        join test_results.evaluations b
+        using (model_id) 
+        where model_group_id in ({model_groups_sql})
+        and metric in ({metrics_sql})
+        and parameter in ({parameters_sql})
+    """
+
+    evaluations_for_model_id = pd.read_sql(q, db_engine)
+
+    return evaluations_for_model_id
+
+
+def get_pairs_models_groups_comparison(model_groups_ids):
+    """Given a list of model group ids, generates a list of all possible pairs"""
+    pairs = list(combinations(model_groups_ids, 2))
+    
+    return pairs
