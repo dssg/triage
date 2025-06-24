@@ -151,9 +151,32 @@ We'll go through the recipies of each metric:
 
 🥕 **Ingredients**
 
++ A list of `model_group_id`s  
++ A metric and threshold of interest, e.g., `precision@100_abs` 
+
 👩‍🍳 **How to cook:** 
 
 🍲 **What to look for**
+
+
+#### Overlap 
+
+🥕 **Ingredients**
+
++  A list of `model_group_id`s
+
+👩‍🍳 **How to cook:** 
+
+🍲 **What to look for**
+
+#### Rank correlation
+
+🥕 **Ingredients**
+
+👩‍🍳 **How to cook:** 
+
+🍲 **What to look for**
+
 
 ### Score distribution
 
