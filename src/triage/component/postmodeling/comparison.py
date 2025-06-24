@@ -6,7 +6,12 @@ import matplotlib.pyplot as plt
 
 import altair as alt
 
-from .utils import get_evaluations_for_metric, get_pairs_models_groups_comparison
+from .utils import (
+    get_evaluations_for_metric, 
+    get_pairs_models_groups_comparison,
+    validation_group_model_exists
+) 
+from triage.component.catwalk.evaluation import ModelEvaluator
 
 class ModelGroupComparison:
     
@@ -199,7 +204,7 @@ class ModelGroupComparison:
             model_group_pairs_to_compare = get_pairs_models_groups_comparison(model_group_ids)
             logging.debug(f"Postmodeling: model group pairs to compare: {model_group_pairs_to_compare}")
         else: 
-            logging.info(f"There's only one model group, Triage expects at least 2 model group ids to compare.")
+            logging.error(f"There are less than 2 model groups, Triage expects at least 2 model group ids to compare.")
             return
 
         # get list of metrics from dictionary 
@@ -207,8 +212,48 @@ class ModelGroupComparison:
         # get set of parameters from dictionary
         parameters = list({i for element in list(priority_metrics.values()) for i in element})
 
-        # TODO Validations!  
+        ### Validations  
+        # 1) Validation: The metric of interest doesn't exist as part of Triage
+        metric_lookup = ModelEvaluator.available_metrics
+        available_metrics = set(metric_lookup.keys())
+        nonexistent_metrics = set(metrics).difference(available_metrics)
+        if len(nonexistent_metrics) > 0: 
+            logging.warning(f"The following metrics don't exist on Triage: {nonexistent_metrics}")
+        if len(nonexistent_metrics) == len(metrics):
+            logging.error(f"None of the metrics specified are defined in Triage. Available metrics: {available_metrics}")
+            return
+        
+        # 2) Validation: The threshold of interest doesn't exist as part of Triage 
+        available_thresholds = ['abs', 'pct']
+        for parameter in set(parameters):
+            threshold_parts = parameter.split("_")
+            if threshold_parts[-1] not in available_thresholds:
+                print(f"threshold {parameter} not valid in Triage, available thresholds in Triage {available_thresholds} (include an underscore as prefix! e.g., 100_abs)")
+
+        # 3) Validation: One of the model group ids (or more) doesn't exist in Triage db
+        existing_model_group_ids = []
+        for model_group_id in model_group_ids:
+            exists = validation_group_model_exists(model_group_id, db_engine)
+            if not exists:
+                logging.warning(f"The model_group_id {model_group_id} doesn't exist in Triage DB!")
+            else:
+                existing_model_group_ids.append(model_group_id)
+        # check how many are left 
+        if len(existing_model_group_ids) < 2:
+            logging.error(f"There are less than 2 model groups, Triage expects at least 2 model groups to compare.")
+
+        model_group_ids = existing_model_group_ids
+
+        # 4) Validation: The metric of interest hasn't been generated for that model (not in evaluations)
+        
+
+        # TODO Validations: 
+        # 5) The threshold of interest (for the metric) hasn't been generated for that model (not in evaluations) 
+        # 6) A model group is part of more than one experiment
+        # 7) Model groups don't share the same as_of_dates 
         # Plots for each metric defined a row with all the pair model groups compared
+
+        # Viz
         for metric in metrics: 
             parameters = priority_metrics[metric]
             for parameter in parameters: 

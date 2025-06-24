@@ -86,3 +86,41 @@ def get_pairs_models_groups_comparison(model_groups_ids):
     pairs = list(combinations(model_groups_ids, 2))
     
     return pairs
+
+
+def validation_group_model_exists(model_group_id, db_engine):
+    """Verifies if the model group exist"""
+    q = f"""
+        select distinct 
+            model_id
+        from triage_metadata.models 
+        where model_group_id = {model_group_id}
+    """
+
+    models_in_model_group = pd.read_sql(q, db_engine)
+
+    if models_in_model_group.shape[0] > 0: 
+        return True
+    else:
+        return False
+    
+
+def validation_metric_generated(model_group_id, metrics, db_engine):
+    """Verifies if the metric was generated for the model group id"""
+    metrics_sql = str(metrics).replace("[", "").replace("]", "")
+
+    q = f"""
+        select distinct
+            model_id, 
+            metric
+        from triage_metadata.models a 
+        join test_results.evaluations b
+        using (model_id)
+        where model_group_id = {model_group_id}
+        and metric in ({metrics_sql})
+    """ 
+
+    metrics_evaluated = pd.read_sql(q, db_engine)
+
+    return metrics_evaluated
+    
