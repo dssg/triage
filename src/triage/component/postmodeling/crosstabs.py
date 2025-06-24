@@ -7,6 +7,9 @@ logger = verboselogs.VerboseLogger(__name__)
 from scipy import stats
 import yaml
 
+from triage.component.architect.database_reflection import table_exists
+from triage.component.catwalk.storage import ProjectStorage
+
 
 class CrosstabsConfigLoader:
     def __init__(self, config_path=None, config=None):
@@ -41,7 +44,10 @@ low_risk_mean = lambda hr, lr: lr.mean(axis=0)
 high_risk_std = lambda hr, lr: hr.std(axis=0)
 low_risk_std = lambda hr, lr: lr.std(axis=0)
 hr_lr_ratio = lambda hr, lr: hr.mean(axis=0) / lr.mean(axis=0)
-
+high_risk_support = lambda hr, lr: (hr > 0).sum(axis=0)
+low_risk_support = lambda hr, lr: (lr > 0).sum(axis=0)
+high_risk_support_pct = lambda hr, lr: round((hr > 0).sum(axis=0).astype(float) / len(hr), 3)
+low_risk_support_pct = lambda hr, lr: round((lr > 0).sum(axis=0).astype(float) / len(lr), 3)
 
 def hr_lr_ttest(hr, lr):
     """Returns the t-test (T statistic and p value), comparing the features for
@@ -244,3 +250,133 @@ def run_crosstabs(db_engine, crosstabs_config):
             schema=crosstabs_config.output["schema"],
             table=crosstabs_config.output["table"],
         )
+
+
+def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type, threshold, matrix_uuid=None, push_to_db=True, table_schema='test_results', table_name='crosstabs', return_as_dataframe=True, replace=False):
+    
+    logging.info('Fetching predictions')
+    
+    where_clause = f'where model_id = {model_id}'
+    
+    if matrix_uuid:
+        where_clause += f" and matrix_uuid = '{matrix_uuid}'"
+    
+    q = f'''
+        select 
+        matrix_uuid,
+        entity_id,
+        as_of_date,
+        score, 
+        label_value,
+        test_label_timespan,
+        {threshold_type},
+        case when {threshold_type} <= {threshold} then 1 else 0 end as high_risk
+        from test_results.predictions p
+        {where_clause}
+    '''
+    
+    id_columns = ['entity_id', 'as_of_date']
+    
+    predictions = pd.read_sql(q, db_engine).set_index(id_columns)
+    
+    if predictions.empty:
+        logging.error('No predictions were found for the model and matrix')
+        return 
+
+    # The same model can have multiple test matrices. If not specified, we calculate crosstabs for all matrices
+    matrices = [matrix_uuid]
+    if matrix_uuid is None:
+        matrices = predictions.matrix_uuid.unique()
+    
+    crosstab_tasks = list() # store a list of matrix uuids we need crosstabs for
+        
+    if table_exists(f'{table_schema}.{table_name}', db_engine):
+        logging.info(f'The {table_schema}.{table_name} table exists. Checking for existing crosstabs')
+        
+        for matrix_uuid in matrices: 
+            df = pd.read_sql(f'''
+                    select 1 from {table_schema}.{table_name}
+                    where model_id = {model_id}
+                    and matrix_uuid = '{matrix_uuid}'
+                ''', db_engine)
+            
+            if not df.empty:
+                if replace: 
+                    logging.info('Exsiting crosstabs found for model {model_id} and matrix {matrix_uuid}. Replace is True. Deleting.')
+                else:
+                    logging.info('Existing crosstabs found for model {model_id} and matrix {matrix_uuid}. Replace flag is not set. Skipping')
+                    continue
+            
+            crosstab_tasks.append(matrix_uuid)
+            
+    if len(crosstab_tasks) == 0:
+        logging.warning('Crosstabs calculation not needed. Exiting.')
+        return
+    
+    project_storage = ProjectStorage(project_path)
+    matrix_storage_engine = project_storage.matrix_storage_engine()
+    
+    results = list()
+    for m in crosstab_tasks:
+        matrix = matrix_storage_engine.get_store(matrix_uuid=m).design_matrix
+        
+        feature_names = matrix.columns
+        
+        matrix = matrix.join(predictions[predictions['matrix_uuid'] == m], how='left')
+        
+        topk_msk = matrix[threshold_type] <= threshold
+        
+        positives = matrix[topk_msk][feature_names]
+        negatives = matrix[~topk_msk][feature_names]
+        
+        for name, function in crosstab_functions:
+            logging.info(f'Calculating {name}')
+            
+            if name == ["ttest_T", "ttest_p"]:
+                res = function(positives, negatives)
+
+                this_result = res.drop(columns=['ttest_p'])
+                
+                # TODO: This is very hacky and ugly
+                this_result.rename(columns={'ttest_T': 0}, inplace=True)
+                this_result['metric'] = 'ttest_T'
+                results.append(this_result)
+                
+                this_result = res.drop(columns=['ttest_T'])
+                
+                # TODO: This is very hacky and ugly
+                this_result.rename(columns={'ttest_p': 0}, inplace=True)
+                this_result['metric'] = 'ttest_p'
+                
+                results.append(this_result)
+            
+                continue
+                
+            this_result = pd.DataFrame(function(positives, negatives))
+            
+            this_result['metric'] = name
+                
+            results.append(this_result)
+                        
+    results = pd.concat(results).reset_index()
+    results.rename(columns={'index': 'feature_name', 0:'value'}, inplace=True)
+    results['threshold_type'] = threshold_type
+    results['threshold'] = threshold
+    results['model_id'] = model_id
+    results['matrix_uuid'] = matrix_uuid
+    
+    if push_to_db:
+        logging.info('Pushing the results to the database')
+        
+        results.set_index(
+            ['model_id', 'matrix_uuid', 'feature_name', 'metric', 'threshold_type', 'threshold'],
+            inplace=True
+        )
+        
+        results.pg_copy_to(schema=table_schema, name=table_name, con=db_engine, if_exists='append', index=True)
+            
+        
+    return results
+        
+                
+        
