@@ -320,9 +320,9 @@ def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type,
             
             if not df.empty:
                 if replace: 
-                    logging.info('Exsiting crosstabs found for model {model_id} and matrix {matrix_uuid}. Replace is True. Deleting.')
+                    logging.info(f'Exsiting crosstabs found for model {model_id} and matrix {matrix_uuid}. Replace is True. Deleting.')
                 else:
-                    logging.info('Existing crosstabs found for model {model_id} and matrix {matrix_uuid}. Replace flag is not set. Skipping')
+                    logging.info(f'Existing crosstabs found for model {model_id} and matrix {matrix_uuid}. Replace flag is not set. Skipping')
                     continue
             
             crosstab_tasks.append(matrix_uuid)
