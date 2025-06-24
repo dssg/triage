@@ -253,6 +253,24 @@ def run_crosstabs(db_engine, crosstabs_config):
 
 
 def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type, threshold, matrix_uuid=None, push_to_db=True, table_schema='test_results', table_name='crosstabs', return_as_dataframe=True, replace=False):
+    """ Calculate crosstabs for a model based on the matrix. 
+        
+        Args: 
+            db_engine: Database engine
+            project_path (str): Path where the experiment artifacts (models and matrices) are stored
+            thresholds (Dict{str: Union[float, int}]): A dictionary that maps threhold type to the threshold
+                                                    The threshold type can be one of the rank columns in the test_results.predictions_table
+           
+            matrix_uuid (str, optional): To run crosstabs for a different matrix than the validation matrix from the experiment
+
+            push_to_db (bool, optional): Whether to write the results to the database. Defaults to True
+            
+            table_schame (str, optional): Database schema to store the crosstabs table. Defaults to `test_results`
+            table_name (str, optional): Table name to use. Defaults to `crosstabs`. If the table exists, results are appended
+
+        return:
+            Dataframe of crosstabs
+    """
     
     logging.info('Fetching predictions')
     
