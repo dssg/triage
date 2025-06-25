@@ -1,7 +1,5 @@
 import pandas as pd 
 
-from itertools import combinations
-
 
 def get_evaluations_for_metric(model_group_ids, metric, parameter, db_engine): 
     """ 
@@ -79,13 +77,6 @@ def get_evaluations_from_model_group(model_group_ids, metrics, parameters, db_en
     evaluations_for_model_id = pd.read_sql(q, db_engine)
 
     return evaluations_for_model_id
-
-
-def get_pairs_models_groups_comparison(model_groups_ids):
-    """Given a list of model group ids, generates a list of all possible pairs"""
-    pairs = list(combinations(model_groups_ids, 2))
-    
-    return pairs
 
 
 def validation_group_model_exists(model_group_id, db_engine):

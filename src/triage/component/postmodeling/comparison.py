@@ -8,7 +8,6 @@ import altair as alt
 
 from .utils import (
     get_evaluations_for_metric, 
-    get_pairs_models_groups_comparison,
     validation_group_model_exists
 ) 
 from triage.component.catwalk.evaluation import ModelEvaluator
@@ -200,10 +199,7 @@ class ModelGroupComparison:
         db_engine = self.engine
 
         # getting all possible pairs to compare 
-        if len(model_group_ids) > 1: 
-            model_group_pairs_to_compare = get_pairs_models_groups_comparison(model_group_ids)
-            logging.debug(f"Postmodeling: model group pairs to compare: {model_group_pairs_to_compare}")
-        else: 
+        if len(model_group_ids) < 2: 
             logging.error(f"There are less than 2 model groups, Triage expects at least 2 model group ids to compare.")
             return
 
@@ -259,36 +255,32 @@ class ModelGroupComparison:
             for parameter in parameters: 
                 # generate an independent plot for each group pair 
                 charts = []
-                for pair in model_group_pairs_to_compare:
-                    pair_evaluations = get_evaluations_for_metric(list(pair), metric, parameter, db_engine)
-                    
-                    # prep for visualization 
-                    pair_evaluations['model_type'] = pair_evaluations.model_type.apply(lambda x: x.split(".")[-1])
-                    pair_evaluations['metric_threshold'] = pair_evaluations.metric + pair_evaluations.parameter
-                    pair_evaluations['model_group_id'] = pair_evaluations.model_group_id.astype(str)
-                    pair_evaluations['model_name'] = pair_evaluations.model_group_id + ' - ' + pair_evaluations.model_type
-                    pair_evaluations['as_of_date'] = pd.to_datetime(pair_evaluations['as_of_date'])
-                    
-                    #plot
-                    chart = ( 
-                        alt.Chart(pair_evaluations)
-                        .mark_line(point=True)
-                        .encode(
-                            x=alt.X('as_of_date:T', title='as_of_date'),
-                            y=alt.Y('value:Q', title='value'),
-                            tooltip=['model_name', 'as_of_date', 'value'],
-                            color='model_name:N'
-                        )
-                        .properties(
-                            title=f'Comparing model_group_id {pair[0]} with model_group_id {pair[1]}'
-                        )
-                    )
-
-                    charts.append(chart)
-                    
-                row_charts = alt.hconcat(*charts).properties(title=f"{metric}{parameter}")
                 
-                row_charts.display()
+                evaluations = get_evaluations_for_metric(model_group_ids, metric, parameter, db_engine)
+                    
+                # prep for visualization 
+                evaluations['model_type'] = evaluations.model_type.apply(lambda x: x.split(".")[-1])
+                evaluations['metric_threshold'] = evaluations.metric + evaluations.parameter
+                evaluations['model_group_id'] = evaluations.model_group_id.astype(str)
+                evaluations['model_name'] = evaluations.model_group_id + ' - ' + evaluations.model_type
+                evaluations['as_of_date'] = pd.to_datetime(evaluations['as_of_date'])
+                    
+                #plot
+                chart = ( 
+                    alt.Chart(evaluations)
+                    .mark_line(point=True)
+                    .encode(
+                        x=alt.X('as_of_date:T', title='as_of_date'),
+                        y=alt.Y('value:Q', title='value'),
+                        tooltip=['model_name', 'as_of_date', 'value'],
+                        color='model_name:N'
+                    )
+                    .properties(
+                        title=f'Comparing model groups for metric {metric}{parameter}'
+                    )
+                )
+                
+                chart.display()
 
 
 class ModelComparisonError(ValueError):
