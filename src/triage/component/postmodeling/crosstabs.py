@@ -6,9 +6,12 @@ logger = verboselogs.VerboseLogger(__name__)
 
 from scipy import stats
 import yaml
+import psycopg2
+from io import StringIO
 
 from triage.component.architect.database_reflection import table_exists
 from triage.component.catwalk.storage import ProjectStorage
+from triage.component.catwalk.utils import save_db_objects
 
 
 class CrosstabsConfigLoader:
@@ -252,6 +255,27 @@ def run_crosstabs(db_engine, crosstabs_config):
         )
 
 
+# TODO: Doing this workaroung cause OHIO does not work with 
+def _generate_create_table_sql_statement_from_df(df, table_name):
+    dtype_mapping = {
+        'int64': 'INTEGER',
+        'float64': 'FLOAT',
+        'object': 'TEXT',
+        'bool': 'BOOLEAN',
+        'datetime64[ns]': 'TIMESTAMP',
+    }
+    
+    columns = list()
+    
+    for col in df.columns:
+        dtype = dtype_mapping.get(str(df[col].dtype), 'TEXT')
+        columns.append(f'{col} {dtype}')
+    
+    col_defs = ', '.join(columns)
+    
+    return f'create table {table_name} ({col_defs})'
+
+
 def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type, threshold, matrix_uuid=None, push_to_db=True, table_schema='test_results', table_name='crosstabs', return_as_dataframe=True, replace=False):
     """ Calculate crosstabs for a model based on the matrix. 
         
@@ -305,6 +329,8 @@ def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type,
     matrices = [matrix_uuid]
     if matrix_uuid is None:
         matrices = predictions.matrix_uuid.unique()
+        
+    logging.info(f'Matrices for crosstabs: {matrices}')
     
     crosstab_tasks = list() # store a list of matrix uuids we need crosstabs for
         
@@ -316,16 +342,34 @@ def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type,
                     select 1 from {table_schema}.{table_name}
                     where model_id = {model_id}
                     and matrix_uuid = '{matrix_uuid}'
+                    and threshold_type = '{threshold_type}'
+                    and threshold = {threshold}
                 ''', db_engine)
             
             if not df.empty:
                 if replace: 
                     logging.info(f'Exsiting crosstabs found for model {model_id} and matrix {matrix_uuid}. Replace is True. Deleting.')
+                    q = f'''
+                        delete from {table_schema}.{table_name}
+                        where model_id = {model_id}
+                        and matrix_uuid = '{matrix_uuid}'
+                        and threshold_type = '{threshold_type}'
+                        and threshold = {threshold}
+                    '''
+                    
+                    db_engine.execute(q)
+                    
+                    
                 else:
                     logging.info(f'Existing crosstabs found for model {model_id} and matrix {matrix_uuid}. Replace flag is not set. Skipping')
                     continue
             
+            logging.info(f'Crosstabs task added for matrix {matrix_uuid}')
             crosstab_tasks.append(matrix_uuid)
+            
+    else:
+        logging.info(f'{table_schema}.{table_name} does not exist. Calculating crostabs for all matrices')
+        crosstab_tasks = matrices
             
     if len(crosstab_tasks) == 0:
         logging.warning('Crosstabs calculation not needed. Exiting.')
@@ -342,7 +386,8 @@ def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type,
         
         matrix = matrix.join(predictions[predictions['matrix_uuid'] == m], how='left')
         
-        topk_msk = matrix[threshold_type] <= threshold
+        # topk_msk = matrix[threshold_type] <= threshold
+        topk_msk = matrix['high_risk'] == 1
         
         positives = matrix[topk_msk][feature_names]
         negatives = matrix[~topk_msk][feature_names]
@@ -377,22 +422,40 @@ def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type,
             results.append(this_result)
                         
     results = pd.concat(results).reset_index()
-    results.rename(columns={'index': 'feature_name', 0:'value'}, inplace=True)
+    results.rename(columns={'index': 'feature', 0:'value'}, inplace=True)
     results['threshold_type'] = threshold_type
     results['threshold'] = threshold
     results['model_id'] = model_id
     results['matrix_uuid'] = matrix_uuid
     
     if push_to_db:
-        logging.info('Pushing the results to the database')
-        
+        logging.info(f'Pushing the results to the database, {len(results)} rows')
+                
         results.set_index(
-            ['model_id', 'matrix_uuid', 'feature_name', 'metric', 'threshold_type', 'threshold'],
+            ['model_id', 'matrix_uuid', 'feature', 'metric', 'threshold_type', 'threshold'],
             inplace=True
         )
         
-        results.pg_copy_to(schema=table_schema, name=table_name, con=db_engine, if_exists='append', index=True)
-            
+        results = results.reset_index()
+        
+        if not table_exists(f'{table_schema}.{table_name}', db_engine):
+            q = _generate_create_table_sql_statement_from_df(results, f'{table_schema}.{table_name}')
+            db_engine.execute(q)
+        
+        conn = db_engine.raw_connection()
+        cursor = conn.cursor()
+        
+        buffer = StringIO()
+        results.to_csv(buffer, index=False, header=False)
+        buffer.seek(0)
+        
+        columns = ', '.join(results.columns)
+        print(columns)
+        cursor.copy_expert(f"COPY {table_schema}.{table_name} ({columns}) FROM STDIN WITH CSV", buffer)
+        # results.to_sql(con=db_engine, schema=table_schema, name=table_name, if_exists='append')
+        conn.commit()
+        cursor.close()
+        conn.close()
         
     return results
         
