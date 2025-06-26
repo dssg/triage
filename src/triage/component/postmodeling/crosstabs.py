@@ -255,27 +255,6 @@ def run_crosstabs(db_engine, crosstabs_config):
         )
 
 
-# TODO: Doing this workaroung cause OHIO does not work with 
-def _generate_create_table_sql_statement_from_df(df, table_name):
-    dtype_mapping = {
-        'int64': 'INTEGER',
-        'float64': 'FLOAT',
-        'object': 'TEXT',
-        'bool': 'BOOLEAN',
-        'datetime64[ns]': 'TIMESTAMP',
-    }
-    
-    columns = list()
-    
-    for col in df.columns:
-        dtype = dtype_mapping.get(str(df[col].dtype), 'TEXT')
-        columns.append(f'{col} {dtype}')
-    
-    col_defs = ', '.join(columns)
-    
-    return f'create table {table_name} ({col_defs})'
-
-
 def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type, threshold, matrix_uuid=None, push_to_db=True, table_schema='test_results', table_name='crosstabs', return_as_dataframe=True, replace=False):
     """ Calculate crosstabs for a model based on the matrix. 
         
@@ -358,8 +337,7 @@ def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type,
                     '''
                     
                     db_engine.execute(q)
-                    
-                    
+                                        
                 else:
                     logging.info(f'Existing crosstabs found for model {model_id} and matrix {matrix_uuid}. Replace flag is not set. Skipping')
                     continue
@@ -439,7 +417,21 @@ def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type,
         results = results.reset_index()
         
         if not table_exists(f'{table_schema}.{table_name}', db_engine):
-            q = _generate_create_table_sql_statement_from_df(results, f'{table_schema}.{table_name}')
+            q = f'''
+                create schema if not exists {table_schema};
+                
+                create table {table_schema}.{table_name} (
+                  model_id INTEGER,
+                  matrix_uuid TEXT,
+                  feature TEXT,
+                  metric TEXT,
+                  threshold_type TEXT,
+                  threshold FLOAT,
+                  value FLOAT  
+                );
+            
+            '''
+            # q = _generate_create_table_sql_statement_from_df(results, f'{table_schema}.{table_name}')
             db_engine.execute(q)
         
         conn = db_engine.raw_connection()
