@@ -564,11 +564,24 @@ class ModelEvaluator:
             labels = matrix_store.labels
             subset_hash = ""
 
+        # Checking whether there are indexes (entity-date pairs) that appear in either the matrix or the protected df, but not in boths
+        symmetric_diff = protected_df.index.symmetric_difference(labels.index)
+        
         # confirm protected_df and labels have same set and count of values
         if (protected_df is not None) and (not protected_df.empty):
             if (protected_df.index.shape != labels.index.shape) or (
-                not protected_df.index.symmetric_difference(labels.index).empty
+                not symmetric_diff.empty
             ):
+                only_in_protected_groups = protected_df.index.difference(labels.index)
+                only_in_matrix = labels.index.difference(protected_df.index)
+                
+                logging.error(
+                f'''The protected groups and the cohort (matrix) tables have diverged! 
+                    {len(only_in_protected_groups)} entity-date pairs appear only in the protected groups
+                    {len(only_in_matrix)} entity-date pairs appear only in the matrix. 
+                    Try rerunning the experiment with replace flag set to True'''
+                )
+                                
                 raise ValueError("Mismatch between protected_df and labels indices")
 
         df_index = labels.index
