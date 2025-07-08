@@ -563,12 +563,12 @@ class ModelEvaluator:
             )
             labels = matrix_store.labels
             subset_hash = ""
-
-        # Checking whether there are indexes (entity-date pairs) that appear in either the matrix or the protected df, but not in boths
-        symmetric_diff = protected_df.index.symmetric_difference(labels.index)
         
         # confirm protected_df and labels have same set and count of values
         if (protected_df is not None) and (not protected_df.empty):
+            # Checking whether there are indexes (entity-date pairs) that appear in either the matrix or the protected df, but not in both
+            symmetric_diff = protected_df.index.symmetric_difference(labels.index)
+            
             if (protected_df.index.shape != labels.index.shape) or (
                 not symmetric_diff.empty
             ):
