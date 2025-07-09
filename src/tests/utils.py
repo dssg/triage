@@ -388,13 +388,13 @@ def sample_config(query_source="filepath"):
         "feature_start_time": "2010-01-01",
         "feature_end_time": "2014-01-01",
         "label_start_time": "2011-01-01",
-        "label_end_time": "2014-01-01",
+        "label_end_time": "2015-01-01",
         "model_update_frequency": "1year",
-        "training_label_timespans": ["6months"],
-        "test_label_timespans": ["6months"],
+        "training_label_timespans": ["12months"],
+        "test_label_timespans": ["12months"],
         "training_as_of_date_frequencies": "1day",
-        "test_as_of_date_frequencies": "3months",
-        "max_training_histories": ["6months"],
+        "test_as_of_date_frequencies": "3day",
+        "max_training_histories": ["10years"],
         "test_durations": ["1months"],
     }
 
@@ -433,7 +433,7 @@ def sample_config(query_source="filepath"):
             "knowledge_date_column": "as_of_date",
             "aggregates_imputation": {"all": {"type": "constant", "value": 0}},
             "aggregates": [{"quantity": "cat_sightings", "metrics": ["count", "avg"]}],
-            "intervals": ["1year"],
+            "intervals": ["all"],
         },
         {
             "prefix": "zip_code_features",
@@ -441,7 +441,7 @@ def sample_config(query_source="filepath"):
             "knowledge_date_column": "as_of_date",
             "aggregates_imputation": {"all": {"type": "constant", "value": 0}},
             "aggregates": [{"quantity": "num_events", "metrics": ["max", "min"]}],
-            "intervals": ["1year"],
+            "intervals": ["all"],
         },
     ]
 
@@ -477,14 +477,14 @@ def sample_config(query_source="filepath"):
             "parameters",
         ],
         "feature_aggregations": feature_config,
-        "cohort_config": cohort_config,
+        # "cohort_config": cohort_config,
         "temporal_config": temporal_config,
         "grid_config": grid_config,
         "bias_audit_config": bias_audit_config,
         "prediction": {"rank_tiebreaker": "random"},
         "scoring": scoring_config,
         "user_metadata": {"custom_key": "custom_value"},
-        "individual_importance": {"n_ranks": 2},
+        # "individual_importance": {"n_ranks": 2},
     }
 
 
