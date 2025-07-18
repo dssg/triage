@@ -229,7 +229,7 @@ class ModelGroupComparison:
         for parameter in set(parameters):
             threshold_parts = parameter.split("_")
             if threshold_parts[-1] not in available_thresholds:
-                print(f"threshold {parameter} not valid in Triage, available thresholds in Triage {available_thresholds} (include an underscore as prefix! e.g., 100_abs)")
+                logging.error(f"threshold {parameter} not valid in Triage, available thresholds in Triage {available_thresholds} (include an underscore as prefix! e.g., 100_abs)")
 
         # 3) Validation: One of the model group ids (or more) doesn't exist in Triage db
         existing_model_group_ids = []
