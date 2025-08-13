@@ -3,7 +3,7 @@
 
 ## Introduction 
 
-Post-modeling takes part in the "Model Selection" stage in a AI/ML/DS project life cycle. in this the phase we select the model that we would like to validate on a field trial from a subset of models previously selected based mainly in performance and bias metrics aligned with the goals of the project defined in terms of efficiency, effectiveness, and equity.  
+Post-modeling analysis takes part in the "Model Selection" stage on an AI/ML/DS project life cycle. In this the phase we select the model that we would like to validate on a field trial from a subset of models previously selected based mainly in performance and bias metrics aligned with the goals of the project defined in terms of efficiency, effectiveness, and equity (audition phase).  
 
 <img src="project_life_cycle.png" alt="drawing" width="350"/>
 
