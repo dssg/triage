@@ -24,6 +24,7 @@ Types of analyses in this playbook:
 + [Crosstabs](#crosstabs) 
 + [Lists similarities](#lists-similarities)
 + [Score distribution](#score-distribution)
++ [Label distribution](#label-distribution)
 + [List characteristics](#list-characteristics) 
 + [Outcomes on label window](#outcomes-on-label-window)
 + [Outcomes after label window](#outcomes-after-label-window)
@@ -215,6 +216,65 @@ We'll go through the recipes of each metric:
 
 
 ### Score distribution
+
+To generate the score distribution of a model you will need: 
+
+🥕 **Ingredients**
+
++ A `model id`
++ A connection to the DB. In case you don't have one you can follow [this recipe](#recipe-creating-a-database-engine)
+
+👩‍🍳 **How to cook:** 
+
+```python
+from triage.component.postmodeling.base import SingleModelAnalyzer
+
+sma = SingleModelAnalyzer(model_id, db_engine)
+# define the matplotlib figure characteristics to use when ploting the scores (the code assumes we always have subplots)
+# for example, in here were are defining 1 suplot with a width of 5 and a height of 4 
+fig, axes = plt.subplots(1, 1, figsize=(5, 4), sharey=True, sharex=True, dpi=100)
+# plot the score distribution
+sma.plot_score_distribution(axes)
+```
+
+🍲 **What to look for**
+
+From the plot you can identify what is the range for the scores of the model specified: min, max, mean; as well as the count of entities in your model with that score. 
+
+🧂 **Tips**
+
++ You would like to see scores with different values. Having a small number of scores (low variety) could indicate that the model is not generalizing well 
++ You can use the information of this plot in combination with the label distribution plot to get more information of the performance of the model
+
+### Label distribution
+
+🥕 **Ingredients**
+
++ A `model id`
++ A connection to the DB. In case you don't have one you can follow [this recipe](#recipe-creating-a-database-engine)
+
+
+👩‍🍳 **How to cook:** 
+
+```python
+from triage.component.postmodeling.base import SingleModelAnalyzer
+
+sma = SingleModelAnalyzer(model_id, db_engine)
+# define the matplotlib figure characteristics to use when ploting the scores (the code assumes we always have subplots)
+# for example, in here were are defining 1 suplot with a width of 5 and a height of 4 
+fig, axes = plt.subplots(1, 1, figsize=(5, 4), sharey=True, sharex=True, dpi=100)
+# plot the score distribution
+sma.plot_score_label_distribution(axes)
+```
+
+🍲 **What to look for**
+
+From the plot you can visualize the ranges of the scores for the positive (label 1) and negative labels (label 0) 
+
+🧂 **Tips**
+
++ You would like to have the smallest overlap of score distributions between labels, which means that your model is good at identifying each label 
++ You would like that the scores for your positive label are grater than the scores for you negative label  
 
 ### List characteristics
 
