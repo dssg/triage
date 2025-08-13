@@ -33,15 +33,25 @@ Types of analyses in this playbook:
 
 ### Crosstabs 
 
-This analysis gives you information about the differences in values of the features used in a particular model, is calcualed as the mean ratio between the top *k* entities and the rest of the list (by default). You can also do crosstabs between the top *k* lists of different models, as long as they share the features used as predictors. 
+This analysis gives you information about the differences in values of the features used in a particular model between the entities in the top *k* and the rest of the list, it's calcualed as the mean ratio between the top *k* entities and the rest of the list (by default). You can also do crosstabs between the top *k* lists from different models, as long as they share the features used as predictors. 
 
-To generate crosstabs in a particular model (`model_id`) you will need: 
+Crosstabs will allow you to understand the characteristics of the entities selected in the top *k* vs the entities not in the top *k*. For example, if you have as a feature `number of calls` and the mean ratio is **350.23**, it means that the entities at the top *k* have a 350 fold increase in the number of calls they made vs the people not at the top *k*.   
+
+There are two ways in which you can generate crosstabs for a particular model (`model_id`):
+1. Generating the crosstabs from the database 
+2. Generating the crosstabs from the matrices generated 
+
+Both recipes shared the same ingredients, and what to look for, they differ only on the way to cook them. 
+
+To generate crosstabs from a particular model (`model_id`) you will need: 
 
 🥕 **Ingredients:** 
 
 + A `model id`
 + Predictions generated and stored in the database. In case you don't have them you can follow [this recipe](#recipe-generating-predictions-and-storing-them-in-db-after-the-experiment-has-run-in-triage).
 + A connection to the DB. In case you don't have one you can follow [this recipe](#recipe-creating-a-database-engine)
+
+**Generating crosstabs from database** 
 
 👩‍🍳 **How to cook:** 
 
@@ -53,14 +63,39 @@ project_path = 's3://name-of-your-bucket/triage_output/'
 # in case your matrices and trained models are stored in local File System
 #project_path = "/mnt/data/path/to/your/project/triage_output/'
 thresholds = {'rank_abs_no_ties': 100} # top 100 abs 
+model_id = 10757
 
 model_analyzer = SingleModelAnalyzer(model_id_, db_conn)
 model_analyzer.crosstabs_pos_vs_neg(project_path, thresholds)
 ```
 
+**Generating crosstabs from features matrix**
+
+👩‍🍳 **How to cook:** 
+```python
+from triage.component.postmodeling.crosstabs import run_crosstabs_from_matrix 
+from triage.util.db import create_engine
+
+# in case your matrices and trained models are stored in S3 buckets
+project_path = 's3://name-of-your-bucket/triage_output/'
+# in case your matrices and trained models are stored in local File System
+#project_path = "/mnt/data/path/to/your/project/triage_output/'
+threshold_type = 'rank_abs_no_ties' # absolute ranking with no ties
+threshold = '100' # top 100 abs 
+model_id = 10757
+
+# check recipe for generating a connection to the database! 
+
+crosstabs_df = run_crosstabs_from_matrix(db_engine, 
+                                         project_path, 
+                                         model_id, 
+                                         threshold_type,
+                                         threshold)
+```
+
 🍲 **What to look for** 
 
-Triage should have created (or append rows) to the table `crosstabs` in your DB with the crosstabs for all the model ids in your model groups. You can retrieve the calculations with the following snippet of code: 
+Triage should have created (or append rows to) the table `crosstabs` (on `test_results` schema) in your DB with the crosstabs for the model id passed. You can retrieve the calculations with the following snippet of code: 
 
 ```python
 q = f"""
@@ -85,6 +120,7 @@ q = f"""
 
 pd.read_sql(q, db_conn)
 ```
+
 Be aware that crosstabs generates the mean ratios for **all** the features used in your models, it can be overwhelming to go through all features to get relevant information that help you characterize your top *k* entities. We suggest to get the top 20 features with the biggest difference in values between the top *k* and the rest of the list (`mean_ratio` metric in the crosstabs table) and adjust as necessary. 
 
 $\rightarrow$ Bear in mind that some of mean ratios have infinity values (because the denominator was 0), if you don't want to retrieve those and focus only on the features that have the biggest difference you can add a condition when retrieving your results from the DB like the following snippet of code in which we are retrieving for each time split on a model group (each model id) the top 20 most different features ratios. 
@@ -145,7 +181,7 @@ This analysis will let you identify how similar &ndash;or disimilar&ndash; two t
 2. **Overlap:** How much intersection is between a pair of top k lists. This is telling you how many entities are present in both lists. You can also think about this as a way to see if the lists are highlighting different entities. This is very useful when you're trying to answer if one model could replace another one &ndash;like a current process implemented by the partner&ndash;.
 3. **Rank correlation:** How similar is the ranking between lists. This is telling you if the order in which the entities in one top *k* list is roughly the same &ndash;increasing or decresing monotonically (1, -1)&ndash; or if the order doesn't have any correlation at all(value of 0). 
 
-We'll go through the recipies of each metric: 
+We'll go through the recipes of each metric: 
 
 #### Jaccard similiarity
 
