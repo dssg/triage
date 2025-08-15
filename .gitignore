@@ -29,3 +29,6 @@ src/triage/component/postmodeling/postmodeling_tmp.ipynb
 src/triage/component/postmodeling/model_class_testing.py
 src/triage/component/postmodeling/model_class_testing.ipynb
 src/triage/component/postmodeling/model_groups_testing.ipynb
+
+# jupyter book built
+cookbook/_built/.*
