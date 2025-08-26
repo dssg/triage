@@ -429,5 +429,8 @@ class ModelGroupComparison:
         return overlaps, overlap_chart, jaccard_chart
 
 
+    def precision_recall_k_curves(self):
+        
+
 class ModelComparisonError(ValueError):
     """Signifies that a something went wrong on the model comparison"""
