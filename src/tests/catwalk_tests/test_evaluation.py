@@ -25,6 +25,7 @@ from tests.results_tests.factories import (
     SubsetFactory,
     session,
 )
+import pytest
 
 
 @Metric(greater_is_better=True)
@@ -769,6 +770,54 @@ def test_evaluation_with_protected_df(db_engine_with_results_schema):
         assert record["parameter"] == "2_abs"
         assert record["attribute_name"] == "protectedattribute1"
         assert record["attribute_value"] == "value1"
+
+
+def test_error_evaluation_with_mismatch_protected_df(db_engine_with_results_schema):
+    """Reproducing the error for mismatch between the protected_df and cohort entities"""
+    
+    model_evaluator = ModelEvaluator(
+        testing_metric_groups=[
+            {
+                "metrics": ["precision@"],
+                "thresholds": {"top_n": [3]},
+            },
+        ],
+        training_metric_groups=[],
+        bias_config={"thresholds": {"top_n": [2]}},
+        db_engine=db_engine_with_results_schema,
+    )
+    testing_labels = np.array([1, 0])
+    testing_prediction_probas = np.array([0.56, 0.55])
+
+    fake_test_matrix_store = MockMatrixStore(
+        "test", "1234", 5, db_engine_with_results_schema, testing_labels
+    )
+    
+    trained_model, model_id = fake_trained_model(
+        db_engine_with_results_schema,
+        train_end_time=TRAIN_END_TIME,
+    )
+    
+    # creating a protected df with fewer entities thn the matrix
+    protected_df_fewer_entities = pd.DataFrame(
+        # removing the last five
+        {"entity_id": fake_test_matrix_store.design_matrix.index.levels[0].tolist()[:-5]}
+    )
+    
+    protected_df_more_entities = pd.DataFrame(
+        # removing the last five
+        {"entity_id": fake_test_matrix_store.design_matrix.index.levels[0].tolist() + [133432, 889782]}
+    )
+    
+    protected_df_fewer_entities['protectedattribute1'] = 'value1'
+    protected_df_more_entities['protectedattribute1'] = 'value2'
+    
+    # protected_df_correct
+    for i, protected_df in enumerate([protected_df_fewer_entities, protected_df_more_entities]):
+        with pytest.raises(ValueError) as err_info:
+            model_evaluator.evaluate(
+                testing_prediction_probas, fake_test_matrix_store, model_id, protected_df
+            )
 
 
 def test_evaluation_sorting_with_protected_df(db_engine_with_results_schema):
