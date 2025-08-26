@@ -2,7 +2,7 @@
 
 __author__ = """Center for Data Science and Public Policy"""
 __email__ = "datascifellows@gmail.com"
-__version__ = '5.5.1' # do not change to double-quotes, it will screw up bumpversion
+__version__ = '5.5.2' # do not change to double-quotes, it will screw up bumpversion
 
 import logging
 import logging.config
