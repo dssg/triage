@@ -1,13 +1,13 @@
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.dates as md
 import numpy as np
-from triage.util.conf import convert_str_to_relativedelta
 import matplotlib.pyplot as plt
-import plotly.express as px
-from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+matplotlib.use('Agg')
+
 from datetime import datetime
+from plotly.subplots import make_subplots
+from triage.util.conf import convert_str_to_relativedelta
 
 
 FIG_SIZE = (32, 16)
