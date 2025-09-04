@@ -242,7 +242,7 @@ class ExperimentBase(ABC):
                 "tested and evaluated everytime that you run this experiment configuration"
             )
 
-        self.random_seed = self.config.pop("random_seed", random.randint(1, 1e7))
+        self.random_seed = self.config.pop("random_seed", random.randint(1, 10000000))
 
         logger.verbose(
             f"Using random seed [{self.random_seed}] for running the experiment"
