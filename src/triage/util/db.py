@@ -4,7 +4,7 @@ import sqlalchemy
 import wrapt
 from contextlib import contextmanager
 from sqlalchemy.orm import Session
-from sqlalchemy.engine.url import make_url
+from sqlalchemy.engine import make_url
 
 import json
 import functools
