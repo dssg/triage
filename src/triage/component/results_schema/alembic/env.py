@@ -1,4 +1,4 @@
-from __future__ import with_statement
+#from __future__ import with_statement
 
 import os
 
@@ -7,7 +7,7 @@ import re
 from alembic import context
 from sqlalchemy import create_engine
 from sqlalchemy import pool
-from sqlalchemy.engine.url import URL
+from sqlalchemy.engine import URL
 
 from triage.component.results_schema import Base
 
@@ -73,8 +73,8 @@ if not url:
 
     with open(db_config_file) as fd:
         config = yaml.full_load(fd)
-        url = URL(
-            "postgres",
+        url = URL.create(
+            "postgresql+psycopg2",
             host=config["host"],
             username=config["user"],
             database=config["db"],
