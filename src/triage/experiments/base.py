@@ -252,7 +252,7 @@ class ExperimentBase(ABC):
         ###################### RUBICON ######################
 
         self.experiment_hash = save_experiment_and_get_hash(self.config, self.db_engine)
-        logger.debug(f"Experiment hash [{self.experiment_hash}] assigned")
+        logger.info(f"Experiment hash [{self.experiment_hash}] assigned")
         self.run_id = initialize_tracking_and_get_run_id(
             self.experiment_hash,
             experiment_class_path=classpath(self.__class__),
@@ -260,7 +260,7 @@ class ExperimentBase(ABC):
             experiment_kwargs=experiment_kwargs,
             db_engine=self.db_engine,
         )
-        logger.debug(f"Experiment run id [{self.run_id}] assigned")
+        logger.info(f"Experiment run id [{self.run_id}] assigned")
 
         self.initialize_components()
 
