@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from functools import partial
 from tempfile import TemporaryDirectory
 from unittest import mock, TestCase
-import fakeredis
 
 import pytest
 import testing.postgresql
@@ -22,7 +21,6 @@ from triage.experiments import (
     CONFIG_VERSION,
 )
 
-from triage.experiments.rq import RQExperiment
 
 
 def num_linked_evaluations(db_engine):
@@ -44,13 +42,6 @@ parametrize_experiment_classes = pytest.mark.parametrize(
     [
         (SingleThreadedExperiment,),
         (partial(MultiCoreExperiment, n_processes=2, n_db_processes=2),),
-        (
-            partial(
-                RQExperiment,
-                redis_connection=fakeredis.FakeStrictRedis(),
-                queue_kwargs={"is_async": False},
-            ),
-        ),
     ],
 )
 

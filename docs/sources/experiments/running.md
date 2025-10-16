@@ -319,4 +319,3 @@ The following options relate to parallelization:
 
 - *SingleThreadedExperiment*: An experiment that performs all tasks serially in a single thread. Good for simple use on small datasets, or for understanding the general flow of data through a pipeline.
 - *MultiCoreExperiment*: An experiment that makes use of the pebble library to parallelize various time-consuming steps. Takes an `n_processes` keyword argument to control how many workers to use.
-- *RQExperiment*: An experiment that makes use of the python-rq library to enqueue individual tasks onto the default queue, and wait for the jobs to be finished before moving on. python-rq requires Redis and any number of worker processes running the Triage codebase. Triage does not set up any of this needed infrastructure for you. Available through the RQ extra ( `pip install triage[rq]` )
