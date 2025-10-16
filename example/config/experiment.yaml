@@ -442,7 +442,7 @@ individual_importance:
 #
 # Each top-level key should be a class name, importable from triage. sklearn is
 # available, and if you have another classifier package you would like available,
-# contribute it to requirement/main.txt
+# add it to the `project.dependencies` section of pyproject.toml
 #
 # Each lower-level key is a hyperparameter name for the given classifier, and
 # each value is a list of potential values. All possible combinations of

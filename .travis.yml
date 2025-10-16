@@ -13,7 +13,10 @@ before_install:
 - sudo apt-get update
 - sudo apt-get install libblas-dev liblapack-dev libatlas-base-dev gfortran
 install:
-- pip install -r requirement/include/build.txt -r requirement/include/test-management.txt
+- python -m pip install --upgrade pip
+- curl -LsSf https://astral.sh/uv/install.sh | sh
+- export PATH="$HOME/.local/bin:$PATH"
+- uv pip install --system 'tox>=4.14,<5' codecov
 env:
   matrix:
     - BOTO_CONFIG=/tmp/nowhere

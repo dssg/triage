@@ -26,10 +26,11 @@ Triage could always use more documentation, whether as part of the
 official Triage docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
-The [documentation site](https://dssg.github.io/triage) runs on [mkdocs](https://www.mkdocs.org) and is controlled by the [docs/sources](docs/sources) directory. We recommend building the docs locally to preview any documentation pages. The python dependencies for this are handled by [requirement/dev.txt](requirement/dev.txt):
+The [documentation site](https://dssg.github.io/triage) runs on [mkdocs](https://www.mkdocs.org) and is controlled by the [docs/sources](docs/sources) directory. We recommend building the docs locally to preview any documentation pages. Install the documentation dependencies with [uv](https://docs.astral.sh/uv/) using the `docs` extra:
 
 ```
-pip install -r requirement/dev.txt
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv sync --extra docs
 ```
 
 Once this is done, you can modify any of the pages under the documentation root directory, and change general doc site configuration in [docs/mkdocs.yml](docs/mkdocs.yml). While modifying a documentation page, you can preview your changes by running the mkdocs dev server:
@@ -76,10 +77,10 @@ Triage always has a backlog of issues. Want to help out? Here's how to set up tr
 5.  When you're done making changes, check that your changes pass flake8
     and the tests, including testing other Python versions with tox:
 
-        $ pip install -r requirement/test.txt
-        $ flake8 triage tests
-        $ python setup.py test or py.test
-        $ tox
+        $ uv sync --extra test
+        $ uv run flake8 triage src/tests
+        $ uv run pytest
+        $ uv run tox -e py3
 
 6.  Commit your changes and push your branch to GitHub. If you've made multiple commits, squash them into one. Each pull request should be one commit (unless there are multiple logical places to split up the code, for instance a big reformatting commit followed by a smaller commit that actually changes behavior). To make the pull request easier to create, the last commit on the branch should be formatted like the following.
 
@@ -118,40 +119,19 @@ This section describes the initial setup of a Triage development environment tha
 
     You can control your development environment any way you'd like (virtualenv, pyenv, _etc._).
 
-    To quickly bootstrap an environment, invoke the executable `develop` script &ndash; found in the triage repo root &ndash; from your system shell:
+    To quickly bootstrap an environment, install uv with the official script and sync the project with the development extras:
 
-        $ ./develop
+        $ curl -LsSf https://astral.sh/uv/install.sh | sh
+        $ uv sync --extra dev
 
-    The script will launch a "wizard," which will suggest set-up steps and optionally execute these, for example:
+    This creates a local `.venv` that uv will reuse. You can either activate it manually (`source .venv/bin/activate`) or invoke tools through uv (for example, `uv run pytest`).
 
-        (install) begin
+    If you prefer to manage virtual environments manually, create one however you like and install the project in editable mode with the development extras:
 
-        (pyenv) installed ✓
-
-        (python-3.6.2) installed ✓
-
-        (virtualenv) installed ✓
-
-        (activation) installed ✓
-
-        (libs) install?
-        1) yes, install {pip install -r requirement/main.txt -r requirement/test.txt -r requirement/dev.txt}
-        2) no, ignore
-        #? 1
-
-    Alternatively, you might manage your environment via `virtualenvwrapper`:
-
-        $ mkvirtualenv triage
-        $ cd triage/
-        $ python setup.py develop
-
-    Or simply via the `venv` module:
-
-        $ cd triage/
-        $ python -m venv --prompt triage venv
-        $ python setup.py develop
-
-    Regardless of your Python environment, we do recommend installing `triage` in development mode, via `python setup.py develop` or `pip install -e .` (The `develop` script handles this for you.)
+        $ python -m venv .venv
+        $ source .venv/bin/activate
+        $ pip install --upgrade pip
+        $ uv pip install --system --editable .[dev]
 
 
 Small Changes
@@ -166,10 +146,10 @@ Triage has an extensive test suite that is run with every commit by travis-ci. A
 - [Wikipedia Page](https://en.wikipedia.org/wiki/Test-driven_development)
 - [Test Driven Development: what it is, and what it is not](https://medium.freecodecamp.org/test-driven-development-what-it-is-and-what-it-is-not-41fa6bca02a2)
 
-In addition to any requirements needed by the main library (which should be installed when you ran `python setup.py develop` to gain access to Triage itself), you can ensure all testing requirements are installed with:
+In addition to the project dependencies installed via `uv sync --extra dev`, you can refresh testing requirements explicitly with:
 
 ```
-pip install -r requirement/test.txt
+uv sync --extra test
 ```
 
 This is mentioned in the main setup section, but you may have to rerun it over time as test requirements change.

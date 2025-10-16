@@ -14,11 +14,11 @@ import random
 from itertools import chain
 from functools import partial
 
-import postgres_copy
 import sqlalchemy
 from retrying import retry
 from sqlalchemy.orm import sessionmaker
 from ohio import PipeTextIO
+from contextlib import closing
 
 from triage.component.results_schema import (
     Experiment,
@@ -337,10 +337,22 @@ def save_db_objects(db_engine, db_objects):
             type_of_object=type_of_object,
         )
     ) as pipe:
-        postgres_copy.copy_from(
-            source=pipe,
-            dest=type_of_object,
-            engine_or_conn=db_engine,
-            columns=columns,
-            format="csv",
+        preparer = db_engine.dialect.identifier_preparer
+        table = type_of_object.__table__
+        if table.schema:
+            table_name = (
+                f"{preparer.quote_identifier(table.schema)}."
+                f"{preparer.quote_identifier(table.name)}"
+            )
+        else:
+            table_name = preparer.quote_identifier(table.name)
+
+        quoted_columns = ", ".join(preparer.quote_identifier(column) for column in columns)
+        copy_sql = (
+            f"COPY {table_name} ({quoted_columns}) FROM STDIN WITH (FORMAT CSV)"
         )
+
+        with closing(db_engine.raw_connection()) as connection:
+            with connection.cursor() as cursor:
+                cursor.copy_expert(copy_sql, pipe)
+            connection.commit()

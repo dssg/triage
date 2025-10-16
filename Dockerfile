@@ -6,7 +6,7 @@ LABEL creator="Center for Data Science and Public Policy (DSaPP)" \
 
 
 RUN apt-get update && \
-        apt-get install -y --no-install-recommends gcc build-essential libpq-dev liblapack-dev postgresql git
+        apt-get install -y --no-install-recommends gcc build-essential libpq-dev liblapack-dev postgresql git curl
 
 RUN apt-get update -y && \
         apt-get install -y --no-install-recommends gnupg2 wget && \
@@ -41,22 +41,19 @@ RUN chown -R triage:triage .
 USER ${USERNAME}
 
 RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-COPY --chown=triage:triage requirement/ requirement/
+ENV PATH="/home/triage/.local/bin:/opt/venv/bin:$PATH"
 
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirement/main.txt && \
-    pip install --no-cache-dir -r requirement/test.txt && \
-    pip install --no-cache-dir -r requirement/extras-rq.txt && \
-    pip install --no-cache-dir ipython jupyter
+    curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    ln -s /home/triage/.local/bin/uv /opt/venv/bin/uv
 
+COPY --chown=triage:triage pyproject.toml .
 COPY --chown=triage:triage README.md .
 COPY --chown=triage:triage LICENSE .
 COPY --chown=triage:triage src/ src/
-COPY --chown=triage:triage setup.py .
 
-RUN pip install -e .
+RUN uv pip install --system --editable .[dev] && \
+    uv pip install --system ipython
 
 ENTRYPOINT [ "bash" ]
 
@@ -67,12 +64,12 @@ LABEL triage.version="master"
 COPY --from=development /opt/venv /opt/venv
 
 # Make sure we use the virtualenv:
-ENV PATH="/opt/venv/bin:$PATH"
+ENV PATH="/home/triage/.local/bin:/opt/venv/bin:$PATH"
 
 RUN apt-get update && \
         apt-get install -y --no-install-recommends git libpq-dev
 
-RUN pip install --no-cache-dir git+https://github.com/dssg/triage@master
+RUN uv pip install --system git+https://github.com/dssg/triage@master
 
 RUN mkdir triage
 
@@ -105,11 +102,9 @@ LABEL triage.version="production"
 COPY --from=development /opt/venv /opt/venv
 
 # Make sure we use the virtualenv:
-ENV PATH="/opt/venv/bin:$PATH"
+ENV PATH="/home/triage/.local/bin:/opt/venv/bin:$PATH"
 
-RUN pip uninstall triage
-
-RUN pip install --no-cache-dir triage
+RUN uv pip install --system --upgrade triage
 
 RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 6)production$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' > /home/triage/.bashrc
 

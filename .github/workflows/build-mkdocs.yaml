@@ -24,8 +24,11 @@ jobs:
       
       - name: Install dependencies
         run: |
-          pip install --upgrade pip && pip install -r requirement/dev.txt
-          pip install git+https://github.com/dssg/triage.git@master
+          python -m pip install --upgrade pip
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          uv pip install --system .[docs]
+          uv pip install --system git+https://github.com/dssg/triage.git@master
           git config user.name 'github-actions[bot]' && git config user.email 'github-actions[bot]@users.noreply.github.com'
       
       - name: Publish docs

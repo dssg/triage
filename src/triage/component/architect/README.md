@@ -23,12 +23,11 @@ In addition to being usable individually to assist in different aspects of build
 
 The Architect is a Python package distributable via `setuptools`. It may be installed directly using `easy_install` or `pip`, or listed as a dependency of another package (namely `triage`), under the package name `matrix-architect`.
 
-To build this package for development, its dependencies may be installed using `pip`:
+To build this package for development, install [uv](https://docs.astral.sh/uv/) and sync the editable project extras:
 
-    pip install -r requirements_dev.txt
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    uv sync --extra dev
 
-(or, without test and development dependencies, using **requirements.txt**).
-
-And, having built for development, to run tests:
+After installing dependencies, run the test suite with:
 
     pytest

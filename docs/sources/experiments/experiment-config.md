@@ -214,7 +214,7 @@ If you set this configuration section you SHOULD NOT include the grid_config sec
 ### Grid Configuration
 The classifier/hyperparameter combinations that should be trained
 
-Each top-level key should be a class name, importable from triage. sklearn is available, and if you have another classifier package you would like available, contribute it to requirement/main.txt
+Each top-level key should be a class name, importable from triage. sklearn is available, and if you have another classifier package you would like available, add it to the `project.dependencies` section of `pyproject.toml`
 
 - `grid_config`: Each lower-level key is a hyperparameter name for the given classifier, and each value is a list of potential values. All possible combinations of classifiers and hyperparameters are trained. Please check out the [grid_config section](https://github.com/dssg/triage/blob/6cb43f9cca032a980cbc25a9501e9559135fd04d/example/config/experiment.yaml#L276) in `experiment.yaml` as for a detailed example.
 

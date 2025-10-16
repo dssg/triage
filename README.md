@@ -92,48 +92,17 @@ There are a plethora of options available for experiment running, affecting thin
 
 Triage was initially developed at [University of Chicago's Center For Data Science and Public Policy](http://dsapp.uchicago.edu) and is now being maintained at Carnegie Mellon University.
 
-To build this package (without installation), its dependencies may
-alternatively be installed from the terminal using `pip`:
+To build this package (without installation), install [uv](https://docs.astral.sh/uv/) using the recommended installer and then sync the development environment:
 
-    pip install -r requirement/main.txt
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    uv sync --extra dev
 
 ### Testing
 
-To add test (and development) dependencies, use **test.txt**:
+After installing the dev dependencies, run the suite or a focused module with `pytest` (either by activating `.venv` or via `uv run`):
 
-    pip install -r requirement/test.txt [-r requirement/dev.txt]
-
-Then, to run tests:
-
-    pytest
-
-### Development Environment
-
-To quickly bootstrap a development environment, having cloned the
-repository, invoke the executable `develop` script from your system
-shell:
-
-    ./develop
-
-A "wizard" will suggest set-up steps and optionally execute these, for
-example:
-
-    (install) begin
-
-    (pyenv) installed
-
-    (python-3.9.10) installed
-
-    (virtualenv) installed
-
-    (activation) installed
-
-    (libs) install?
-    1) yes, install {pip install -r requirement/main.txt -r requirement/test.txt -r requirement/dev.txt}
-    2) no, ignore
-    #? 1
+    uv run pytest
 
 ### Contributing
 
 If you'd like to contribute to Triage development, see the [CONTRIBUTING.md](https://github.com/dssg/triage/blob/master/CONTRIBUTING.md) document.
-

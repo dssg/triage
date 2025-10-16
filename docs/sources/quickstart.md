@@ -2,7 +2,7 @@
 
 ### 1. Install Triage
 
-Triage can be installed using pip or through python setup.py. It
+Triage can be installed using pip (or `uv pip` if you prefer uv). It
 requires Python 3.8+ and access to a postgresql database (for now). *If you're interested in helping port the queries to support other databases, let us know*. Ideally you have full access to a database so triage can create additional schemas
 inside that it needs to store metadata, predictions, and evaluation
 metrics.
