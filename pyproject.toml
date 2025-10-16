@@ -165,3 +165,6 @@ commands = [
 AWS_ACCESS_KEY_ID = "fake"
 AWS_SECRET_ACCESS_KEY = "fake"
 BOTO_CONFIG = "/dev/null"
+
+[tool.pytest.ini_options]
+testpaths = ["src/tests"]
