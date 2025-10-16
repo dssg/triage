@@ -1,8 +1,9 @@
 import io
 import subprocess
 
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+import logging
+from triage.logging import get_logger
+logger = get_logger(__name__)
 
 import pandas as pd
 import numpy as np

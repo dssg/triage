@@ -1,5 +1,5 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+logger = get_logger(__name__)
 
 from triage.component.architect.utils import str_in_sql
 from triage.util.structs import FeatureNameList

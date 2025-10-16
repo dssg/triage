@@ -11,8 +11,8 @@ file
 import yaml
 import json
 
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+logger = get_logger(__name__)
 
 class PostmodelParameters:
     '''

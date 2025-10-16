@@ -1063,7 +1063,7 @@ class ModelEvaluator:
                         directory='error_analysis',
                         view=view_plots)
 
-           print(dot_path)
+           logger.info(dot_path)
 
     def error_analysis(self, threshold, **kwargs):
         '''
@@ -1087,7 +1087,7 @@ class ModelEvaluator:
         if isinstance(threshold, dict):
            for threshold_type, threshold_list in threshold.items():
                for threshold in threshold_list:
-                   print(threshold_type, threshold)
+                   logger.info(threshold_type, threshold)
                    error_modeler(param_type = threshold_type,
                                  param = threshold)
         else:

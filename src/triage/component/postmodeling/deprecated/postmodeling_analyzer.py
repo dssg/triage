@@ -63,7 +63,7 @@ class PostmodelingAnalyzer:
         to_print = all_models.groupby('model_group_id').nth(1)[['model_type', 'hyperparameters']].reset_index().to_dict(orient='records')
 
         for m in to_print:
-            print(m)
+            logger.info(m)
 
         return all_models
     
@@ -79,7 +79,7 @@ class PostmodelingAnalyzer:
         # to_print = all_models.groupby('model_group_id').nth(1)[['model_type', 'hyperparameters']].reset_index().to_dict(orient='records')
 
         for i, model in all_models.groupby('model_group_id').nth(1)[['model_type', 'hyperparameters']].reset_index().iterrows():
-            print(f"{model['model_group_id']} - {model['model_type']} with ({model['hyperparameters']}) ")
+            logger.info(f"{model['model_group_id']} - {model['model_type']} with ({model['hyperparameters']}) ")
 
     def cohort_summary(self):
         q = f"""
@@ -96,7 +96,7 @@ class PostmodelingAnalyzer:
 
         matrices = pd.read_sql(q, self.engine)
 
-        print(matrices)
+        logger.info(matrices)
     
 
     def subset_summary(self, subset_hash):
@@ -115,7 +115,7 @@ class PostmodelingAnalyzer:
 
         matrices = pd.read_sql(q, self.engine)
 
-        print(matrices)
+        logger.info(matrices)
 
     def plot_model_group_performance(self, metric, parameter):
         pass        
@@ -207,7 +207,7 @@ class PostmodelingAnalyzer:
         """
         fig, axes = self._get_subplots(subplot_width=subplot_width, subplot_len=subplot_len, sharey=sharey, sharex=sharex)
         
-        print(len(axes), len(axes[0]))
+        logger.info(len(axes), len(axes[0]))
 
         for j, mg in enumerate(self.models):
             for i, train_end_time in enumerate(self.models[mg]):
@@ -319,7 +319,7 @@ class PostmodelingAnalyzer:
             Plot precision against threshold (list %)
         """
         if len(self.models) <= 1:
-            print("Not available when there is only one model group (look at plot_prk_curves instead)")
+            logger.info("Not available when there is only one model group (look at plot_prk_curves instead)")
             return
         fig, axes = self._get_subplots(subplot_width=6, n_cols=1, sharey=True)
         for _, mg in enumerate(self.models):
@@ -494,7 +494,7 @@ class PostmodelingAnalyzer:
                     logging.error('Please run calculate_crosstabs_pos_vs_neg function to calculate crosstabs first for all models!')
                     raise e
                 
-                print(f'\nModel Group: {mg}, Validation date: {train_end_time}'.center(30, ' '))
+                logger.info(f'\nModel Group: {mg}, Validation date: {train_end_time}'.center(30, ' '))
                 display(df)
 
         if return_dfs:

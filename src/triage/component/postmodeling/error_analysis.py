@@ -4,7 +4,8 @@ import yaml
 import os
 import io
 import psycopg2
-import verboselogs, logging, coloredlogs
+import logging
+from triage.logging import get_logger
 import matplotlib.pyplot as plt
 import seaborn as sns
 import graphviz
@@ -15,7 +16,7 @@ from sklearn.tree import export_text, export_graphviz
 
 from triage.component.catwalk.storage import ProjectStorage
 
-logger = verboselogs.VerboseLogger(__name__)
+logger = get_logger(__name__)
 
 
 def _get_error_analysis_configuration():
@@ -497,28 +498,28 @@ def output_all_analysis(error_analysis_results):
             error_anlaysis_resulst (list): List of dictionaries with the output 
             of every single error anlaysis made.
     """
-    print("Error Analysis")
-    print("--------------")
+    logger.info("Error Analysis")
+    logger.info("--------------")
 
     for analysis in error_analysis_results:
         for element in analysis:
             error_label = _get_error_label(element['error_type'])
             config_text = _output_config_text(element, error_label)
-            print(config_text)
+            logger.info(config_text)
             
             _plot_feature_importance_local(element['feature_importance'],
                                            element['feature_names'],
                                            error_label)
 
             dt_text = _output_dt_text(error_label)
-            print(dt_text)
+            logger.info(dt_text)
             plot_tree(element['tree'], filled=True, feature_names=
                       element['feature_names_graphviz'])
             plt.show()
             #print(element['tree_text'])
-            print("             ######            ")
+            logger.info("             ######            ")
         
-        print("*******************************************")
+        logger.info("*******************************************")
 
 
 def output_specific_configuration(error_analysis_resutls, 
@@ -542,19 +543,19 @@ def output_specific_configuration(error_analysis_resutls,
                 (element['max_depth'] == max_depth)):
                 error_label = _get_error_label(error_type)
                 config_text = _output_config_text(element, error_label)
-                print(config_text)
+                logger.info(config_text)
                 
                 _plot_feature_importance_local(element['feature_importance'],
                                                element['feature_names'],
                                                error_label)
                 
                 dt_text = _output_dt_text(error_label)
-                print(dt_text)
+                logger.info(dt_text)
                 plot_tree(element['tree'], filled=True,
                           feature_names=element['feature_names_graphviz'])
                 plt.show()
                 #print(element['tree_text'])
-                print("             ######            ")
+                logger.info("             ######            ")
 
 
 def output_specific_error_analysis(error_analysis_results, 
@@ -573,21 +574,21 @@ def output_specific_error_analysis(error_analysis_results,
             if element['error_type'] == error_type:
                 error_label = _get_error_label(error_type)
                 config_text = _output_config_text(element, error_label)
-                print(config_text)
+                logger.info(config_text)
                 
                 _plot_feature_importance_local(element['feature_importance'], 
                                                element['feature_names'], 
                                                error_label)
 
                 dt_text = _output_dt_text(error_label)
-                print(dt_text)
+                logger.info(dt_text)
                 plot_tree(element['tree'], filled=True,
                           feature_names=element['feature_names_graphviz'])
                 plt.show()
                 #print(element['tree_text'])
-                print("             ######            ")
+                logger.info("             ######            ")
         
-        print("*******************************************")
+        logger.info("*******************************************")
 
 
 if __name__ == "__main__":

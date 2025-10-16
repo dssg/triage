@@ -5,11 +5,11 @@ import logging
 import seaborn as sns
 import matplotlib.table as tab
 import matplotlib.pyplot as plt
-import itertools
 #from tabulate import tabulate
 
 from IPython.display import display
-from io import StringIO
+import itertools
+
 from descriptors import cachedproperty
 from sqlalchemy import create_engine
 from sklearn.calibration import calibration_curve
@@ -475,55 +475,15 @@ class SingleModelAnalyzer:
         crosstabs_df['model_id'] = self.model_id
         crosstabs_df['matrix_uuid'] = matrix_uuid
 
+    
         if push_to_db:
-            # logging.info('Pushing the results to the DB')
-            # crosstabs_df.set_index(
-            #     ['model_id', 'matrix_uuid', 'feature', 'metric', 'threshold_type', 'threshold'], inplace=True
-            # )
-
-            # # TODO: Figure out to change the owner of the table
-            # crosstabs_df.pg_copy_to(schema='test_results', name=table_name, con=self.engine, if_exists='append')
-            logging.info(f'Pushing the results to the database, {len(crosstabs_df)} rows')
-                    
+            logging.info('Pushing the results to the DB')
             crosstabs_df.set_index(
-                ['model_id', 'matrix_uuid', 'feature', 'metric', 'threshold_type', 'threshold'],
-                inplace=True
+                ['model_id', 'matrix_uuid', 'feature', 'metric', 'threshold_type', 'threshold'], inplace=True
             )
-            
-            crosstabs_df = crosstabs_df.reset_index()
-            
-            if not table_exists(f'test_results.{table_name}', self.engine):
-                q = f'''
-                    create schema if not exists test_results;
-                    
-                    create table test_results.{table_name} (
-                    model_id INTEGER,
-                    matrix_uuid TEXT,
-                    feature TEXT,
-                    metric TEXT,
-                    threshold_type TEXT,
-                    threshold FLOAT,
-                    value FLOAT  
-                    );
-                
-                '''
-                # q = _generate_create_table_sql_statement_from_df(results, f'{table_schema}.{table_name}')
-                self.engine.execute(q)
-            
-            conn = self.engine.raw_connection()
-            cursor = conn.cursor()
-            
-            buffer = StringIO()
-            crosstabs_df.to_csv(buffer, index=False, header=False)
-            buffer.seek(0)
-            
-            columns = ', '.join(crosstabs_df.columns)
-            print(columns)
-            cursor.copy_expert(f"COPY test_results.{table_name} ({columns}) FROM STDIN WITH CSV", buffer)
-            # results.to_sql(con=db_engine, schema=table_schema, name=table_name, if_exists='append')
-            conn.commit()
-            cursor.close()
-            conn.close()
+
+            # TODO: Figure out to change the owner of the table
+            crosstabs_df.pg_copy_to(schema='test_results', name=table_name, con=self.engine, if_exists='append')
 
         if return_df:
             return crosstabs_df
@@ -1093,7 +1053,7 @@ class MultiModelAnalyzer:
         to_print = all_models.groupby('model_group_id').nth(1)[['model_type', 'hyperparameters']].reset_index().to_dict(orient='records')
 
         for m in to_print:
-            print(m)
+            logger.info(m)
 
         return all_models
     
@@ -1109,7 +1069,7 @@ class MultiModelAnalyzer:
         # to_print = all_models.groupby('model_group_id').nth(1)[['model_type', 'hyperparameters']].reset_index().to_dict(orient='records')
 
         for i, model in all_models.groupby('model_group_id').nth(1)[['model_type', 'hyperparameters']].reset_index().iterrows():
-            print(f"{model['model_group_id']} - {model['model_type']} with ({model['hyperparameters']}) ")
+            logger.info(f"{model['model_group_id']} - {model['model_type']} with ({model['hyperparameters']}) ")
 
     def cohort_summary(self):
         q = f"""
@@ -1126,7 +1086,7 @@ class MultiModelAnalyzer:
 
         matrices = pd.read_sql(q, self.engine)
 
-        print(matrices)
+        logger.info(matrices)
     
 
     def subset_summary(self, subset_hash):
@@ -1145,7 +1105,7 @@ class MultiModelAnalyzer:
 
         matrices = pd.read_sql(q, self.engine)
 
-        print(matrices)
+        logger.info(matrices)
 
     def plot_model_group_performance(self, metric, parameter):
         pass        
@@ -1176,7 +1136,7 @@ class MultiModelAnalyzer:
             and model_group_id in ('{model_groups}')        
             """  
         # TODO do we really need experiment_hashes here? can we query with only model_group_ids?
-        
+
         # TODO: modify to remove pandas
         models = pd.read_sql(q, self.engine).to_dict(orient='records')
 
@@ -1237,7 +1197,7 @@ class MultiModelAnalyzer:
         """
         fig, axes = self._get_subplots(subplot_width=subplot_width, subplot_len=subplot_len, sharey=sharey, sharex=sharex)
         
-        logging.info(f"{len(axes), len(axes[0])}")
+        logger.info(len(axes), len(axes[0]))
 
         for j, mg in enumerate(self.models):
             for i, train_end_time in enumerate(self.models[mg]):
@@ -1349,7 +1309,7 @@ class MultiModelAnalyzer:
             Plot precision against threshold (list %)
         """
         if len(self.models) <= 1:
-            print("Not available when there is only one model group (look at plot_prk_curves instead)")
+            logger.info("Not available when there is only one model group (look at plot_prk_curves instead)")
             return
         fig, axes = self._get_subplots(subplot_width=6, n_cols=1, sharey=True)
         for _, mg in enumerate(self.models):
@@ -1524,7 +1484,7 @@ class MultiModelAnalyzer:
                     logging.error('Please run calculate_crosstabs_pos_vs_neg function to calculate crosstabs first for all models!')
                     raise e
                 
-                print(f'\nModel Group: {mg}, Validation date: {train_end_time}'.center(30, ' '))
+                logger.info(f'\nModel Group: {mg}, Validation date: {train_end_time}'.center(30, ' '))
                 display(df)
 
         if return_dfs:

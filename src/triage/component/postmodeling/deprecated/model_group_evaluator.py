@@ -339,7 +339,7 @@ class ModelGroupEvaluator:
                 legend.get_title().set_fontsize('16')
 
             except TypeError:
-                    print(f'''
+                    logger.info(f'''
                           Oops! model_metrics_pivot table is empty. Several problems
                           can be creating this error:
                           1. Check that {param_type}@{param} exists in the evaluations
@@ -497,7 +497,7 @@ class ModelGroupEvaluator:
                 legend.get_title().set_fontsize('16')
 
             except TypeError:
-                    print(f'''
+                    logger.info(f'''
                           Oops! model_metrics_pivot table is empty. Several problems
                           can be creating this error:
                           1. Check that {param_type}@{param} exists in the evaluations
@@ -849,7 +849,7 @@ class ModelGroupEvaluator:
                                 annot=True,
                                 linewidth=0.1)
             except ValueError:
-                print(f'''
+                logger.info(f'''
                       Temporal comparison can be only made for more than one
                       model group.
                      ''')
@@ -957,7 +957,7 @@ class ModelGroupEvaluator:
                                 annot=True,
                                 linewidth=0.1)
             except ValueError:
-                print(f'''
+                logger.info(f'''
                       Temporal comparison can be only made for more than one
                       model group.
                      ''')
@@ -1204,7 +1204,7 @@ class ModelGroupEvaluator:
                 fig.suptitle(values['train_end_time'])
                 plt.show()
         except ValueError:
-            print(f'''
+            logger.info(f'''
             Temporal comparison can be only made for more than one
             model group.
             ''')

@@ -1,6 +1,3 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
-
 import os
 import yaml
 

@@ -1,5 +1,6 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+import logging
+from triage.logging import get_logger
+logger = get_logger(__name__)
 
 import datetime
 import shutil

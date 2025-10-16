@@ -55,8 +55,8 @@ import getpass
 import os
 from datetime import datetime
 
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+logger = get_logger(__name__)
 
 
 

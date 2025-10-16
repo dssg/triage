@@ -1,6 +1,6 @@
-import verboselogs, logging
+from triage.logging import get_logger
 
-logger = verboselogs.VerboseLogger(__name__)
+logger = get_logger(__name__)
 
 from abc import ABC, abstractmethod
 import cProfile

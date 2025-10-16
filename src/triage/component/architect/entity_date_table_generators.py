@@ -1,9 +1,9 @@
-import verboselogs
+from triage.logging import get_logger
 
 from triage.database_reflection import table_has_data, table_row_count, table_exists, table_has_duplicates
 
 
-logger = verboselogs.VerboseLogger(__name__)
+logger = get_logger(__name__)
 DEFAULT_ACTIVE_STATE = "active"
 
 
@@ -205,7 +205,7 @@ class CohortTableGeneratorNoOp(EntityDateTableGenerator):
 class SubsetEntityDateTableGenerator(EntityDateTableGenerator):
     def __init__(self, query, db_engine, entity_date_table_name, labels_table_name=None, replace=True, cohort_table=None):
         super().__init__(query, db_engine, entity_date_table_name, labels_table_name, replace)
-        print('Initializing the new child class Subset entity date generator')
+        logger.info('Initializing the new child class Subset entity date generator')
         self.cohort_table = cohort_table
         
     def create_and_populate_entity_date_table_from_query(self, as_of_dates):

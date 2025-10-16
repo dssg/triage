@@ -1,16 +1,14 @@
 
 """ This is a module for moving the ad-hoc code we wrote in generating the modeling report"""
-import verboselogs, logging
-
-logger = verboselogs.VerboseLogger(__name__)
 
 import pandas as pd
 import json
 import matplotlib.pyplot as plt
 import seaborn as sns
-import warnings
-
+import logging
 from matplotlib.lines import Line2D
+
+import warnings
 
 from triage.component.timechop.plotting import visualize_chops_plotly
 from triage.component.timechop import Timechop
@@ -114,12 +112,7 @@ def get_most_recent_experiment_hash(engine):
 
 class ExperimentReport:
     
-    def __init__(self, engine, 
-                 experiment_hashes, 
-                 performance_priority_metric='recall@', 
-                 threshold="1_pct", 
-                 bias_priority_metric='tpr_disparity', 
-                 bias_priority_groups=None):
+    def __init__(self, engine, experiment_hashes, performance_priority_metric, threshold, bias_priority_metric, bias_priority_groups):
         self.engine = engine
         self.experiment_hashes = experiment_hashes
         
@@ -149,7 +142,7 @@ class ExperimentReport:
         chops = Timechop(**experiment_config['temporal_config'])
         splits = len(chops.chop_time())
 
-        print(f'There are {splits} train-validation splits')
+        logger.info(f'There are {splits} train-validation splits')
         visualize_chops_plotly(
             chops
         )
@@ -436,51 +429,33 @@ class ExperimentReport:
             parameter = self.threshold
         
         # fetch model groups
-        def fetch_evaluation_values(with_parameter=True): 
-            if with_parameter: 
-                parameter_stmt = f"and e.parameter = '{parameter}'"
-            else: 
-                parameter_stmt = ''
-
-            q = f'''
-                with models as (
-                    select 
-                        distinct model_id, 
-                        train_end_time, 
-                        model_group_id, 
-                        model_type, 
-                        hyperparameters
-                    from triage_metadata.experiment_models join triage_metadata.models using(model_hash)
-                    where experiment_hash in ('{"','".join(self.experiment_hashes)}')   
-                )
+        q = f'''
+            with models as (
                 select 
-                    m.model_id, 
-                    train_end_time::date as train_end_time_dt,
-                    to_char(train_end_time, 'YYYY-MM-DD') as train_end_time,
+                    distinct model_id, 
+                    train_end_time, 
+                    model_group_id, 
                     model_type, 
-                    model_group_id,
-                    stochastic_value as metric_value,
-                    parameter
-                from models m left join test_results.evaluations e 
-                on m.model_id = e.model_id
-                and e.metric = '{metric}'
-                {parameter_stmt}
-                and e.subset_hash = ''
-            '''
-            return q 
-        
-        # 1. fetch evaluation values to check if we have 
-        q = fetch_evaluation_values()
-        df = pd.read_sql(q, self.engine)
-        # Validate that we have value for the DEFAULT metric and parameter 
-        if df.metric_value.isna().unique(): 
-            q = fetch_evaluation_values(with_parameter=False)
-            df = pd.read_sql(q, self.engine)
-            # fetch the first available value 
-            parameter_ = df.loc[0, 'parameter']
-            self.threshold = parameter_
-            df = df[df.parameter == parameter_]
+                    hyperparameters
+                from triage_metadata.experiment_models join triage_metadata.models using(model_hash)
+                where experiment_hash in ('{"','".join(self.experiment_hashes)}')   
+            )
+            select 
+                m.model_id, 
+                train_end_time::date as train_end_time_dt,
+                to_char(train_end_time, 'YYYY-MM-DD') as train_end_time,
+                model_type, 
+                model_group_id,
+                stochastic_value as metric_value
+            from models m left join test_results.evaluations e 
+            on m.model_id = e.model_id
+            and e.metric = '{metric}'
+            and e.parameter = '{parameter}'
+            and e.subset_hash = ''
+        '''
 
+
+        df = pd.read_sql(q, self.engine)
         df['train_end_time'] = pd.to_datetime(df.train_end_time, format='%Y-%m-%d')
         
         models_per_train_end_time = df.groupby(['model_group_id', 'train_end_time']).count()['model_id']
@@ -488,7 +463,7 @@ class ExperimentReport:
         if models_per_train_end_time[models_per_train_end_time > 1].empty:
             pass 
         else: 
-            print(f'model groups with morel than one model id per train end time: \n{models_per_train_end_time[models_per_train_end_time > 1]}' )
+            logger.info(f'model groups with morel than one model id per train end time: \n{models_per_train_end_time[models_per_train_end_time > 1]}' )
         
         if generate_plot:
             # using the audition plotting base here
@@ -533,45 +508,27 @@ class ExperimentReport:
         if parameter is None: 
             parameter = self.threshold
         
-        def fetch_evaluation_values_subsets(with_parameter=True):
-            if with_parameter: 
-                parameter_stmt = f"and e.parameter = '{parameter}'"
-            else: 
-                parameter_stmt = ''
-
-            q = f'''
-                select 
-                    case when e.subset_hash is null then 'full_cohort' 
-                    else s.config ->> 'name' 
-                    end as "subset",
-                    e.subset_hash,
-                    m.model_id,
-                    m.model_group_id,
-                    m.model_type,
-                    m.train_end_time::date,
-                    e.stochastic_value as metric_value,
-                    parameter
-                from triage_metadata.experiment_models join triage_metadata.models m using(model_hash)
-                    left join test_results.evaluations e
-                    on m.model_id = e.model_id
-                    and e.parameter = '{parameter}'
-                    {parameter_stmt}
-                        left join triage_metadata.subsets s on e.subset_hash = s.subset_hash 
-                where experiment_hash in ('{"','".join(self.experiment_hashes)}')
-            '''
-
-            return q
+        q = f'''
+            select 
+                case when e.subset_hash is null then 'full_cohort' 
+                else s.config ->> 'name' 
+                end as "subset",
+                e.subset_hash,
+                m.model_id,
+                m.model_group_id,
+                m.model_type,
+                m.train_end_time::date,
+                e.stochastic_value as metric_value
+            from triage_metadata.experiment_models join triage_metadata.models m using(model_hash)
+                left join test_results.evaluations e
+                on m.model_id = e.model_id
+                and e.parameter = '{parameter}'
+                and e.metric = '{metric}'
+                    left join triage_metadata.subsets s on e.subset_hash = s.subset_hash 
+            where experiment_hash in ('{"','".join(self.experiment_hashes)}')
+        '''
         
-        q = fetch_evaluation_values_subsets() 
         df = pd.read_sql(q, self.engine)
-        # Validate that we have value for the DEFAULT metric and parameter 
-        if df.metric_value.isna().unique(): 
-            q = fetch_evaluation_values_subsets(with_parameter=False)
-            df = pd.read_sql(q, self.engine)
-            # fetch the first available value 
-            parameter_ = df.loc[0, 'parameter']
-            self.threshold = parameter_
-            df = df[df.parameter == parameter_]
         
         if (df.empty) or (None in df.subset.unique()):
             return None
@@ -964,41 +921,39 @@ class ExperimentReport:
         if equity_metric is None:
             equity_metric = self.bias_metric
         
-        logger.notice(f"Default performance parameters are set to recall@1_pct and bias metric to tpr_disparity!")
-        logger.notice("==> In case your experiment doesn't have those parameters Triage will use one of the available. <==")
+        
         stats = self.experiment_stats()
           
         if stats['implemented_fewer_splits'] == 1:
-            logger.notice(f"Temporal config suggests {stats['timesplits_from_temporal_config']} temporal splits, but experiment implemented only {stats['validation_splits']} splits. Was this intentional?")
+            logger.info(f"Temporal config suggests {stats['timesplits_from_temporal_config']} temporal splits, but experiment implemented only {stats['validation_splits']} splits. Was this intentional?")
         else:
-            logger.notice(f'Experiment contained {stats["timesplits_from_temporal_config"]} temporal splits')
+            logger.info(f'Experiment contained {stats["timesplits_from_temporal_config"]} temporal splits')
             
-        logger.notice(f"Experiment contained {stats['as_of_times']} distinct as_of_times")
+        
+        logger.info(f"Experiment contained {stats['as_of_times']} distinct as_of_times")
     
         cohorts = self.cohorts(generate_plots=False)
-        logger.notice(f'On average, your cohorts contained around {round(cohorts.cohort_size.mean())} entities with a baserate of {round(cohorts.baserate.mean(), 3)}')
+        logger.info(f'On average, your cohorts contained around {round(cohorts.cohort_size.mean())} entities with a baserate of {round(cohorts.baserate.mean(), 3)}')
+    
+        logger.info(f"You built {stats['features']} features organized into {stats['feature_groups']} groups/blocks")
         
-        logger.notice(f"You built {stats['features']} features organized into {stats['feature_groups']} groups/blocks")
-        
-        logger.notice(f"Your model grid specification contained {stats['grid_size']} model types with {stats['models_needed']} individual models")
+        logger.info(f"Your model grid specification contained {stats['grid_size']} model types with {stats['models_needed']} individual models")
         
         ## Models
         num_models = len(self.models())
         if num_models < stats['models_needed']:
-            logger.notice(f"However, the experiment only built {num_models} models. You are missing {stats['models_needed'] - num_models} models")
+            logger.info(f"However, the experiment only built {num_models} models. You are missing {stats['models_needed'] - num_models} models")
             
         else:
-            logger.notice(f"You successfully built all the {num_models} models")
+            logger.info(f"You successfully built all the {num_models} models")
         
         # Model Performance
         performance = self.model_performance(metric=metric, parameter=parameter, generate_plot=False)
         best_performance = performance.groupby(['model_group_id', 'model_type'])['metric_value'].mean().max()
         best_model_group = performance.groupby(['model_group_id', 'model_type'])['metric_value'].mean().idxmax()[0]
         best_model_type = performance.groupby(['model_group_id', 'model_type'])['metric_value'].mean().idxmax()[1]
-        
-        # because we could change the value of the default parameter in case it doesn't exist, 
-        # it is safer to take it from the object itself.
-        logger.notice(f"Your models achieved a best average {self.performance_metric}{self.threshold} of {round(best_performance, 3)} over the {stats['validation_splits']} validation splits, with the Model Group {best_model_group},{best_model_type}. Note that model selection is more nuanced than average predictive performance over time. You could use Audition for model selection.") 
+            
+        logger.info(f"Your models acheived a best average {metric}{parameter} of {round(best_performance, 3)} over the {stats['validation_splits']} validation splits, with the Model Group {best_model_group},{best_model_type}. Note that model selection is more nuanced than average predictive performance over time. You could use Audition for model selection.")
         
         ## Subsets
         subset_performance = self.model_performance_subsets(metric=metric, parameter=parameter, generate_plot=False)
@@ -1014,11 +969,11 @@ class ExperimentReport:
                 res.append(d)
             
             if len(res) > 0:
-                logger.notice(f"You created {len(res)} subsets of your cohort -- {', '.join([x['subset'] for x in res])}")
+                logger.info(f"You created {len(res)} subsets of your cohort -- {', '.join([x['subset'] for x in res])}")
                 for d in res:
-                    logger.notice(f"For subset '{d['subset'] }', Model Group {d['best_mod'][0]}, {d['best_mod'][1]} achieved the best average {metric}{parameter} of {d['best_perf']}")
+                    logger.info(f"For subset '{d['subset'] }', Model Group {d['best_mod'][0]}, {d['best_mod'][1]} achieved the best average {metric}{parameter} of {d['best_perf']}")
         else:
-            logger.notice("No subsets defined.")
+            logger.info("No subsets defined.") 
 
         ## Bias
         equity_metrics = self.efficiency_and_equity(
@@ -1031,11 +986,11 @@ class ExperimentReport:
         if equity_metrics is not None:
             grpobj = equity_metrics[(equity_metrics.baserate > 0) & (equity_metrics.model_group_id == best_model_group)].groupby('attribute_name')
             for attr, gdf in grpobj:
-                logger.notice(f"Measuring biases across {attr} groups using {equity_metric} for the best performing model:")
+                logger.info(f'Measuring biases across {attr} groups using {equity_metric} for the best performing model:')
                 d = gdf.groupby('attribute_value')[equity_metric].mean()
-                logger.notice(", ".join(f"{k}: {round(v, 3)}" for k, v, in d.to_dict().items()))
+                logger.info(", ".join(f"{k}: {round(v, 3)}" for k, v, in d.to_dict().items()))
         else:
-            logger.notice(f"No bias audit results were found in the database for the experiment.")
+            logger.info(f"No bias audit results were found in the database for the experiment.")
             
 
     def precision_recall_curves(self, plot_size=(3,3)):

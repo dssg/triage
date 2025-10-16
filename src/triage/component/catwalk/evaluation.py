@@ -1,8 +1,9 @@
 import functools
 import itertools
-import verboselogs, logging
+import logging
+from triage.logging import get_logger
 
-logger = verboselogs.VerboseLogger(__name__)
+logger = get_logger(__name__)
 import math
 
 import numpy as np

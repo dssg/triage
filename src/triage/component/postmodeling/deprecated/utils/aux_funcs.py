@@ -12,8 +12,8 @@ from sqlalchemy.sql import text
 from collections import namedtuple
 import yaml
 
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+logger = get_logger(__name__)
 
 
 ModelEvaluator = namedtuple('ModelEvaluator',

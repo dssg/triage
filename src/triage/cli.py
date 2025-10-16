@@ -36,9 +36,9 @@ from triage.component.postmodeling.add_predictions import add_predictions
 from triage.util.conf import load_query_if_needed
 from triage.util.db import create_engine
 
-import verboselogs, logging
+from triage.logging import get_logger
 
-logger = verboselogs.VerboseLogger(__name__)
+logger = get_logger(__name__)
 
 
 def natural_number(value):
@@ -120,7 +120,7 @@ class Triage(RootCommand):
     @cmdmethod
     def configversion(self, args):
         """Check the experiment config version compatible with this installation of Triage"""
-        print(CONFIG_VERSION)
+        logger.info("%s", CONFIG_VERSION)
 
 
 @Triage.register

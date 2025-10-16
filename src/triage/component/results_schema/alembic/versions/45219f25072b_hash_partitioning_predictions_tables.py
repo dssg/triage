@@ -8,8 +8,8 @@ Create Date: 2020-08-21 09:29:04.751933
 from alembic import op
 import os
 
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+logger = get_logger(__name__)
 
 
 # revision identifiers, used by Alembic.

@@ -281,4 +281,4 @@ if __name__ == '__main__':
         table_name='crosstabs_test_kasun'
     )
 
-    print(df.sample(n=10))
+    logger.info(df.sample(n=10))

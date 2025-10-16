@@ -9,6 +9,8 @@ import pandas as pd
 import yaml
 import numpy as np
 
+from triage.logging import ic
+
 
 def convert_string_column_to_date(column):
     return [datetime.datetime.strptime(date, "%Y-%m-%d").date() for date in column]
@@ -121,7 +123,7 @@ def create_entity_date_df(
         for date in ids_dates["as_of_date"]
     ]
     ids_dates = ids_dates[ids_dates["as_of_date"].isin(as_of_dates)]
-    print(ids_dates)
+    ic(ids_dates)
 
     return ids_dates.reset_index(drop=True)
 

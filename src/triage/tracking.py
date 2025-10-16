@@ -5,8 +5,9 @@ import getpass
 import os
 import requests
 import subprocess
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+import logging
+from triage.logging import get_logger
+logger = get_logger(__name__)
 from functools import wraps
 from triage.util.db import scoped_session, get_for_update
 from triage.util.introspection import classpath

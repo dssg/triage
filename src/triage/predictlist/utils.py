@@ -3,8 +3,8 @@ from triage.component.catwalk.utils import db_retry, filename_friendly_hash
 
 import re
 from sqlalchemy.orm import sessionmaker
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+logger = get_logger(__name__)
 
 
 def experiment_config_from_model_id(db_engine, model_id):

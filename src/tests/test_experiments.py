@@ -14,6 +14,7 @@ from sqlalchemy.orm import sessionmaker
 from tests.utils import sample_config, populate_source_data, open_side_effect
 from triage.component.catwalk.storage import CSVMatrixStore
 from triage.component.results_schema.schema import Experiment
+from triage.logging import ic
 
 from triage.experiments import (
     MultiCoreExperiment,
@@ -106,7 +107,7 @@ def test_simple_experiment(experiment_class):
                 )
             ]
         )
-        print(f"========================Model groups {num_mgs}")
+        ic(f"========================Model groups {num_mgs}")
         assert num_mgs > 0
 
         # 2. that model entries are present, and linked to model groups
@@ -122,7 +123,7 @@ def test_simple_experiment(experiment_class):
                 )
             ]
         )
-        print(f"========================Model {num_models}")
+        ic(f"========================Model {num_models}")
         assert num_models > 0
 
         # 3. predictions, linked to models for both training and testing predictions
@@ -139,7 +140,7 @@ def test_simple_experiment(experiment_class):
                     )
                 ]
             )
-            print(f"========================Predictions {num_predictions}")
+            ic(f"========================Predictions {num_predictions}")
             assert num_predictions > 0
 
         # 4. evaluations linked to predictions linked to models, for training and testing
@@ -162,7 +163,7 @@ def test_simple_experiment(experiment_class):
                     )
                 ]
             )
-            print(f"========================Evaluations {num_evaluations}")
+            ic(f"========================Evaluations {num_evaluations}")
             assert num_evaluations > 0
 
         # 5. subset evaluations linked to subsets and predictions linked to

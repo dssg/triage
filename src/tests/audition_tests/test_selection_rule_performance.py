@@ -8,6 +8,7 @@ from triage.component.audition.selection_rule_performance import (
     SelectionRulePerformancePlotter,
 )
 from triage.component.audition.selection_rules import BoundSelectionRule
+from triage.logging import ic
 
 from .utils import create_sample_distance_table
 
@@ -51,7 +52,7 @@ def test_SelectionRulePerformancePlotter_generate_plot_data():
         model_group_ids=[1, 2],
         train_end_times=TRAIN_END_TIMES,
     )
-    print(df.to_dict("list"))
+    ic(df.to_dict("list"))
     assert df.to_dict("list") == {
         "selection_rule": [
             "best_current_value_precision@_100_abs",

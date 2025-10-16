@@ -1,7 +1,7 @@
 import itertools
 
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+logger = get_logger(__name__)
 
 from triage.util.conf import convert_str_to_relativedelta, dt_from_str
 from triage.util.structs import AsOfTimeList

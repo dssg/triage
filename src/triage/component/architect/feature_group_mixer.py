@@ -1,5 +1,5 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+logger = get_logger(__name__)
 
 import itertools
 from triage.component.architect.feature_group_creator import FeatureGroup

@@ -1,8 +1,9 @@
 import ohio.ext.pandas
 import pandas as pd
-import verboselogs, logging
+import logging
+from triage.logging import get_logger
 
-logger = verboselogs.VerboseLogger(__name__)
+logger = get_logger(__name__)
 
 from scipy import stats
 import yaml
@@ -442,7 +443,7 @@ def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type,
         buffer.seek(0)
         
         columns = ', '.join(results.columns)
-        print(columns)
+        logger.info(columns)
         cursor.copy_expert(f"COPY {table_schema}.{table_name} ({columns}) FROM STDIN WITH CSV", buffer)
         # results.to_sql(con=db_engine, schema=table_schema, name=table_name, if_exists='append')
         conn.commit()
