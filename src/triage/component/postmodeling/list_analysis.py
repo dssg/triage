@@ -6,9 +6,6 @@ import logging
 import itertools
 import pandas as pd
 
-# remove this
-import psycopg2
-
 from scipy.stats import spearmanr
 
 from triage.component.catwalk.storage import ProjectStorage
@@ -270,8 +267,9 @@ def _get_descriptives(db_engine, model_id, columns_of_interest, feature_groups):
 
 
 if __name__ == '__main__':
+    from psycopg import connect
 
-    conn = psycopg2.connect(service='acdhs_housing')
+    conn = connect(service='acdhs_housing')
 
     df = get_crosstabs_postive_vs_negative(
         conn,

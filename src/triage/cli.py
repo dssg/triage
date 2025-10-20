@@ -1,636 +1,741 @@
-import argparse
+from __future__ import annotations
+
 import importlib.util
 import os
-import yaml
 import pathlib
-
-
+import subprocess
+import textwrap
+import time
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any, Dict, Iterable, List, Optional
 
-from descriptors import cachedproperty
-from argcmdr import RootCommand, Command, main, cmdmethod, local
-from getpass import getpass
+import typer
+import yaml
+from rich import box
+from rich.console import Console
+from rich.live import Live
+from rich.panel import Panel
+from rich.table import Table
 from sqlalchemy.engine.url import URL
-from triage.component.architect.feature_generators import FeatureGenerator
+from sqlalchemy.orm import sessionmaker
+
 from triage.component.architect.entity_date_table_generators import (
     EntityDateTableGenerator,
 )
+from triage.component.architect.feature_generators import FeatureGenerator
 from triage.component.audition import AuditionRunner
-from triage.component.results_schema import (
-    upgrade_db,
-    stamp_db,
-    db_history,
-    downgrade_db,
-)
-from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
-from triage.component.timechop.plotting import visualize_chops
-from triage.component.catwalk.storage import CSVMatrixStore, Store, ProjectStorage
-from triage.experiments import (
-    CONFIG_VERSION,
-    MultiCoreExperiment,
-    SingleThreadedExperiment,
-)
-from triage.predictlist import predict_forward_with_existed_model, Retrainer
-from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader, run_crosstabs
+from triage.component.catwalk.model_trainers import flatten_grid_config
+from triage.component.catwalk.storage import CSVMatrixStore, ProjectStorage, Store
 from triage.component.postmodeling.add_predictions import add_predictions
+from triage.component.postmodeling.crosstabs import (
+    CrosstabsConfigLoader,
+    run_crosstabs,
+)
+from triage.component.results_schema import (
+    TriageRun,
+    TriageRunStatus,
+    downgrade_db,
+    db_history,
+    stamp_db,
+    upgrade_db,
+)
+from triage.component.timechop import Timechop
+from triage.component.timechop.plotting import visualize_chops
+from triage.experiments import CONFIG_VERSION, MultiCoreExperiment, SingleThreadedExperiment
+from triage.logging import get_logger
+from triage.predictlist import Retrainer, predict_forward_with_existed_model
 from triage.util.conf import load_query_if_needed
 from triage.util.db import create_engine
 
-from triage.logging import get_logger
-
 logger = get_logger(__name__)
+console = Console()
+
+app = typer.Typer(
+    help="Manage Triage experiments, results schema, and post-modeling utilities.",
+    add_completion=False,
+)
+db_app = typer.Typer(help="Administer the Triage results schema and helpers.")
+app.add_typer(db_app, name="db")
+
+DEFAULT_DATABASE_FILE = pathlib.Path("database.yaml")
+DEFAULT_SETUP_FILE = pathlib.Path("experiment.py")
+
+MATRIX_STORAGE_MAP = {"csv": CSVMatrixStore}
 
 
-def natural_number(value):
-    natural = int(value)
-    if natural <= 0:
-        raise argparse.ArgumentTypeError(f"{value} is an invalid natural number")
-    return natural
+@dataclass
+class CLIState:
+    db_url: str
+    setup_path: Optional[pathlib.Path]
 
 
-def valid_date(value):
+def natural_number(value: int) -> int:
+    if value <= 0:
+        raise typer.BadParameter(f"{value} is not a natural number")
+    return value
+
+
+def parse_date(value: str) -> datetime:
     try:
         return datetime.strptime(value, "%Y-%m-%d")
-    except ValueError:
-        raise argparse.ArgumentTypeError(
-            f"{value} is an invalid date (format: YYYY-MM-DD)"
+    except ValueError as exc:
+        raise typer.BadParameter(
+            f"{value} is an invalid date (expected YYYY-MM-DD)"
+        ) from exc
+
+
+def load_file_from_store(path: str) -> str:
+    store = Store.factory(path)
+    with store.open("r") as fd:
+        return fd.read()
+
+
+def load_yaml_from_store(path: str) -> Dict[str, Any]:
+    contents = load_file_from_store(path)
+    return yaml.full_load(contents) or {}
+
+
+def resolve_db_url(dbfile: Optional[pathlib.Path]) -> str:
+    if dbfile:
+        config = yaml.full_load(dbfile.read_text())
+    elif DEFAULT_DATABASE_FILE.exists():
+        config = yaml.full_load(DEFAULT_DATABASE_FILE.read_text())
+    else:
+        environ_url = os.getenv("DATABASE_URL")
+        if environ_url:
+            return environ_url
+        raise typer.BadParameter(
+            "Database connection not provided. Use --dbfile, DATABASE_URL, "
+            "or ensure database.yaml exists."
         )
 
-
-class Triage(RootCommand):
-    """manage Triage database and experiments"""
-
-    DATABASE_FILE_DEFAULT = os.path.abspath("database.yaml")
-    SETUP_FILE_DEFAULT = os.path.abspath("experiment.py")
-
-    def __init__(self, parser):
-        parser.add_argument(
-            "-d",
-            "--dbfile",
-            type=argparse.FileType("r"),
-            help="database connection file",
+    try:
+        return str(
+            URL(
+                "postgresql",
+                host=config["host"],
+                username=config["user"],
+                database=config["db"],
+                password=config["pass"],
+                port=config["port"],
+            )
         )
-        parser.add_argument(
-            "-s",
-            "--setup",
-            help=f"file path to Python module to import before running the "
-            f"Experiment (default: {self.SETUP_FILE_DEFAULT})",
-        )
+    except KeyError as exc:
+        raise typer.BadParameter(
+            "database.yaml is missing required keys: host, user, pass, port, db"
+        ) from exc
 
-    def setup(self):
-        if not self.args.setup and not os.path.exists(self.SETUP_FILE_DEFAULT):
+
+def resolve_setup_path(setup: Optional[pathlib.Path]) -> Optional[pathlib.Path]:
+    if setup:
+        return setup
+    if DEFAULT_SETUP_FILE.exists():
+        return DEFAULT_SETUP_FILE
+    return None
+
+
+def load_setup_module(setup_path: pathlib.Path) -> None:
+    logger.info("Loading setup module at %s", setup_path)
+    spec = importlib.util.spec_from_file_location("triage_config", str(setup_path))
+    if not spec or not spec.loader:
+        raise typer.BadParameter(f"Unable to load setup module from {setup_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)  # type: ignore[attr-defined]
+    logger.info("Setup module loaded")
+
+
+def get_state(ctx: typer.Context) -> CLIState:
+    state = ctx.obj
+    if not isinstance(state, CLIState):
+        raise RuntimeError("CLI state is not initialized.")
+    return state
+
+
+def get_engine(ctx: typer.Context):
+    state = get_state(ctx)
+    return create_engine(state.db_url)
+
+
+def short_description(value: Optional[str]) -> str:
+    if not value:
+        return "Not provided"
+    stripped = " ".join(value.split())
+    return textwrap.shorten(stripped, width=120, placeholder="…")
+
+
+def describe_sql_block(block: Dict[str, Any]) -> str:
+    if "query" in block and block["query"]:
+        return short_description(block["query"])
+    if "filepath" in block and block["filepath"]:
+        path = pathlib.Path(block["filepath"])
+        if path.exists():
+            try:
+                return short_description(path.read_text())
+            except OSError:
+                return f"SQL file at {path} (unreadable)"
+        return f"SQL file reference: {block['filepath']}"
+    return "Not specified"
+
+
+def load_experiment_config(config_path: str) -> Dict[str, Any]:
+    store = Store.factory(config_path)
+    with store.open("r") as fd:
+        return yaml.full_load(fd) or {}
+
+
+def prepare_experiment(
+    ctx: typer.Context,
+    config: Dict[str, Any],
+    project_path: pathlib.Path,
+    *,
+    replace: bool,
+    materialize_fromobjs: bool,
+    features_ignore_cohort: bool,
+    matrix_storage_format: str,
+    profile: bool,
+    save_predictions: bool,
+    skip_validation: bool,
+    additional_bigtrain_classnames: Optional[Iterable[str]],
+) -> tuple[Dict[str, Any], Any]:
+    engine = get_engine(ctx)
+    matrix_storage_class = MATRIX_STORAGE_MAP[matrix_storage_format]
+    kwargs = dict(
+        config=config,
+        db_engine=engine,
+        project_path=str(project_path),
+        replace=replace,
+        materialize_subquery_fromobjs=materialize_fromobjs,
+        features_ignore_cohort=features_ignore_cohort,
+        matrix_storage_class=matrix_storage_class,
+        profile=profile,
+        save_predictions=save_predictions,
+        skip_validation=skip_validation,
+        additional_bigtrain_classnames=list(additional_bigtrain_classnames or []),
+    )
+    return kwargs, engine
+
+
+@app.callback()
+def triage_callback(
+    ctx: typer.Context,
+    dbfile: Optional[pathlib.Path] = typer.Option(
+        None,
+        "--dbfile",
+        "-d",
+        help="YAML file containing database connection information.",
+    ),
+    setup: Optional[pathlib.Path] = typer.Option(
+        None,
+        "--setup",
+        "-s",
+        help="Python module to import before executing commands.",
+    ),
+) -> None:
+    db_url = resolve_db_url(dbfile)
+    setup_path = resolve_setup_path(setup)
+    if setup_path:
+        load_setup_module(setup_path)
+    ctx.obj = CLIState(db_url=db_url, setup_path=setup_path)
+    logger.info("Using database %s", db_url)
+    if setup_path:
+        logger.info("Setup module: %s", setup_path)
+
+
+@app.command("featuretest")
+def feature_test(
+    ctx: typer.Context,
+    feature_config_file: str = typer.Argument(
+        ..., help="Feature config YAML containing feature_aggregations."
+    ),
+    as_of_date: datetime = typer.Argument(
+        ..., callback=parse_date, help="Date (YYYY-MM-DD) to build features for."
+    ),
+) -> None:
+    engine = get_engine(ctx)
+    full_config = load_yaml_from_store(feature_config_file)
+    feature_config = full_config["feature_aggregations"]
+    cohort_config = load_query_if_needed(full_config.get("cohort_config"))
+
+    state_table = "features_test.test_cohort"
+    if cohort_config:
+        EntityDateTableGenerator(
+            entity_date_table_name=state_table,
+            db_engine=engine,
+            query=cohort_config["query"],
+            replace=True,
+        ).generate_entity_date_table(as_of_dates=[as_of_date])
+
+    FeatureGenerator(engine, "features_test").create_features_before_imputation(
+        feature_aggregation_config=feature_config,
+        feature_dates=[as_of_date],
+        state_table=state_table,
+    )
+    console.print(
+        f"[green]Feature test completed for {as_of_date.date()}[/green]",
+        justify="left",
+    )
+
+
+@app.command("experiment")
+def experiment_command(
+    ctx: typer.Context,
+    config: str = typer.Argument(..., help="Experiment configuration file."),
+    project_path: pathlib.Path = typer.Option(
+        pathlib.Path.cwd(),
+        "--project-path",
+        help="Directory or URI to store matrices and models.",
+    ),
+    n_db_processes: int = typer.Option(
+        1, "--n-db-processes", callback=natural_number, help="DB worker count."
+    ),
+    n_processes: int = typer.Option(
+        1, "--n-processes", callback=natural_number, help="Model worker count."
+    ),
+    n_bigtrain_processes: int = typer.Option(
+        1,
+        "--n-bigtrain-processes",
+        callback=natural_number,
+        help="Worker count for large estimators.",
+    ),
+    add_bigtrain_class: Optional[List[str]] = typer.Option(
+        None,
+        "--add-bigtrain-class",
+        help=(
+            "Additional classifier paths to train with the big-model batch. "
+            "Use multiple times for multiple classes."
+        ),
+    ),
+    matrix_format: str = typer.Option(
+        "csv",
+        "--matrix-format",
+        help="Matrix storage backend.",
+        show_choices=list(MATRIX_STORAGE_MAP.keys()),
+    ),
+    replace: bool = typer.Option(False, "--replace", help="Replace existing artifacts."),
+    validate: bool = typer.Option(
+        True, "--validate/--no-validate", help="Validate config before running."
+    ),
+    validate_only: bool = typer.Option(
+        False, "--validate-only", help="Only validate the config and exit."
+    ),
+    profile: bool = typer.Option(
+        False,
+        "--profile",
+        help="Profile experiment runtime with cProfile (implies serialized run).",
+    ),
+    materialize_fromobjs: bool = typer.Option(
+        True,
+        "--materialize-fromobjs/--no-materialize-fromobjs",
+        help="Create tables for feature from-objects subqueries.",
+    ),
+    save_predictions: bool = typer.Option(
+        True,
+        "--save-predictions/--no-save-predictions",
+        help="Persist individual predictions to the database.",
+    ),
+    features_ignore_cohort: bool = typer.Option(
+        False,
+        "--features-ignore-cohort",
+        help="Store features independently of the cohort definition.",
+    ),
+    show_timechop: bool = typer.Option(
+        False,
+        "--show-timechop",
+        help="Render the timechop diagram to <project-path>/images.",
+    ),
+) -> None:
+    matrix_format = matrix_format.lower()
+    if matrix_format not in MATRIX_STORAGE_MAP:
+        raise typer.BadParameter(
+            f"Unsupported matrix format '{matrix_format}'. "
+            f"Available: {', '.join(MATRIX_STORAGE_MAP.keys())}"
+        )
+    config_data = load_experiment_config(config)
+    kwargs, _engine = prepare_experiment(
+        ctx,
+        config_data,
+        project_path,
+        replace=replace,
+        materialize_fromobjs=materialize_fromobjs,
+        features_ignore_cohort=features_ignore_cohort,
+        matrix_storage_format=matrix_format,
+        profile=profile,
+        save_predictions=save_predictions,
+        skip_validation=not validate,
+        additional_bigtrain_classnames=add_bigtrain_class,
+    )
+
+    console.print(
+        f"[cyan]Triage config version:[/cyan] {config_data.get('config_version', CONFIG_VERSION)}"
+    )
+    console.print(f"[cyan]Project path:[/cyan] {project_path}")
+
+    try:
+        if (
+            n_db_processes > 1
+            or n_processes > 1
+            or n_bigtrain_processes > 1
+        ):
+            experiment = MultiCoreExperiment(
+                n_db_processes=n_db_processes,
+                n_processes=n_processes,
+                n_bigtrain_processes=n_bigtrain_processes,
+                **kwargs,
+            )
+        else:
+            experiment = SingleThreadedExperiment(**kwargs)
+    except Exception as exc:
+        console.print(f"[red]Failed to initialize experiment: {exc}[/red]")
+        raise typer.Exit(code=1) from exc
+
+    if validate_only:
+        console.print("[yellow]Validating configuration...[/yellow]")
+        experiment.validate()
+        console.print("[green]Validation completed.[/green]")
+        return
+
+    if show_timechop:
+        experiment_name = pathlib.Path(config).stem
+        project_storage = ProjectStorage(str(project_path))
+        target_store = project_storage.get_store(["images"], f"{experiment_name}.png")
+        with target_store.open("wb") as fd:
+            visualize_chops(experiment.chopper, save_target=fd)
+        console.print("[green]Timechop image saved.[/green]")
+        return
+
+    console.print("[yellow]Running experiment...[/yellow]")
+    experiment.run()
+    console.print("[green]Experiment completed successfully.[/green]")
+
+
+@app.command("audition")
+def audition_command(
+    ctx: typer.Context,
+    config: str = typer.Option(
+        "audition_config.yaml",
+        "--config",
+        "-c",
+        help="Audition configuration file.",
+    ),
+    validate: bool = typer.Option(
+        True, "--validate/--no-validate", help="Validate configuration first."
+    ),
+    validate_only: bool = typer.Option(
+        False, "--validate-only", help="Only validate audition config."
+    ),
+    directory: Optional[pathlib.Path] = typer.Option(
+        None, "--directory", "-d", help="Directory to store generated plots."
+    ),
+) -> None:
+    engine = get_engine(ctx)
+    config_data = load_yaml_from_store(config)
+    runner = AuditionRunner(config_data, engine, str(directory) if directory else None)
+    if validate or validate_only:
+        runner.validate()
+        if validate_only:
+            console.print("[green]Audition config validates successfully.[/green]")
             return
+    runner.run()
+    console.print("[green]Audition completed.[/green]")
 
-        setup_path = self.args.setup or self.SETUP_FILE_DEFAULT
-        logger.info("Loading setup module at %s", setup_path)
-        spec = importlib.util.spec_from_file_location("triage_config", setup_path)
-        triage_config = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(triage_config)
-        logger.info(f"Setup module loaded")
 
-    @cachedproperty
-    def db_url(self):
-        if self.args.dbfile:
-            dbfile = self.args.dbfile
-        elif os.path.isfile(self.DATABASE_FILE_DEFAULT):
-            dbfile = open(self.DATABASE_FILE_DEFAULT)
-        else:
-            environ_url = os.getenv("DATABASE_URL")
-            if environ_url:
-                return environ_url
-            else:
-                raise EnvironmentError(
-                    f"could not determine database connection information from "
-                    f"either process environment (DATABASE_URL) or filesystem "
-                    f"default ({self.DATABASE_FILE_DEFAULT}) -- see option: -d/--dbfile"
-                )
+@app.command("crosstabs")
+def crosstabs_command(
+    ctx: typer.Context,
+    config: str = typer.Argument(..., help="Crosstabs configuration file."),
+) -> None:
+    engine = get_engine(ctx)
+    config_store = Store.factory(config)
+    with config_store.open() as fd:
+        loader = CrosstabsConfigLoader(config=yaml.full_load(fd))
+    run_crosstabs(engine, loader)
+    console.print("[green]Crosstabs completed.[/green]")
 
-        with dbfile:
-            dbconfig = yaml.full_load(dbfile)
 
-        return URL(
-            "postgres",
-            host=dbconfig["host"],
-            username=dbconfig["user"],
-            database=dbconfig["db"],
-            password=dbconfig["pass"],
-            port=dbconfig["port"],
+@app.command("retrainpredict")
+def retrain_predict_command(
+    ctx: typer.Context,
+    model_group_id: int = typer.Argument(..., callback=natural_number),
+    prediction_date: datetime = typer.Argument(..., callback=parse_date),
+    project_path: pathlib.Path = typer.Option(
+        pathlib.Path.cwd(), "--project-path", help="Artifact storage path."
+    ),
+) -> None:
+    engine = get_engine(ctx)
+    retrainer = Retrainer(engine, str(project_path), model_group_id)
+    retrainer.retrain(prediction_date)
+    retrainer.predict(prediction_date)
+    console.print("[green]Retrain and predict completed.[/green]")
+
+
+@app.command("predictlist")
+def predictlist_command(
+    ctx: typer.Context,
+    model_id: int = typer.Argument(..., callback=natural_number),
+    as_of_date: datetime = typer.Argument(..., callback=parse_date),
+    project_path: pathlib.Path = typer.Option(
+        pathlib.Path.cwd(), "--project-path", help="Artifact storage path."
+    ),
+) -> None:
+    engine = get_engine(ctx)
+    predict_forward_with_existed_model(
+        engine, str(project_path), model_id, as_of_date
+    )
+    console.print("[green]Prediction list generated.[/green]")
+
+
+@app.command("addpredictions")
+def add_predictions_command(
+    ctx: typer.Context,
+    configfile: str = typer.Option(
+        ...,
+        "--configfile",
+        "-c",
+        help="YAML config describing model groups and experiments to ingest.",
+    ),
+) -> None:
+    engine = get_engine(ctx)
+    config = load_yaml_from_store(configfile)
+    add_predictions(
+        db_engine=engine,
+        model_groups=config["model_group_ids"],
+        project_path=config["project_path"],
+        experiment_hashes=config.get("experiments"),
+        train_end_times_range=config.get("train_end_times"),
+    )
+    console.print("[green]Predictions added to results schema.[/green]")
+
+
+@app.command("analyze-config")
+def analyze_config(
+    config: str = typer.Argument(..., help="Experiment config to inspect."),
+) -> None:
+    config_data = load_experiment_config(config)
+    temporal = config_data.get("temporal_config")
+    if not temporal:
+        console.print("[red]temporal_config block is required.[/red]")
+        raise typer.Exit(code=1)
+
+    chopper = Timechop(**temporal)
+    matrix_sets = chopper.chop_time()
+    total_train = len(matrix_sets)
+    total_test = sum(len(m["test_matrices"]) for m in matrix_sets)
+    as_of_counts = [
+        len(matrix["train_matrix"]["as_of_times"]) for matrix in matrix_sets
+    ]
+    avg_train_as_of = sum(as_of_counts) / total_train if total_train else 0
+
+    label_config = config_data.get("label_config", {})
+    cohort_config = config_data.get("cohort_config", {})
+
+    table = Table(title="Experiment Overview", box=box.SIMPLE_HEAVY)
+    table.add_column("Statistic")
+    table.add_column("Value", justify="right")
+    table.add_row("Config Version", config_data.get("config_version", CONFIG_VERSION))
+    table.add_row("Feature Aggregations", str(len(config_data.get("feature_aggregations", []))))
+    table.add_row("Cohorts", "1" if cohort_config else "Default (labels-driven)")
+    table.add_row("Train matrix sets", str(total_train))
+    table.add_row("Test matrices", str(total_test))
+    table.add_row("Avg train as_of dates", f"{avg_train_as_of:.1f}")
+
+    grid_config = config_data.get("grid_config")
+    if grid_config:
+        grid_size = sum(1 for _ in flatten_grid_config(grid_config))
+        table.add_row("Model grid size", str(grid_size))
+
+    console.print(table)
+
+    label_panel = Panel.fit(
+        f"[cyan]Label name:[/cyan] {label_config.get('name', 'default')}\n"
+        f"[cyan]Description:[/cyan] {short_description(label_config.get('description'))}\n"
+        f"[cyan]SQL:[/cyan] {describe_sql_block(label_config)}",
+        title="Label Configuration",
+    )
+    console.print(label_panel)
+
+    cohort_panel = Panel.fit(
+        f"[cyan]Cohort name:[/cyan] {cohort_config.get('name', 'all_entities')}\n"
+        f"[cyan]SQL:[/cyan] {describe_sql_block(cohort_config)}",
+        title="Cohort Configuration",
+    )
+    console.print(cohort_panel)
+
+
+@app.command("dashboard")
+def dashboard_command(
+    ctx: typer.Context,
+    experiment_hash: Optional[str] = typer.Option(
+        None,
+        "--experiment-hash",
+        "-e",
+        help="Filter runs by experiment hash.",
+    ),
+    watch: bool = typer.Option(
+        False, "--watch", "-w", help="Continuously refresh the dashboard."
+    ),
+    refresh_seconds: float = typer.Option(
+        5.0, "--refresh-seconds", help="Refresh interval when watching."
+    ),
+    limit: int = typer.Option(20, "--limit", help="Number of runs to display."),
+) -> None:
+    engine = get_engine(ctx)
+    session_factory = sessionmaker(bind=engine)
+
+    def fetch_rows():
+        with session_factory() as session:
+            query = session.query(TriageRun).order_by(TriageRun.start_time.desc())
+            if experiment_hash:
+                query = query.filter(TriageRun.run_hash == experiment_hash)
+            return query.limit(limit).all()
+
+    def render(rows: List[TriageRun]) -> Table:
+        table = Table(box=box.SIMPLE_HEAVY, title="Recent Triage Runs")
+        table.add_column("ID", justify="right")
+        table.add_column("Hash")
+        table.add_column("Status")
+        table.add_column("Start Time")
+        table.add_column("Matrices")
+        table.add_column("Models")
+        for row in rows:
+            status = row.current_status.name if row.current_status else "unknown"
+            table.add_row(
+                str(row.run_id),
+                row.run_hash or "",
+                status,
+                row.start_time.isoformat() if row.start_time else "",
+                f"{row.matrices_made}/{row.matrices_needed or ''}",
+                f"{row.models_made}/{row.models_needed or ''}",
+            )
+        return table
+
+    if watch:
+        with Live(refresh_per_second=max(1.0 / max(refresh_seconds, 0.1), 1.0)) as live:
+            while True:
+                live.update(render(fetch_rows()))
+                time.sleep(refresh_seconds)
+    else:
+        console.print(render(fetch_rows()))
+
+
+@db_app.command("upgrade")
+def db_upgrade(
+    ctx: typer.Context,
+    revision: str = typer.Option(
+        "head",
+        "--revision",
+        "-r",
+        help="Target schema revision (default head).",
+    ),
+) -> None:
+    upgrade_db(revision=revision, dburl=get_state(ctx).db_url)
+    console.print("[green]Database upgraded.[/green]")
+
+
+@db_app.command("downgrade")
+def db_downgrade(
+    ctx: typer.Context,
+    revision: str = typer.Option(
+        "-1", "--revision", "-r", help="Schema revision to downgrade to."
+    ),
+) -> None:
+    downgrade_db(revision=revision, dburl=get_state(ctx).db_url)
+    console.print("[green]Database downgraded.[/green]")
+
+
+@db_app.command("stamp")
+def db_stamp(
+    ctx: typer.Context,
+    revision: str = typer.Argument(..., help="Revision to stamp the DB with."),
+) -> None:
+    stamp_db(revision=revision, dburl=get_state(ctx).db_url)
+    console.print("[green]Database stamped.[/green]")
+
+
+@db_app.command("history")
+def db_history_command(ctx: typer.Context) -> None:
+    db_history(dburl=get_state(ctx).db_url)
+
+
+@db_app.command("up")
+def db_up_command(
+    password: bool = typer.Option(
+        False,
+        "--password",
+        help="Prompt for a password when provisioning the container.",
+    )
+) -> None:
+    inspect = subprocess.run(
+        [
+            "docker",
+            "container",
+            "inspect",
+            "-f",
+            "{{.State.Status}}",
+            "triage_db",
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    if inspect.returncode != 0:
+        console.print("[yellow]Provisioning new Postgres container...[/yellow]")
+        if DEFAULT_DATABASE_FILE.exists():
+            console.print(
+                "[red]database.yaml already exists; refusing to overwrite.[/red]"
+            )
+            raise typer.Exit(1)
+        db_password = ""
+        if password:
+            db_password = typer.prompt(
+                "Enter a password for your new database user", hide_input=True
+            )
+        run = subprocess.run(
+            [
+                "docker",
+                "run",
+                "-d",
+                "-p",
+                "5432:5432",
+                "-e",
+                "POSTGRES_HOST=0.0.0.0",
+                "-e",
+                "POSTGRES_USER=triage_user",
+                "-e",
+                "POSTGRES_PORT=5432",
+                "-e",
+                f"POSTGRES_PASSWORD={db_password}",
+                "-e",
+                "POSTGRES_DB=triage",
+                "-v",
+                "triage-db-data:/var/lib/postgresql/data",
+                "--name",
+                "triage_db",
+                "postgres:12",
+            ],
+            capture_output=True,
+            text=True,
         )
-
-    @cmdmethod
-    def configversion(self, args):
-        """Check the experiment config version compatible with this installation of Triage"""
-        logger.info("%s", CONFIG_VERSION)
-
-
-@Triage.register
-class FeatureTest(Command):
-    """Test a feature aggregation by running it for one date"""
-
-    def __init__(self, parser):
-        parser.add_argument(
-            "feature_config_file",
-            type=argparse.FileType("r"),
-            help="Feature config YAML file, containing a list of feature_aggregation objects",
-        )
-        parser.add_argument(
-            "as_of_date",
-            type=valid_date,
-            help="The date as of which to run features. Format YYYY-MM-DD",
-        )
-
-    def __call__(self, args):
-        self.root.setup()  # Loading configuration (if exists)
-        db_engine = create_engine(self.root.db_url)
-        full_config = yaml.full_load(args.feature_config_file)
-        feature_config = full_config["feature_aggregations"]
-        cohort_config = load_query_if_needed(full_config.get("cohort_config", None))
-        if cohort_config:
-            EntityDateTableGenerator(
-                entity_date_table_name="features_test.test_cohort",
-                db_engine=db_engine,
-                query=cohort_config["query"],
-                replace=True,
-            ).generate_entity_date_table(as_of_dates=[args.as_of_date])
-
-        FeatureGenerator(db_engine, "features_test").create_features_before_imputation(
-            feature_aggregation_config=feature_config,
-            feature_dates=[args.as_of_date],
-            state_table="features_test.test_cohort",
-        )
-        logger.success(
-            f"Features created for feature_config {feature_config} and date {args.as_of_date}"
-        )
-
-
-@Triage.register
-class Experiment(Command):
-    """Run a full modeling experiment"""
-
-    matrix_storage_map = {
-        "csv": CSVMatrixStore,
-    }
-    matrix_storage_default = "csv"
-
-    def __init__(self, parser):
-        parser.add_argument("config", help="config file for Experiment")
-        parser.add_argument(
-            "--project-path",
-            default=os.getcwd(),
-            help="path to store matrices and trained models",
-        )
-        parser.add_argument(
-            "--n-db-processes",
-            type=natural_number,
-            default=1,
-            help="number of concurrent database connections to use",
-        )
-        parser.add_argument(
-            "--n-processes",
-            type=natural_number,
-            default=1,
-            help="number of cores to use for small classifiers (e.g. Logistic Regression)",
-        )
-        parser.add_argument(
-            "--n-bigtrain-processes",
-            type=natural_number,
-            default=1,
-            help="number of cores to use for big, computationally-intensive classifiers (e.g. Random Forests)",
-        )
-        parser.add_argument(
-            "--add-bigtrain-classes",
-            nargs="*",
-            help="Additional classifier paths (e.g. sklearn.ensemble.RandomForestClassifier) to train alongside the 'big' classifiers like random forests.",
-        )
-        parser.add_argument(
-            "--matrix-format",
-            choices=self.matrix_storage_map.keys(),
-            default=self.matrix_storage_default,
-            help=f"The matrix storage format to use. [default: {self.matrix_storage_default}]",
-        )
-        parser.add_argument("--replace", dest="replace", action="store_true")
-        parser.add_argument(
-            "-v",
-            "--validate",
-            action="store_true",
-            help="validate before running experiment",
-        )
-        parser.add_argument(
-            "--no-validate",
-            action="store_false",
-            dest="validate",
-            help="run experiment without validation",
-        )
-        parser.add_argument(
-            "--validate-only",
-            action="store_true",
-            help="only validate the config file not running Experiment",
-        )
-        parser.add_argument(
-            "--profile",
-            action="store_true",
-            dest="profile",
-            help="Record the time spent in various functions using cProfile",
-        )
-
-        parser.add_argument(
-            "--no-materialize-fromobjs",
-            action="store_false",
-            dest="materialize_fromobjs",
-            help="do not attempt to create tables out of any feature 'from obj' subqueries.",
-        )
-
-        parser.add_argument(
-            "--save-predictions",
-            action="store_true",
-            dest="save_predictions",
-            default=True,
-            help="Save predictions in the database to enable more analyses after modeling [default: True]",
-        )
-
-        parser.add_argument(
-            "--no-save-predictions",
-            action="store_false",
-            default=True,
-            dest="save_predictions",
-            help="Skip saving predictions to the database to save time",
-        )
-
-        parser.add_argument(
-            "--features-ignore-cohort",
-            action="store_true",
-            default=False,
-            dest="features_ignore_cohort",
-            help="Will save all features independently of cohort. "
-            + "This can require more disk space but allow you to reuse "
-            + "features across different cohorts",
-        )
-
-        parser.add_argument(
-            "--show-timechop",
-            action="store_true",
-            default=False,
-            help="Visualize time chops (temporal cross-validation blocks')",
-        )
-
-        parser.set_defaults(
-            validate=True, validate_only=False, materialize_fromobjs=True
-        )
-
-    def _load_config(self):
-        config_file = Store.factory(self.args.config)
-        return yaml.full_load(config_file.load())
-
-    @cachedproperty
-    def experiment(self):
-        self.root.setup()  # Loading configuration (if exists)
-        db_url = self.root.db_url
-        config = self._load_config()
-        db_engine = create_engine(db_url)
-        common_kwargs = {
-            "db_engine": db_engine,
-            "project_path": self.args.project_path,
-            "config": config,
-            "replace": self.args.replace,
-            "materialize_subquery_fromobjs": self.args.materialize_fromobjs,
-            "features_ignore_cohort": self.args.features_ignore_cohort,
-            "matrix_storage_class": self.matrix_storage_map[self.args.matrix_format],
-            "profile": self.args.profile,
-            "save_predictions": self.args.save_predictions,
-            "skip_validation": not self.args.validate,
-            "additional_bigtrain_classnames": self.args.add_bigtrain_classes,
+        if run.returncode != 0:
+            console.print(f"[red]Docker run failed: {run.stderr}[/red]")
+            raise typer.Exit(1)
+        config = {
+            "host": "0.0.0.0",
+            "user": "triage_user",
+            "pass": db_password,
+            "port": 5432,
+            "db": "triage",
         }
-        logger.info(f"Setting up the experiment")
-        logger.info(f"Configuration file: {self.args.config}")
-        logger.info(f"Results will be stored in DB: {self.root.db_url}")
-        logger.info(f"Artifacts will be saved in {self.args.project_path}")
-        try:
-            if (
-                self.args.n_db_processes > 1
-                or self.args.n_processes > 1
-                or self.args.n_bigtrain_processes > 1
-            ):
-                experiment = MultiCoreExperiment(
-                    n_db_processes=self.args.n_db_processes,
-                    n_processes=self.args.n_processes,
-                    n_bigtrain_processes=self.args.n_bigtrain_processes,
-                    **common_kwargs,
-                )
-                logger.info(
-                    f"Experiment will run in multi core  mode using {self.args.n_processes} processes and {self.args.n_db_processes} db processes"
-                )
-            else:
-                experiment = SingleThreadedExperiment(**common_kwargs)
-                logger.info("Experiment will run in serial fashion")
-            return experiment
-        except Exception:
-            logger.exception("Error occurred while creating the experiment!")
-            logger.info(
-                f"Experiment [config file: {self.args.config}] failed at creation"
-            )
-
-    def __call__(self, args):
-        if args.validate_only:
-            try:
-                logger.info(f"Validating experiment [config file: {self.args.config}]")
-                self.experiment.validate()
-                logger.success(
-                    f"Experiment ({self.experiment.experiment_hash})'s configuration file is OK!"
-                )
-            except Exception:
-                logger.exception(f"Validation failed!")
-                logger.info(
-                    f"Experiment [config file: {self.args.config}] configuration file is incorrect"
-                )
-
-        elif args.show_timechop:
-            experiment_name = os.path.splitext(os.path.basename(self.args.config))[0]
-            project_storage = ProjectStorage(self.args.project_path)
-            timechop_store = project_storage.get_store(
-                ["images"], f"{experiment_name}.png"
-            )
-
-            with timechop_store.open("wb") as fd:
-                visualize_chops(self.experiment.chopper, save_target=fd)
-
-        else:
-            try:
-                logger.info(f"Running Experiment ({self.experiment.experiment_hash})")
-                self.experiment.run()
-                logger.success(
-                    f"Experiment ({self.experiment.experiment_hash}) ran through completion"
-                )
-            except Exception:
-                logger.exception("Something went wrong")
-                logger.info(f"Experiment [config file: {self.args.config}] run failed!")
-
-
-@Triage.register
-class Audition(Command):
-    """Audition models from a completed experiment to pick a smaller group of promising models"""
-
-    def __init__(self, parser):
-        parser.add_argument(
-            "-c",
-            "--config",
-            type=argparse.FileType("r"),
-            default="audition_config.yaml",
-            help="config file for audition",
+        DEFAULT_DATABASE_FILE.write_text(yaml.dump(config))
+        console.print(
+            "[green]Database created. Credentials written to database.yaml.[/green]"
         )
-        parser.add_argument(
-            "-v",
-            "--validate",
-            action="store_true",
-            help="validate before running audition",
-        )
-        parser.add_argument(
-            "--no-validate",
-            action="store_false",
-            dest="validate",
-            help="run audition without validation",
-        )
-        parser.add_argument(
-            "--validate-only",
-            action="store_true",
-            help="only validate the config file not running audition",
-        )
-        parser.add_argument(
-            "-d",
-            "--directory",
-            help="directory to store the result plots from audition",
-        )
-        parser.set_defaults(directory=None, validate=True, validate_only=False)
-
-    @cachedproperty
-    def runner(self):
-        self.root.setup()  # Loading configuration (if exists)
-        db_url = self.root.db_url
-        dir_plot = self.args.directory
-        config = yaml.full_load(self.args.config)
-        db_engine = create_engine(db_url)
-        return AuditionRunner(config, db_engine, dir_plot)
-
-    def __call__(self, args):
-        if args.validate_only:
-            self.runner.validate()
-        elif args.validate:
-            self.runner.validate()
-            self.runner.run()
-        else:
-            self.runner.run()
+    elif "running" in inspect.stdout:
+        console.print("[green]triage_db container is already running.[/green]")
+    else:
+        console.print("[yellow]Starting existing triage_db container.[/yellow]")
+        subprocess.run(["docker", "start", "triage_db"], check=True)
 
 
-@Triage.register
-class Crosstabs(Command):
-    """Run crosstabs for postmodeling"""
-
-    def __init__(self, parser):
-        parser.add_argument("config", help="config file for crosstabs")
-
-    def __call__(self, args):
-        db_engine = create_engine(self.root.db_url)
-        config_store = Store.factory(args.config)
-        with config_store.open() as fd:
-            config = CrosstabsConfigLoader(config=yaml.full_load(fd))
-        run_crosstabs(db_engine, config)
-
-
-@Triage.register
-class RetrainPredict(Command):
-    """Given a model_group_id, retrain and predict forwoard use all data up to current date"""
-
-    def __init__(self, parser):
-        parser.add_argument(
-            "model_group_id",
-            type=natural_number,
-            help="The model_group_id to use for retrain and predict",
-        )
-
-        parser.add_argument(
-            "prediction_date",
-            type=valid_date,
-            help="The date as of which to run features. Format YYYY-MM-DD",
-        )
-        parser.add_argument(
-            "--project-path",
-            default=os.getcwd(),
-            help="path to store matrices and trained models",
-        )
-
-    def __call__(self, args):
-        db_engine = create_engine(self.root.db_url)
-        retrainer = Retrainer(
-            db_engine,
-            args.project_path,
-            args.model_group_id,
-        )
-        retrainer.retrain(args.prediction_date)
-        retrainer.predict(args.prediction_date)
-
-
-@Triage.register
-class Predictlist(Command):
-    """Generate a list of risk scores from an already-trained model and new data"""
-
-    def __init__(self, parser):
-        parser.add_argument(
-            "model_id",
-            type=natural_number,
-            help="The model_id of an existing trained model in the models table",
-        )
-        parser.add_argument(
-            "as_of_date",
-            type=valid_date,
-            help="The date as of which to run features. Format YYYY-MM-DD",
-        )
-        parser.add_argument(
-            "--project-path",
-            default=os.getcwd(),
-            help="path to store matrices and trained models",
-        )
-
-    def __call__(self, args):
-        db_engine = create_engine(self.root.db_url)
-        predict_forward_with_existed_model(
-            db_engine, args.project_path, args.model_id, args.as_of_date
-        )
-
-
-@Triage.register
-class Db(Command):
-    """Manage experiment database"""
-
-    @cmdmethod(
-        "-r",
-        "--revision",
-        default="head",
-        help="database schema revision to upgrade to (see triage db history)",
-    )
-    def upgrade(self, args):
-        """Upgrade triage results database"""
-        upgrade_db(revision=args.revision, dburl=self.root.db_url)
-
-    @cmdmethod(
-        "-r",
-        "--revision",
-        default="-1",
-        help="database schema revision to downgrade to (see triage db history)",
-    )
-    def downgrade(self, args):
-        """Downgrade triage results database"""
-        downgrade_db(revision=args.revision, dburl=self.root.db_url)
-
-    @cmdmethod(
-        "revision", help="database schema revision to stamp to (see triage db history)"
-    )
-    def stamp(self, args):
-        """Mark triage results database as updated to a known version without doing any upgrading.
-
-        The revision can be anything alembic recognizes, such as a specific revision or 'head' (the most recent revision in the current codebase)
-
-        This is most useful if the database was created without a 'results_schema_versions' table (i.e. old versions of triage that didn't enforce alembic use), but could also be useful after general database mangling.
-
-        If you don't know what the right revision is, here are some database revisions that old experiment configs are associated with:
-            - no config version: 8b3f167d0418
-            - v1 or v2: 72ac5cbdca05
-            - v3: 7d57d1cf3429
-            - v4: 89a8ce240bae
-            - v5: 2446a931de7a
-        """
-        stamp_db(revision=args.revision, dburl=self.root.db_url)
-
-    @cmdmethod
-    def history(self, args):
-        """Show triage results database history"""
-        db_history(dburl=self.root.db_url)
-
-    @cmdmethod("password", action="store_true", help="hidden password prompt")
-    @local
-    def up(self, args):
-        (retcode, stdout, stderr) = self.local["docker"][
-            "container", "inspect", "-f", "'{{.State.Status}}'", "triage_db"
-        ].run(retcode=None)
-        if retcode != 0:
-            logger.info("Container does not exist")
-            if os.path.exists("database.yaml"):
-                logger.error(
-                    "database.yaml already exists, which indicates you are "
-                    "already using Triage with a database and likely do not "
-                    "need to run this command. If you would like to provision "
-                    "a new database to use with Triage, remove database.yaml"
-                )
-                return
-            if args.password:
-                password = getpass(
-                    prompt="Enter a password for your new database user: "
-                )
-                logger.info(
-                    self.local["docker"][
-                        "run",
-                        "-d",
-                        "-p",
-                        "5432:5432",
-                        "-e",
-                        "POSTGRES_HOST=0.0.0.0",
-                        "-e",
-                        "POSTGRES_USER=triage_user",
-                        "-e",
-                        "POSTGRES_PORT=5432",
-                        "-e",
-                        f"POSTGRES_PASSWORD={password}",
-                        "-e",
-                        "POSTGRES_DB=triage",
-                        "-v",
-                        "triage-db-data:/var/lib/postgresql/data",
-                        "--name",
-                        "triage_db",
-                        "postgres:12",
-                    ]()
-                )
-                with open("database.yaml", "w") as out_fd:
-                    config = {
-                        "host": "0.0.0.0",
-                        "user": "triage_user",
-                        "pass": password,
-                        "port": 5432,
-                        "db": "triage",
-                    }
-                    out_fd.write(yaml.dump(config))
-                logger.info(
-                    'New database created with credentials saved to database.yaml. You can watch it boot up with "docker logs triage_db --follow", and wait until it says "database system is ready to accept connections". At that point, you can either psql into it using the credentials in database.yaml, or use other triage commands which will look for the credentials in database.yaml'
-                )
-        elif "running" in stdout:
-            logger.info("Already running, will not start")
-        else:
-            logger.info("Container exists, but is not running. Starting")
-            logger.info(self.local["docker"]["start", "triage_db"])
-
-
-@Triage.register
-class AddPredictions(Command):
-    """Save test predictions of selected model groups"""
-
-    def __init__(self, parser):
-        parser.add_argument(
-            "-c",
-            "--configfile",
-            type=argparse.FileType("r"),
-            help="Path to the configuration file (required)",
-            required=True,
-        )
-
-    def __call__(self):
-        db_engine = create_engine(self.root.db_url)
-        config = yaml.full_load(self.args.configfile)
-
-        add_predictions(
-            db_engine=db_engine,
-            model_groups=config["model_group_ids"],
-            project_path=config["project_path"],
-            experiment_hashes=config.get("experiments"),
-            train_end_times_range=config.get("train_end_times"),
-        )
-
-
-def execute():
-    main(Triage)
+def execute() -> None:
+    app()

@@ -9,7 +9,7 @@ from sqlalchemy.engine.url import make_url
 import json
 import functools
 
-from psycopg2.extras import DateRange, DateTimeRange
+from psycopg.types.range import DateRange, TimestampRange
 from datetime import date, datetime
 
 
@@ -19,7 +19,7 @@ def serialize_to_database(obj):
     if isinstance(obj, date):
         return str(obj.isoformat())
 
-    if isinstance(obj, (DateRange, DateTimeRange)):
+    if isinstance(obj, (DateRange, TimestampRange)):
         return f"[{obj.lower}, {obj.upper}]"
 
     return obj
@@ -39,11 +39,17 @@ class SerializableDbEngine(wrapt.ObjectProxy):
     __slots__ = ("url", "creator", "kwargs")
 
     def __init__(self, url, *, creator=sqlalchemy.create_engine, **kwargs):
-        self.url = make_url(url)
+        original_url = make_url(url)
+        if original_url.drivername in {"postgresql", "postgresql+psycopg2"}:
+            normalized_url = original_url.set(drivername="postgresql+psycopg")
+        else:
+            normalized_url = original_url
+
+        self.url = normalized_url
         self.creator = creator
         self.kwargs = kwargs
 
-        engine = creator(url, **kwargs)
+        engine = creator(str(normalized_url), **kwargs)
         super().__init__(engine)
 
     def __reduce__(self):

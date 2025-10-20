@@ -7,7 +7,6 @@ logger = get_logger(__name__)
 
 from scipy import stats
 import yaml
-import psycopg2
 from io import StringIO
 
 from triage.component.architect.database_reflection import table_exists

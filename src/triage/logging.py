@@ -13,9 +13,9 @@ __all__ = ["configure_logging", "get_logger", "LoguruAdapter", "ic"]
 
 
 _CUSTOM_LEVELS = (
-    ("SPAM", 5, "<level>SPAM</level>"),
-    ("VERBOSE", 9, "<level>VERBOSE</level>"),
-    ("NOTICE", 25, "<level>NOTICE</level>"),
+    ("SPAM", 5, "<blue>"),
+    ("VERBOSE", 9, "<cyan>"),
+    ("NOTICE", 25, "<magenta>"),
 )
 
 for name, number, color in _CUSTOM_LEVELS:

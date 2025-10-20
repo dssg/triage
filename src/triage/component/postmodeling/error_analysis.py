@@ -3,7 +3,6 @@ import numpy as np
 import yaml
 import os
 import io
-import psycopg2
 import logging
 from triage.logging import get_logger
 import matplotlib.pyplot as plt
@@ -592,8 +591,10 @@ def output_specific_error_analysis(error_analysis_results,
 
 
 if __name__ == "__main__":
+    from psycopg import connect
+
     model_id = 1417
-    db_conn = psycopg2.connect(service='acdhs_housing')
+    db_conn = connect(service='acdhs_housing')
     # its given by the repor generator 
     project_path = 's3://dsapp-social-services-migrated/acdhs_housing/triage_experiments/' 
 
