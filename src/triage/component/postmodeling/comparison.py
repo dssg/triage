@@ -444,15 +444,16 @@ class ModelGroupComparison:
         # TODO: add ability to filter by train_end_times or by number of most recent splits. Currently, plots everything
 
         evaluations = get_evaluations_for_metric(db_engine=self.engine, model_group_ids=self.model_group_ids, metric=metric)
+        evaluations['k'] = evaluations.parameter.str.split('_').str[0].astype(int)
         
         # We only want '_pct' evaluations
         evaluations = evaluations[evaluations.parameter.str.contains('_pct')].rename(columns={'parameter': 'k_pct', 
                                                                                               'value': 'metric_value'})
         
         # Summary over time
-        eval_summary = evaluations.groupby(['model_group_id', 'k_pct']).metric_value.agg(['mean', 'sem']).reset_index()
+        eval_summary = evaluations.groupby(['model_group_id', 'k']).value.agg(['mean', 'sem']).reset_index()
         summ = alt.Chart(eval_summary).mark_line().encode(
-            x=alt.X('k_pct:Q', axis=alt.Axis(title='Treshold (%)', labelFontSize=12, titleFontSize=12, grid=True)),
+            x=alt.X('k:Q', axis=alt.Axis(title='Treshold (%)', labelFontSize=12, titleFontSize=12, grid=True)),
             y=alt.Y('mean:Q', axis=alt.Axis(title='Metric Value',labelFontSize=12, titleFontSize=12, grid=True)),
             color=alt.Color('model_group_id:N', title='Model Group'),
         ).properties(
@@ -463,24 +464,23 @@ class ModelGroupComparison:
         
         # Subplots for each validation cohort
         chart = alt.Chart(evaluations).mark_line().encode(
-            x=alt.X('k_pct:Q', axis=alt.Axis(title='Treshold (%)', labelFontSize=12, titleFontSize=12, grid=True)),
-            y=alt.Y('metric_value:Q', axis=alt.Axis(title='Metric Value',labelFontSize=12, titleFontSize=12, grid=True)),
+            x=alt.X('k:Q', axis=alt.Axis(title='Treshold (%)', labelFontSize=12, titleFontSize=12, grid=True)),
+            y=alt.Y('value:Q', axis=alt.Axis(title='Metric Value',labelFontSize=12, titleFontSize=12, grid=True)),
             color=alt.Color('model_group_id:N', title='Model Group'),
             tooltip=[
-                alt.Tooltip('k_pct', title='Threshold (%)'),
+                alt.Tooltip('k', title='Threshold (%)'),
                 alt.Tooltip('model_group_id', title='Model Group'),
                 alt.Tooltip('model_type', title='Model Type'),
-                alt.Tooltip('model_comment', title='Model Comment'),
-                alt.Tooltip('metric_value', title='Metric')
+                alt.Tooltip('value', title='Metric')
             ]
         ).properties(
             width=300,
             height=250,
         ).facet(
-            column=alt.Column('train_end_time', title=None, header=alt.Header(labelFontSize=14), sort=alt.EncodingSortField('train_end_time', order='descending')),
+            column=alt.Column('as_of_date', title=None, header=alt.Header(labelFontSize=14), sort=alt.EncodingSortField('as_of_date', order='descending')),
         )
         
-        chart = summ + chart
+        chart = summ | chart
         
         if return_data:
             return chart, evaluations
