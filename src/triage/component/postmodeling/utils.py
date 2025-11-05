@@ -1,14 +1,16 @@
 import pandas as pd 
 
 
-def get_evaluations_for_metric(model_group_ids, metric, parameter, db_engine): 
+def get_evaluations_for_metric(db_engine, model_group_ids, metric, parameter=None, subset_hash=''): 
     """ 
         Retrieves the evaluations associated with a list of model group ids, metric and parameter of interest. 
 
         Args: 
+            db_engine(sqlalchemy): Database engine to connect to the DB
             model_group_ids (list): List of model_group_id
             metric (str): Performance metric of interest
-            parameter (str): Threshold of interest
+            parameter (str, optional): Threshold of interest. If not provided, metric values for all the parameters are returned
+            subset_hash (str, optional): Hash of the cohort subset. Defaults to an empty string (whole cohort)
 
         Returns:
             pandas.DataFrame with the evaluation value associated with the metric and threshold defined for the list of models sent 
@@ -31,12 +33,15 @@ def get_evaluations_for_metric(model_group_ids, metric, parameter, db_engine):
         using (model_id) 
         where model_group_id in ({model_groups_sql})
         and metric = '{metric}'
-        and parameter = '{parameter}'
+        and subset_hash = '{subset_hash}'
     """
+    
+    if parameter is not None: 
+        q += "and parameter = '{parameter}'"
 
-    evaluations_for_model_id = pd.read_sql(q, db_engine)
+    evaluations = pd.read_sql(q, db_engine)
 
-    return evaluations_for_model_id
+    return evaluations
 
 
 def get_evaluations_from_model_group(model_group_ids, metrics, parameters, db_engine):
