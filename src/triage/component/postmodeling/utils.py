@@ -37,7 +37,7 @@ def get_evaluations_for_metric(db_engine, model_group_ids, metric, parameter=Non
     """
     
     if parameter is not None: 
-        q += "and parameter = '{parameter}'"
+        q += f"and parameter = '{parameter}'"
 
     evaluations = pd.read_sql(q, db_engine)
 
