@@ -261,7 +261,7 @@ class ModelGroupComparison:
                 # generate an independent plot for each group pair 
                 charts = []
                 
-                evaluations = get_evaluations_for_metric(model_group_ids, metric, parameter, db_engine)
+                evaluations = get_evaluations_for_metric(db_engine=db_engine, model_group_ids=model_group_ids, metric=metric, parameter=parameter)
                     
                 # prep for visualization 
                 evaluations['model_type'] = evaluations.model_type.apply(lambda x: x.split(".")[-1])
@@ -439,29 +439,12 @@ class ModelGroupComparison:
         
         # NOTE: Current version assumes evaluations to be present for all PCT thresholds
         # TODO: Should add a version that calculates the metrics on the fly if the predictions are available
-        q = f"""
-        select 
-            model_group_id, 
-            train_end_time, 
-            model_id,
-            model_type as model_type_2,
-            reverse(split_part(reverse(model_type), '.', 1)) as model_type,
-            model_comment,
-            metric,
-            "parameter", 
-            stochastic_value as metric_value, 
-            split_part("parameter", '_', 1)::int as k_pct
-            from triage_metadata.models m inner join test_results.evaluations e using(model_id)
-        where m.model_group_id in ({', '.join([str(x) for x in self.model_group_ids])})
-        and train_end_time > '2023-01-01'::date
-        and metric = '{metric}'
-        and subset_hash = ''
-        and "parameter" like '%%_pct'
-        order by 2 desc, 6
-        """
         # TODO: add ability to filter by train_end_times or by number of most recent splits. Currently, plots everything
 
-        evaluations = pd.read_sql(q, self.engine)
+        evaluations = get_evaluations_for_metric(db_engine=self.engine, model_group_ids=self.model_group_ids, metric=metric)
+        
+        # We only want '_pct' evaluations
+        evaluations = evaluations[evaluations.parameter.str.contains('_pct')]
         
         # Summary over time
         eval_summary = evaluations.groupby(['model_group_id', 'k_pct']).metric_value.agg(['mean', 'sem']).reset_index()
