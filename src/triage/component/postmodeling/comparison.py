@@ -288,7 +288,9 @@ class ModelGroupComparison:
                 chart.display()
 
     def topk_list(self, threshold_type, threshold):
-        """ Compare topk lists given a threshold      
+        """ 
+            Compare topk lists given a threshold type (one from: rank_abs_no_ties, rank_abs_with_ties, rank_pct_no_ties, or rank_pct_with_ties), 
+            and a threshold (e.g. 100 for top 100)    
         """
         
         q = f'''
@@ -444,7 +446,8 @@ class ModelGroupComparison:
         evaluations = get_evaluations_for_metric(db_engine=self.engine, model_group_ids=self.model_group_ids, metric=metric)
         
         # We only want '_pct' evaluations
-        evaluations = evaluations[evaluations.parameter.str.contains('_pct')]
+        evaluations = evaluations[evaluations.parameter.str.contains('_pct')].rename(columns={'parameter': 'k_pct', 
+                                                                                              'value': 'metric_value'})
         
         # Summary over time
         eval_summary = evaluations.groupby(['model_group_id', 'k_pct']).metric_value.agg(['mean', 'sem']).reset_index()
