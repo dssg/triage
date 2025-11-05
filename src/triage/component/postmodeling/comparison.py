@@ -459,11 +459,23 @@ class ModelGroupComparison:
         and "parameter" like '%%_pct'
         order by 2 desc, 6
         """
-        
+        # TODO: add ability to filter by train_end_times or by number of most recent splits. Currently, plots everything
+
         evaluations = pd.read_sql(q, self.engine)
         
-        # TODO: add ability to filter by train_end_times or by number of most recent splits. Currently, plots everything
+        # Summary over time
+        eval_summary = evaluations.groupby(['model_group_id', 'k_pct']).metric_value.agg(['mean', 'sem']).reset_index()
+        summ = alt.Chart(eval_summary).mark_line().encode(
+            x=alt.X('k_pct:Q', axis=alt.Axis(title='Treshold (%)', labelFontSize=12, titleFontSize=12, grid=True)),
+            y=alt.Y('mean:Q', axis=alt.Axis(title='Metric Value',labelFontSize=12, titleFontSize=12, grid=True)),
+            color=alt.Color('model_group_id:N', title='Model Group'),
+        ).properties(
+            width=300,
+            height=250,
+            title='Average Over Time'
+        )
         
+        # Subplots for each validation cohort
         chart = alt.Chart(evaluations).mark_line().encode(
             x=alt.X('k_pct:Q', axis=alt.Axis(title='Treshold (%)', labelFontSize=12, titleFontSize=12, grid=True)),
             y=alt.Y('metric_value:Q', axis=alt.Axis(title='Metric Value',labelFontSize=12, titleFontSize=12, grid=True)),
@@ -481,6 +493,8 @@ class ModelGroupComparison:
         ).facet(
             column=alt.Column('train_end_time', title=None, header=alt.Header(labelFontSize=14), sort=alt.EncodingSortField('train_end_time', order='descending')),
         )
+        
+        chart = summ + chart
         
         if return_data:
             return chart, evaluations
