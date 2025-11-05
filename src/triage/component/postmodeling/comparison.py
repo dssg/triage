@@ -429,7 +429,66 @@ class ModelGroupComparison:
         return overlaps, overlap_chart, jaccard_chart
 
 
-    def precision_recall_k_curves(self):
+    def evaluation_metrics_over_thresholds(self, metric='recall@', return_data=True):
+        ''' Comparing precision or recall curves at different thresholds
+            
+            args:
+                metric (str): The metric to plot over different thresholds. Can be either 'recall@' or 'precision@'
+                
+        '''
+        
+        # NOTE: Current version assumes evaluations to be present for all PCT thresholds
+        # TODO: Should add a version that calculates the metrics on the fly if the predictions are available
+        q = f"""
+        select 
+            model_group_id, 
+            train_end_time, 
+            model_id,
+            model_type as model_type_2,
+            reverse(split_part(reverse(model_type), '.', 1)) as model_type,
+            model_comment,
+            metric,
+            "parameter", 
+            stochastic_value as metric_value, 
+            split_part("parameter", '_', 1)::int as k_pct
+            from triage_metadata.models m inner join test_results.evaluations e using(model_id)
+        where m.model_group_id in ({', '.join([str(x) for x in self.model_group_ids])})
+        and train_end_time > '2023-01-01'::date
+        and metric = '{metric}'
+        and subset_hash = ''
+        and "parameter" like '%%_pct'
+        order by 2 desc, 6
+        """
+        
+        evaluations = pd.read_sql(q, self.engine)
+        
+        # TODO: add ability to filter by train_end_times or by number of most recent splits. Currently, plots everything
+        
+        chart = alt.Chart(evaluations).mark_line().encode(
+            x=alt.X('k_pct:Q', axis=alt.Axis(title='Treshold (%)', labelFontSize=12, titleFontSize=12, grid=True)),
+            y=alt.Y('metric_value:Q', axis=alt.Axis(title='Metric Value',labelFontSize=12, titleFontSize=12, grid=True)),
+            color=alt.Color('model_group_id:N', title='Model Group'),
+            tooltip=[
+                alt.Tooltip('k_pct', title='Threshold (%)'),
+                alt.Tooltip('model_group_id', title='Model Group'),
+                alt.Tooltip('model_type', title='Model Type'),
+                alt.Tooltip('model_comment', title='Model Comment'),
+                alt.Tooltip('metric_value', title='Metric')
+            ]
+        ).properties(
+            width=300,
+            height=250,
+        ).facet(
+            column=alt.Column('train_end_time', title=None, header=alt.Header(labelFontSize=14), sort=alt.EncodingSortField('train_end_time', order='descending')),
+        )
+        
+        if return_data:
+            return chart, evaluations
+    
+        else:
+            return chart
+        
+        
         
 
 class ModelComparisonError(ValueError):
