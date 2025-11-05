@@ -447,8 +447,7 @@ class ModelGroupComparison:
         evaluations['k'] = evaluations.parameter.str.split('_').str[0].astype(int)
         
         # We only want '_pct' evaluations
-        evaluations = evaluations[evaluations.parameter.str.contains('_pct')].rename(columns={'parameter': 'k_pct', 
-                                                                                              'value': 'metric_value'})
+        evaluations = evaluations[evaluations.parameter.str.contains('_pct')]
         
         # Summary over time
         eval_summary = evaluations.groupby(['model_group_id', 'k']).value.agg(['mean', 'sem']).reset_index()
