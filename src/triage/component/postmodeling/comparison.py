@@ -444,7 +444,7 @@ class ModelGroupComparison:
         # TODO: add ability to filter by train_end_times or by number of most recent splits. Currently, plots everything
 
         evaluations = get_evaluations_for_metric(db_engine=self.engine, model_group_ids=self.model_group_ids, metric=metric)
-        evaluations['k'] = evaluations.parameter.str.split('_').str[0].astype(int)
+        evaluations['k'] = evaluations.parameter.str.split('_').str[0]
         
         # We only want '_pct' evaluations
         evaluations = evaluations[evaluations.parameter.str.contains('_pct')]
