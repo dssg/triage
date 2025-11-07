@@ -29,7 +29,7 @@ class ModelGroupComparison:
         self.model_group_ids = model_group_ids
         self.engine = engine
         
-    def bias_and_performance(self, performance_metric='precision@', bias_metric='tpr_disparity', parameter='1_pct'):
+    def bias_and_performance(self, performance_metric='precision@', bias_metric='tpr_disparity', parameter='1_pct', bias_tolerance=0.2):
         """
         Compare model groups based on performance and bias metrics.
         
@@ -70,7 +70,7 @@ class ModelGroupComparison:
                 m.model_group_id,
                 m.model_type,
                 m.hyperparameters,
-                m.train_end_time::date,
+                m.train_end_time,
                 e.metric,
                 e."parameter",
                 e.num_labeled_examples,
@@ -100,9 +100,16 @@ class ModelGroupComparison:
         '''
         
         metrics = pd.read_sql(q, self.engine)
-        metrics['model_type_display'] = metrics.model_type.str.split('.').str[-1]
+        metrics['model_type_display'] = metrics.model_group_id.astype(str) + '-' + metrics.model_type.str.split('.').str[-1]
+        metrics['bias_tolerance_lower'] = 1 - bias_tolerance
+        metrics['bias_tolerance_upper'] = 1 + bias_tolerance
+        metrics['bias_parity'] = 1
         
-        # grouping:
+        # Only selecting protected groups
+        # reference_group_filter = (metrics[] == 1)
+        # metrics = metrics[~reference_group_filter]
+        
+        # grouping to get means and error bars over time
         df = round(metrics.groupby(['model_group_id', 'attribute_name', 'attribute_value']).agg(
             model_type=('model_type_display', 'max'),
             mean_bias=(f'{bias_metric}', 'mean'),
@@ -112,74 +119,71 @@ class ModelGroupComparison:
             group_size=('group_size', 'mean')
         ), 3).reset_index()
         
-        reference_group_filter = (df.mean_bias == 1)
-        
-        filtered_df = df[~reference_group_filter]
-        
-        points = alt.Chart(filtered_df).mark_point(filled=True, size=80, opacity=1).encode(
-        x=alt.X('mean_perf', axis=alt.Axis(title='Performance Metric', grid=False)),
-        y=alt.Y('mean_bias', axis=alt.Axis(title='Bias Metric', grid=False), scale=alt.Scale(domain=(0, 3))),
-        color=alt.Color('model_group_id:N', title='Model'),
-        shape=alt.Shape('attribute_value:N', title='Protected Groups'),
-        tooltip=[
-            alt.Tooltip('attribute_name', title='Attribute'), 
-            alt.Tooltip('model_type', title='Model Type'),
-            alt.Tooltip('group_size', title='Mean Group Size'), 
-            alt.Tooltip('mean_bias', title=f'{bias_metric}'), 
-            alt.Tooltip('mean_perf', title=f'{performance_metric}{parameter}')
-            ],
-        ).interactive()
-
-
-        error_x = alt.Chart(filtered_df).mark_errorbar(orient='horizontal', opacity=0.5).encode(
-            x=alt.X('mean_perf', title=''),
-            xError='sem_perf',
-            y='mean_bias',
-            color='model_group_id:N'
+               
+        # Shaded band showing the tolerance band for the bias metric
+        parity_band = alt.Chart(metrics).mark_rect(opacity=0.01, color='gray').encode(
+            y='bias_tolerance_lower:Q',
+            y2='bias_tolerance_upper:Q'
         )
 
-        error_y = alt.Chart(filtered_df).mark_errorbar(orient='vertical', opacity=0.5).encode(
-            y=alt.Y('mean_bias', title=''),
-            yError='sem_bias',
-            x='mean_perf',
-            color='model_group_id:N'
-        )
-
-        parity_band = alt.Chart(filtered_df).transform_calculate(y_min='0.8', y_max='1.2').mark_rect(opacity=0.01, color='gray').encode(
-            y='y_min:Q',
-            y2='y_max:Q'
-        )
-
-        rule = alt.Chart(filtered_df).transform_calculate(y='1').mark_rule(
+        rule = alt.Chart(metrics).mark_rule(
             strokeDash=[4, 4],  # Dashed line: [dash, gap]
             color='gray'
         ).encode(
-            y='y:Q'
+            y='bias_parity:Q'
+        )
+        
+        points_time_series = alt.Chart(metrics).mark_point(filled=True, size=80, opacity=1).encode(
+            x=alt.X(f'{performance_metric}{parameter}', title=f'Performance ({performance_metric}{parameter})'),
+            y=alt.Y(bias_metric, title=f'Bias ({bias_metric})'),
+            color=alt.Color('model_type_display:N', title='Model'),
+            shape=alt.Shape('attribute_value:N', title='Protected Groups'),
+            tooltip=[
+                alt.Tooltip('attribute_name', title='Attribute'), 
+                alt.Tooltip('model_type', title='Model Type'),
+                alt.Tooltip('group_size', title='Mean Group Size'), 
+                alt.Tooltip(bias_metric, title=f'{bias_metric}'), 
+                alt.Tooltip(f'{performance_metric}{parameter}', title=f'{performance_metric}{parameter}')
+            ],
+        )
+        
+        points_grouped = alt.Chart(df).mark_point(filled=True, size=80, opacity=1).encode(
+            x=alt.X('mean_perf', axis=alt.Axis(title='Performance Metric')),
+            y=alt.Y('mean_bias', axis=alt.Axis(title='Bias Metric'), scale=alt.Scale(domain=(0, 3))),
+            color=alt.Color('model_type:N', title='Model'),
+            shape=alt.Shape('attribute_value:N', title='Protected Groups'),
+            tooltip=[
+                alt.Tooltip('attribute_name', title='Attribute'), 
+                alt.Tooltip('model_type', title='Model Type'),
+                alt.Tooltip('group_size', title='Mean Group Size'), 
+                alt.Tooltip('mean_bias', title=f'{bias_metric}'), 
+                alt.Tooltip('mean_perf', title=f'{performance_metric}{parameter}')
+                ],
         )
 
-        # TODO - add annotations to the plot
-        # annotations = pd.DataFrame(
-        #     {
-        #         'x': [0.15, 0.15],
-        #         'y': [0.3, 2],
-        #         'label': ['Models favor reference group', 'Models favor protected group']
-        #     }
-        # )
-
-        # texts = alt.Chart(annotations).mark_text(
-        #     color='black',
-        #     align='center',
-        #     opacity=0.5
-        # ).encode(
-        #     x='x:Q',
-        #     y='y:Q',
-        #     text='label:N'
-        # )
-
-        chart = (parity_band + rule + points + error_x + error_y).properties(
-            width=300,
-            title=''
+        error_x = alt.Chart(df).mark_errorbar(orient='horizontal', opacity=0.5).encode(
+            x=alt.X('mean_perf', title=''),
+            xError='sem_perf',
+            y='mean_bias',
+            color='model_type:N'
         )
+
+        error_y = alt.Chart(df).mark_errorbar(orient='vertical', opacity=0.5).encode(
+            y=alt.Y('mean_bias', title=''),
+            yError='sem_bias',
+            x='mean_perf',
+            color='model_type:N'
+        )
+
+        # TODO: add annotations to the plot
+        
+        summary_chart = (parity_band + rule + error_x + error_y + points_grouped)
+
+        time_series_chart = (parity_band + rule + points_time_series).facet(
+            column=alt.Column('train_end_time', title=None, header=alt.Header(labelFontSize=14), sort=alt.EncodingSortField('train_end_time', order='descending'))
+        )
+                       
+        chart = summary_chart | time_series_chart
         
         return chart
 
