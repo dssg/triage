@@ -425,8 +425,8 @@ class ModelGroupComparison:
             )
 
 
-            overlap_chart = overlap_agg + overlap_agg_label | (overlapp_over_time + overlap_label_over_time).facet(column=alt.Column('train_end_time', title='', header=alt.Header(labelFontSize=13))).properties(title=alt.Title('Overlap by Validation Cohort', anchor='start'))
-            jaccard_chart = jaccard_agg + jaccard_agg_label | (jaccard_over_time + jaccard_label_over_time).facet(column=alt.Column('train_end_time', title='')).properties(title=alt.Title('Jaccard Similarity by Validation Cohort', anchor='start'))    
+            overlap_chart = overlap_agg + overlap_agg_label | (overlapp_over_time + overlap_label_over_time).facet(column=alt.Column('train_end_time', title='', header=alt.Header(labelFontSize=13))).properties(title=alt.TitleParams(text='Overlap by Validation Cohort', anchor='start'))
+            jaccard_chart = jaccard_agg + jaccard_agg_label | (jaccard_over_time + jaccard_label_over_time).facet(column=alt.Column('train_end_time', title='')).properties(title=alt.TitleParams(text='Jaccard Similarity by Validation Cohort', anchor='start'))    
     
         return overlaps, overlap_chart, jaccard_chart
 
