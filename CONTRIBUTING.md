@@ -35,7 +35,12 @@ uv sync --extra docs
 
 Once this is done, you can modify any of the pages under the documentation root directory, and change general doc site configuration in [docs/mkdocs.yml](docs/mkdocs.yml). While modifying a documentation page, you can preview your changes by running the mkdocs dev server:
 ```
-manage docs
+just docs
+```
+
+Or directly:
+```
+cd docs && uv run mkdocs serve
 ```
 
 ### Submit Feedback
@@ -115,7 +120,13 @@ This section describes the initial setup of a Triage development environment tha
 
         $ git clone git@github.com:your_name_here/triage.git
 
-3.  Set up your local environment.
+3.  Install development tools (optional but recommended):
+
+        $ curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/.local/bin
+
+    The `just` command runner provides convenient shortcuts for common development tasks. If you prefer not to install it, you can run the commands directly (see the justfile for the full commands).
+
+4.  Set up your local environment.
 
     You can control your development environment any way you'd like (virtualenv, pyenv, _etc._).
 

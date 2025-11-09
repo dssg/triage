@@ -144,7 +144,7 @@ def upgrade_if_clean(dburl):
                 "revision. If you would like to upgrade your database from the console, and "
                 "you've installed Triage, you may execute `triage db upgrade`. "
                 "If the `triage` command is unavailable, (because you are running Triage directly "
-                " from a repository checkout), then `manage alembic upgrade head`. "
+                " from a repository checkout), then `just alembic upgrade head`. "
                 "The database changes may take a long time on a heavily populated database. "
                 "Otherwise, you can also downgrade your Triage version to match your database."
             )

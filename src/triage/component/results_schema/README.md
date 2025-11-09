@@ -44,7 +44,7 @@ many valid ways to create migrations, which you can read about in
 [Alembic's
 documentation](http://alembic.zzzcomputing.com/en/latest/tutorial.html). But
 here is a common workflow we will use to modify the
-schema. Throughout, we'll use a wrapper script, `manage alembic`,
+schema. Throughout, we'll use `just alembic`,
 bundled in the triage repository that wraps calls to the 'alembic'
 command with the correct options for running within triage. We'll only
 have a few examples here, but this script just passes all arguments to
@@ -55,13 +55,11 @@ perform whatever operations you want there.
    already. You can use a toy database for this, or use your project
    database if the results schema has not been manually
    modified. Populate `database.yaml` in the repo root with the
-   credentials, and upgrade it to the current HEAD: `manage alembic
-   upgrade head`
+   credentials, and upgrade it to the current HEAD: `just alembic upgrade head`
 
 2. Make the desired modifications to [results_schema.schema](schema.py).
 
-3. From the repo root, autogenerate a migration: `manage alembic
-   revision --autogenerate` - This will look at the difference between
+3. From the repo root, autogenerate a migration: `just alembic revision --autogenerate` - This will look at the difference between
    your schema definition and the database, and generate a new file in
    results_schema/alembic/versions/.
 
@@ -69,7 +67,7 @@ perform whatever operations you want there.
    it is suggesting make sense. Make any modifications you want; the
    autogenerate functionality is just meant as a guideline.
 
-5. Upgrade the database: `manage alembic upgrade head`
+5. Upgrade the database: `just alembic upgrade head`
 
 6. Update the [factories file](../../../../src/tests/results_tests/factories.py) with your changes - see more on factories below if you are unfamiliar with them.
 

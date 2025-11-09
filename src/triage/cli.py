@@ -618,6 +618,44 @@ def dashboard_command(
         console.print(render(fetch_rows()))
 
 
+@app.command("tui")
+def tui_command(
+    ctx: typer.Context,
+) -> None:
+    """
+    Launch interactive TUI (Text User Interface) for exploring experiments.
+
+    The TUI provides a rich, navigable interface for:
+    - Browsing all experiments with live status updates
+    - Viewing experiment details (overview, models, config)
+    - Real-time monitoring of running experiments
+    - Model comparison and analytics
+
+    Keyboard shortcuts:
+    - ↑/↓ or j/k: Navigate
+    - Enter: View details
+    - r: Refresh
+    - q: Quit
+    - Esc: Go back
+    """
+    try:
+        from triage.tui import TriageApp
+
+        engine = get_engine(ctx)
+        app = TriageApp(engine)
+        app.run()
+    except ImportError as e:
+        console.print("[red]Error:[/red] Could not import TUI components.")
+        console.print(f"[yellow]Details:[/yellow] {e}")
+        console.print("\n[cyan]Tip:[/cyan] Make sure textual is installed:")
+        console.print("  uv sync --extra dev")
+        raise typer.Exit(1)
+    except Exception as e:
+        console.print(f"[red]Error launching TUI:[/red] {e}")
+        logger.exception("TUI launch failed")
+        raise typer.Exit(1)
+
+
 @db_app.command("upgrade")
 def db_upgrade(
     ctx: typer.Context,
