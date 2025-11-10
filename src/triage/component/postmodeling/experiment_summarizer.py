@@ -1,14 +1,16 @@
 
 """ This is a module for moving the ad-hoc code we wrote in generating the modeling report"""
+import verboselogs, logging
+
+logger = verboselogs.VerboseLogger(__name__)
 
 import pandas as pd
 import json
 import matplotlib.pyplot as plt
 import seaborn as sns
-import logging
-from matplotlib.lines import Line2D
-
 import warnings
+
+from matplotlib.lines import Line2D
 
 from triage.component.timechop.plotting import visualize_chops_plotly
 from triage.component.timechop import Timechop
@@ -925,35 +927,43 @@ class ExperimentReport:
         stats = self.experiment_stats()
           
         if stats['implemented_fewer_splits'] == 1:
-            print(f"Temporal config suggests {stats['timesplits_from_temporal_config']} temporal splits, but experiment implemented only {stats['validation_splits']} splits. Was this intentional?")
+            logger.notice(f"Temporal config suggests {stats['timesplits_from_temporal_config']} temporal splits, but experiment implemented only {stats['validation_splits']} splits. Was this intentional?")
+            #print(f"Temporal config suggests {stats['timesplits_from_temporal_config']} temporal splits, but experiment implemented only {stats['validation_splits']} splits. Was this intentional?")
         else:
-            print(f'Experiment contained {stats["timesplits_from_temporal_config"]} temporal splits')
+            logger.notice(f'Experiment contained {stats["timesplits_from_temporal_config"]} temporal splits')
+            #print(f'Experiment contained {stats["timesplits_from_temporal_config"]} temporal splits')
             
-        
-        print(f"Experiment contained {stats['as_of_times']} distinct as_of_times")
+        logger.notice(f"Experiment contained {stats['as_of_times']} distinct as_of_times")
+        #print(f"Experiment contained {stats['as_of_times']} distinct as_of_times")
     
         cohorts = self.cohorts(generate_plots=False)
-        print(f'On average, your cohorts contained around {round(cohorts.cohort_size.mean())} entities with a baserate of {round(cohorts.baserate.mean(), 3)}')
-    
-        print(f"You built {stats['features']} features organized into {stats['feature_groups']} groups/blocks")
+        logger.notice(f'On average, your cohorts contained around {round(cohorts.cohort_size.mean())} entities with a baserate of {round(cohorts.baserate.mean(), 3)}')
+        #print(f'On average, your cohorts contained around {round(cohorts.cohort_size.mean())} entities with a baserate of {round(cohorts.baserate.mean(), 3)}')
         
-        print(f"Your model grid specification contained {stats['grid_size']} model types with {stats['models_needed']} individual models")
+        logger.notice(f"You built {stats['features']} features organized into {stats['feature_groups']} groups/blocks")
+        #print(f"You built {stats['features']} features organized into {stats['feature_groups']} groups/blocks")
+        
+        logger.notice(f"Your model grid specification contained {stats['grid_size']} model types with {stats['models_needed']} individual models")
+        #print(f"Your model grid specification contained {stats['grid_size']} model types with {stats['models_needed']} individual models")
         
         ## Models
         num_models = len(self.models())
         if num_models < stats['models_needed']:
-            print(f"However, the experiment only built {num_models} models. You are missing {stats['models_needed'] - num_models} models")
+            logger.notice(f"However, the experiment only built {num_models} models. You are missing {stats['models_needed'] - num_models} models")
+            #print(f"However, the experiment only built {num_models} models. You are missing {stats['models_needed'] - num_models} models")
             
         else:
-            print(f"You successfully built all the {num_models} models")
+            logger.notice(f"You successfully built all the {num_models} models")
+            #print(f"You successfully built all the {num_models} models")
         
         # Model Performance
         performance = self.model_performance(metric=metric, parameter=parameter, generate_plot=False)
         best_performance = performance.groupby(['model_group_id', 'model_type'])['metric_value'].mean().max()
         best_model_group = performance.groupby(['model_group_id', 'model_type'])['metric_value'].mean().idxmax()[0]
         best_model_type = performance.groupby(['model_group_id', 'model_type'])['metric_value'].mean().idxmax()[1]
-            
-        print(f"Your models acheived a best average {metric}{parameter} of {round(best_performance, 3)} over the {stats['validation_splits']} validation splits, with the Model Group {best_model_group},{best_model_type}. Note that model selection is more nuanced than average predictive performance over time. You could use Audition for model selection.")
+
+        logger.notice(f"Your models acheived a best average {metric}{parameter} of {round(best_performance, 3)} over the {stats['validation_splits']} validation splits, with the Model Group {best_model_group},{best_model_type}. Note that model selection is more nuanced than average predictive performance over time. You could use Audition for model selection.")    
+        #print(f"Your models acheived a best average {metric}{parameter} of {round(best_performance, 3)} over the {stats['validation_splits']} validation splits, with the Model Group {best_model_group},{best_model_type}. Note that model selection is more nuanced than average predictive performance over time. You could use Audition for model selection.")
         
         ## Subsets
         subset_performance = self.model_performance_subsets(metric=metric, parameter=parameter, generate_plot=False)
@@ -969,11 +979,14 @@ class ExperimentReport:
                 res.append(d)
             
             if len(res) > 0:
-                print(f"You created {len(res)} subsets of your cohort -- {', '.join([x['subset'] for x in res])}")
+                logger.notice(f"You created {len(res)} subsets of your cohort -- {', '.join([x['subset'] for x in res])}")
+                #print(f"You created {len(res)} subsets of your cohort -- {', '.join([x['subset'] for x in res])}")
                 for d in res:
-                    print(f"For subset '{d['subset'] }', Model Group {d['best_mod'][0]}, {d['best_mod'][1]} achieved the best average {metric}{parameter} of {d['best_perf']}")
+                    logger.notice(f"For subset '{d['subset'] }', Model Group {d['best_mod'][0]}, {d['best_mod'][1]} achieved the best average {metric}{parameter} of {d['best_perf']}")
+                   #print(f"For subset '{d['subset'] }', Model Group {d['best_mod'][0]}, {d['best_mod'][1]} achieved the best average {metric}{parameter} of {d['best_perf']}")
         else:
-            print("No subsets defined.") 
+            logger.notice("No subsets defined.")
+            #print("No subsets defined.") 
 
         ## Bias
         equity_metrics = self.efficiency_and_equity(
@@ -986,11 +999,14 @@ class ExperimentReport:
         if equity_metrics is not None:
             grpobj = equity_metrics[(equity_metrics.baserate > 0) & (equity_metrics.model_group_id == best_model_group)].groupby('attribute_name')
             for attr, gdf in grpobj:
-                print(f'Measuring biases across {attr} groups using {equity_metric} for the best performing model:')
+                logger.notice(f"Measuring biases across {attr} groups using {equity_metric} for the best performing model:")
+                #print(f'Measuring biases across {attr} groups using {equity_metric} for the best performing model:')
                 d = gdf.groupby('attribute_value')[equity_metric].mean()
-                print(", ".join(f"{k}: {round(v, 3)}" for k, v, in d.to_dict().items()))
+                logger.notice(", ".join(f"{k}: {round(v, 3)}" for k, v, in d.to_dict().items()))
+                #print(", ".join(f"{k}: {round(v, 3)}" for k, v, in d.to_dict().items()))
         else:
-            print(f"No bias audit results were found in the database for the experiment.")
+            logger.notice(f"No bias audit results were found in the database for the experiment.")
+            #print(f"No bias audit results were found in the database for the experiment.")
             
 
     def precision_recall_curves(self, plot_size=(3,3)):
