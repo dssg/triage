@@ -114,7 +114,12 @@ def get_most_recent_experiment_hash(engine):
 
 class ExperimentReport:
     
-    def __init__(self, engine, experiment_hashes, performance_priority_metric, threshold, bias_priority_metric, bias_priority_groups):
+    def __init__(self, engine, 
+                 experiment_hashes, 
+                 performance_priority_metric='precision@', 
+                 threshold="1_pct", 
+                 bias_priority_metric='tpr_disparity', 
+                 bias_priority_groups=None):
         self.engine = engine
         self.experiment_hashes = experiment_hashes
         
