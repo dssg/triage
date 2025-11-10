@@ -926,7 +926,7 @@ class ExperimentBase(ABC):
 
     def _summary_report(self):
         logger.debug(f"experiment hash to send to experiment report for summary: {self.experiment_hash}")
-        er = ExperimentReport(self.db_engine, self.experiment_hash)
+        er = ExperimentReport(self.db_engine, [self.experiment_hash])
         er.generate_summary()
 
     def _log_end_of_run_report(self):
