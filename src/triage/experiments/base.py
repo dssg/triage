@@ -63,6 +63,7 @@ from triage.component.catwalk.storage import (
     ProjectStorage,
     MatrixStorageEngine,
 )
+from triage.component.postmodeling.experiment_summarizer import ExperimentReport
 
 from triage.experiments import CONFIG_VERSION
 from triage.experiments.validate import ExperimentValidator
@@ -910,6 +911,7 @@ class ExperimentBase(ABC):
             self.generate_subsets()
             self.generate_protected_groups()
             self.train_and_test_models()
+            self._experiment_report()
             self._log_end_of_run_report()
         except Exception:
             logger.error("Uh oh... Houston we have a problem")
@@ -921,6 +923,12 @@ class ExperimentBase(ABC):
                 logger.notice(
                     "Cleanup flag was set to True, so label, cohort and subset tables were deleted"
                 )
+
+    def _experiment_report(self):
+        logger.debug(f"experiment hash to send to experiment remport for summary: {self.experiment_hash}")
+        er = ExperimentReport(self.db_engine,
+                              self.experiment_hash)
+        er.generate_summary()
 
     def _log_end_of_run_report(self):
         missing_matrices = missing_matrix_uuids(self.experiment_hash, self.db_engine)
