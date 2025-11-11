@@ -204,7 +204,7 @@ class ModelGroupComparison:
         
         return chart
 
-    def metrics_overtime(self, priority_metrics):
+    def metrics_over_time(self, priority_metrics):
         """
             For each metric of interest defined on a dictionary, it will generates a comparison plot for each model group pair. 
 
