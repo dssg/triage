@@ -466,16 +466,23 @@ class ModelGroupComparison:
 
         evaluations = get_evaluations_for_metric(db_engine=self.engine, model_group_ids=self.model_group_ids, metric=metric)
         evaluations['k'] = evaluations.parameter.str.split('_').str[0]
+        evaluations['model_type_display'] = evaluations.model_group_id.astype(str) + ' - ' + evaluations.model_type.str.split('.').str[-1]
         
         # We only want '_pct' evaluations
         evaluations = evaluations[evaluations.parameter.str.contains('_pct')]
         
         # Summary over time
-        eval_summary = evaluations.groupby(['model_group_id', 'k']).value.agg(['mean', 'sem']).reset_index()
+        eval_summary = round(evaluations.groupby(['model_type_display', 'k']).value.agg(['mean', 'sem']), 4).reset_index()
         summ = alt.Chart(eval_summary).mark_line().encode(
             x=alt.X('k:Q', axis=alt.Axis(title='Treshold (%)', labelFontSize=12, titleFontSize=12, grid=True)),
             y=alt.Y('mean:Q', axis=alt.Axis(title='Metric Value',labelFontSize=12, titleFontSize=12, grid=True)),
-            color=alt.Color('model_group_id:N', title='Model Group'),
+            color=alt.Color('model_type_display:N', title='Model Group'),
+            tooltip=[
+                alt.Tooltip('model_type_display', title='Model Type'),
+                alt.Tooltip('k', title='Threshold (%)'),
+                alt.Tooltip('mean', title='Average Metric'),
+                alt.Tooltip('sem', title='Metric Std. Err.')
+            ]
         ).properties(
             width=300,
             height=250,
@@ -486,11 +493,10 @@ class ModelGroupComparison:
         chart = alt.Chart(evaluations).mark_line().encode(
             x=alt.X('k:Q', axis=alt.Axis(title='Treshold (%)', labelFontSize=12, titleFontSize=12, grid=True)),
             y=alt.Y('value:Q', axis=alt.Axis(title='Metric Value',labelFontSize=12, titleFontSize=12, grid=True)),
-            color=alt.Color('model_group_id:N', title='Model Group'),
+            color=alt.Color('model_type_display:N', title='Model Group'),
             tooltip=[
+                alt.Tooltip('model_type_display', title='Model Type'),
                 alt.Tooltip('k', title='Threshold (%)'),
-                alt.Tooltip('model_group_id', title='Model Group'),
-                alt.Tooltip('model_type', title='Model Type'),
                 alt.Tooltip('value', title='Metric')
             ]
         ).properties(
