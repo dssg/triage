@@ -121,16 +121,31 @@ class ModelGroupComparison:
         
                
         # Shaded band showing the tolerance band for the bias metric
-        parity_band = alt.Chart(metrics).mark_rect(opacity=0.01, color='gray').encode(
-            y='bias_tolerance_lower:Q',
-            y2='bias_tolerance_upper:Q'
-        )
+        # parity_band = alt.Chart(metrics).mark_rect(opacity=0.01, color='gray').encode(
+        #     y='bias_tolerance_lower:Q',
+        #     y2='bias_tolerance_upper:Q'
+        # )
 
         rule = alt.Chart(metrics).mark_rule(
             strokeDash=[4, 4],  # Dashed line: [dash, gap]
             color='gray'
         ).encode(
             y='bias_parity:Q'
+        )
+        
+        rule_lower = alt.Chart(metrics).transform_calculate(y=str(0.8)).mark_rule(
+            strokeDash=[1, 4],  # Dashed line: [dash, gap]
+            color='gray'
+        ).encode(
+            y='y:Q'
+        )
+
+        rule_upper = alt.Chart(metrics).transform_calculate(y=str(1.2)).mark_rule(
+            strokeDash=[1, 4],  # Dashed line: [dash, gap]
+            color='gray',
+            opacity=0.2
+        ).encode(
+            y='y:Q'
         )
         
         points_time_series = alt.Chart(metrics).mark_point(filled=True, size=80, opacity=1).encode(
@@ -161,14 +176,14 @@ class ModelGroupComparison:
                 ],
         )
 
-        error_x = alt.Chart(df).mark_errorbar(orient='horizontal', opacity=0.5).encode(
+        error_x = alt.Chart(df).mark_errorbar(orient='horizontal', opacity=0.8).encode(
             x=alt.X('mean_perf', title=''),
             xError='sem_perf',
             y='mean_bias',
             color='model_type:N'
         )
 
-        error_y = alt.Chart(df).mark_errorbar(orient='vertical', opacity=0.5).encode(
+        error_y = alt.Chart(df).mark_errorbar(orient='vertical', opacity=0.8).encode(
             y=alt.Y('mean_bias', title=''),
             yError='sem_bias',
             x='mean_perf',
@@ -177,9 +192,11 @@ class ModelGroupComparison:
 
         # TODO: add annotations to the plot
         
-        summary_chart = (parity_band + rule + error_x + error_y + points_grouped)
+        summary_chart = (rule_lower + rule_upper + rule + error_x + error_y + points_grouped).properties(
+            title='Average Over Time'
+        )
 
-        time_series_chart = (parity_band + rule + points_time_series).facet(
+        time_series_chart = (rule_lower + rule_upper + rule + points_time_series).facet(
             column=alt.Column('train_end_time', title=None, header=alt.Header(labelFontSize=14), sort=alt.EncodingSortField('train_end_time', order='descending'))
         )
                        
