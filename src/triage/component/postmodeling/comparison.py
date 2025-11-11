@@ -204,7 +204,7 @@ class ModelGroupComparison:
         
         return chart
 
-    def priority_metrics_overtime(self, priority_metrics):
+    def metrics_overtime(self, priority_metrics):
         """
             For each metric of interest defined on a dictionary, it will generates a comparison plot for each model group pair. 
 
@@ -452,7 +452,7 @@ class ModelGroupComparison:
         return overlaps, overlap_chart, jaccard_chart
 
 
-    def evaluation_metrics_over_thresholds(self, metric='recall@', return_data=True):
+    def metrics_over_thresholds(self, metric='recall@', return_data=True):
         ''' Comparing precision or recall curves at different thresholds
             
             args:
