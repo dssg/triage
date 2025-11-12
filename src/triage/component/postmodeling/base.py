@@ -5,11 +5,11 @@ import logging
 import seaborn as sns
 import matplotlib.table as tab
 import matplotlib.pyplot as plt
+import itertools
 #from tabulate import tabulate
 
 from IPython.display import display
-import itertools
-
+from io import StringIO
 from descriptors import cachedproperty
 from sqlalchemy import create_engine
 from sklearn.calibration import calibration_curve
@@ -510,20 +510,20 @@ class SingleModelAnalyzer:
                 # q = _generate_create_table_sql_statement_from_df(results, f'{table_schema}.{table_name}')
                 self.engine.execute(q)
             
-                conn = self.engine.raw_connection()
-                cursor = conn.cursor()
-                
-                buffer = StringIO()
-                crosstabs_df.to_csv(buffer, index=False, header=False)
-                buffer.seek(0)
-                
-                columns = ', '.join(crosstabs_df.columns)
-                print(columns)
-                cursor.copy_expert(f"COPY test_results.{table_name} ({columns}) FROM STDIN WITH CSV", buffer)
-                # results.to_sql(con=db_engine, schema=table_schema, name=table_name, if_exists='append')
-                conn.commit()
-                cursor.close()
-                conn.close()
+            conn = self.engine.raw_connection()
+            cursor = conn.cursor()
+            
+            buffer = StringIO()
+            crosstabs_df.to_csv(buffer, index=False, header=False)
+            buffer.seek(0)
+            
+            columns = ', '.join(crosstabs_df.columns)
+            print(columns)
+            cursor.copy_expert(f"COPY test_results.{table_name} ({columns}) FROM STDIN WITH CSV", buffer)
+            # results.to_sql(con=db_engine, schema=table_schema, name=table_name, if_exists='append')
+            conn.commit()
+            cursor.close()
+            conn.close()
 
         if return_df:
             return crosstabs_df
