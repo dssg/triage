@@ -231,18 +231,7 @@ class ModelGroupComparison:
                        
         chart = summary_chart | time_series_chart
         
-        return_objs = tuple()
-        
-        if return_chart:
-            return_objs = (chart, )
-        
-        if return_data:
-            return_objs = return_objs + (metrics, )
-            
-        if display_chart:
-            chart.display()
-        
-        return return_objs
+        return self._handle_returns(metrics, chart, return_data, return_chart, display_chart)
 
     def metrics_over_time(self, priority_metrics, return_data=True, return_chart=True, display_chart=True):
         """
@@ -369,17 +358,8 @@ class ModelGroupComparison:
                 # TODO: consider returning a list of charts to let the user plot in any configuration 
                 chart &= c # Appending charts vertically 
         
-        return_objs = tuple()    
-        if return_data:
-            return_objs = (pd.concat(evals, ignore_index=True), )
-        
-        if return_chart:
-            return_objs = return_objs + (chart, )
-            
-        if display_chart:
-            chart.display() 
-        
-        return return_objs          
+        return self._handle_returns(pd.concat(evals, ignore_index=True), chart, return_data, return_chart, display_chart)
+
                 
     def topk_list(self, threshold_type, threshold, return_data=True, return_chart=True, display_chart=True):
         """ 
@@ -544,18 +524,8 @@ class ModelGroupComparison:
 
             overlap_chart = overlap_agg + overlap_agg_label | (overlapp_over_time + overlap_label_over_time).facet(column=alt.Column('train_end_time', title='', header=alt.Header(labelFontSize=13))).properties(title=alt.TitleParams(text='Overlap by Validation Cohort', anchor='start'))
             jaccard_chart = jaccard_agg + jaccard_agg_label | (jaccard_over_time + jaccard_label_over_time).facet(column=alt.Column('train_end_time', title='')).properties(title=alt.TitleParams(text='Jaccard Similarity by Validation Cohort', anchor='start'))    
-    
-        return_objs = tuple()
-        if return_data:
-            return_objs = (overlaps, )
-        
-        if return_chart:
-            return_objs =  return_objs + (overlap_chart & jaccard_chart, )      
-    
-        if display_chart:
-            (overlap_chart & jaccard_chart).display()
 
-        return return_objs 
+        return self._handle_returns(overlaps, (overlap_chart & jaccard_chart), return_data, return_chart, display_chart)
 
 
     def metrics_over_thresholds(self, metric='recall@', return_data=True, return_chart=True, display_chart=True):
@@ -623,18 +593,7 @@ class ModelGroupComparison:
         
         chart = summ | chart
         
-        return_objs = tuple()
-        
-        if return_data:
-            return_objs = (evaluations, )
-        
-        if return_chart:
-            return_objs = return_objs + (chart, )
-    
-        if display_chart:
-            chart.display()
-        
-        return return_objs
+        return self._handle_returns(evaluations, chart, return_data, return_chart, display_chart)
         
     def score_distributions(self, score_extent=(0, 1), return_data=True, return_chart=True, display_chart=True, ):
         '''
