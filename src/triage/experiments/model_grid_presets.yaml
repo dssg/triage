@@ -107,10 +107,6 @@ texas:
 whatever:
     prev: ~
     grid:
-
-        'sklearn.naive_bayes.GaussianNB':
-            var_smoothing: [1.0e-09]
-
         'sklearn.svm.SVC':
             C: [0.00001,0.0001,0.001,0.01,0.1,1,10]
             kernel: ['linear']
