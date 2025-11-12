@@ -29,14 +29,35 @@ class ModelGroupComparison:
         self.model_group_ids = model_group_ids
         self.engine = engine
         
-    def bias_and_performance(self, performance_metric='precision@', bias_metric='tpr_disparity', parameter='1_pct', bias_tolerance=0.2):
+    def bias_and_performance(
+        self, 
+        performance_metric='precision@', 
+        bias_metric='tpr_disparity', 
+        parameter='1_pct', 
+        bias_tolerance=0.2,
+        return_data=True,
+        return_chart=True,
+        display_chart=True,
+    ):
         """
         Compare model groups based on performance and bias metrics.
         
-        :param performance_metric: The performance metric to use for comparison.
-        :param bias_metric: The bias metric to use for comparison.
-        :param parameter: The threshold for determining significant differences.
-        :return: DataFrame with comparison results.
+        Args: 
+            performance_metric: The performance metric to use for comparison.
+            bias_metric: The bias metric to use for comparison.
+            parameter: The threshold for determining significant differences.
+            bias_tolerance: Tolerance range for the bias metric (parite +/- tolerance). Defaults to 0.2
+            return_data: Whether to return the bias and performance metric data. Defaults to True
+            return_chart: Whether to return the Altair Chart object. Defaults to True
+            display_chart: Whether to display the chart (when called in Jupyter). Defaults to True
+        
+        Return: 
+            A tuple containing one or more of
+                DataFrame with bias metrics
+                Altair Chart object with the chart
+            User can toggle what to return by using return
+                
+        
         """
         
         # check if there are bias audit results in the DB (directly from aequitas table)
@@ -119,13 +140,6 @@ class ModelGroupComparison:
             group_size=('group_size', 'mean')
         ), 3).reset_index()
         
-               
-        # Shaded band showing the tolerance band for the bias metric
-        # parity_band = alt.Chart(metrics).mark_rect(opacity=0.01, color='gray').encode(
-        #     y='bias_tolerance_lower:Q',
-        #     y2='bias_tolerance_upper:Q'
-        # )
-
         rule = alt.Chart(metrics).mark_rule(
             strokeDash=[4, 4],  # Dashed line: [dash, gap]
             color='gray'
@@ -202,9 +216,20 @@ class ModelGroupComparison:
                        
         chart = summary_chart | time_series_chart
         
-        return chart
+        return_objs = tuple()
+        
+        if return_chart:
+            return_objs = (chart, )
+        
+        if return_data:
+            return_objs = return_objs + (metrics, )
+            
+        if display_chart:
+            chart.display()
+        
+        return return_objs
 
-    def metrics_over_time(self, priority_metrics):
+    def metrics_over_time(self, priority_metrics, return_data=True, return_chart=True, display_chart=True):
         """
             For each metric of interest defined on a dictionary, it will generates a comparison plot for each model group pair. 
 
@@ -219,7 +244,7 @@ class ModelGroupComparison:
             - One with the recall@10_pct
 
             Args: 
-                priority_metrics (dict of str): A dictionary with the metrics of interest as keys, and a list of thresholds of interest.        
+                priority_metrics (Dict[str: List[str]]): A dictionary with the metrics of interest as keys, and a list of thresholds of interest.        
         """
         model_group_ids = self.model_group_ids
         db_engine = self.engine
@@ -276,11 +301,13 @@ class ModelGroupComparison:
         # Plots for each metric defined a row with all the pair model groups compared
 
         # Viz
+        charts = list()
+        evals = list()
         for metric in metrics: 
             parameters = priority_metrics[metric]
             for parameter in parameters: 
                 # generate an independent plot for each group pair 
-                charts = []
+                # charts = []
                 
                 evaluations = get_evaluations_for_metric(db_engine=db_engine, model_group_ids=model_group_ids, metric=metric, parameter=parameter)
                     
@@ -291,6 +318,8 @@ class ModelGroupComparison:
                 evaluations['model_name'] = evaluations.model_group_id + ' - ' + evaluations.model_type
                 evaluations['as_of_date'] = pd.to_datetime(evaluations['as_of_date'])
                     
+                evals.append(evaluations)
+                
                 #plot
                 chart = ( 
                     alt.Chart(evaluations)
@@ -302,13 +331,34 @@ class ModelGroupComparison:
                         color='model_name:N'
                     )
                     .properties(
+                        width=500,
+                        height=300,
                         title=f'Comparing model groups for metric {metric}{parameter}'
                     )
                 )
                 
-                chart.display()
-
-    def topk_list(self, threshold_type, threshold):
+                charts.append(chart)
+           
+        for i, c in enumerate(charts):
+            if i==0:
+                chart = c
+            else:
+                # TODO: consider returning a list of charts to let the user plot in any configuration 
+                chart &= c # Appending charts vertically 
+        
+        return_objs = tuple()    
+        if return_data:
+            return_objs = (pd.concat(evals, ignore_index=True), )
+        
+        if return_chart:
+            return_objs = return_objs + (chart, )
+            
+        if display_chart:
+            chart.display() 
+        
+        return return_objs          
+                
+    def topk_list(self, threshold_type, threshold, return_data=True, return_chart=True, display_chart=True):
         """ 
             Compare topk lists given a threshold type (one from: rank_abs_no_ties, rank_abs_with_ties, rank_pct_no_ties, or rank_pct_with_ties), 
             and a threshold (e.g. 100 for top 100)    
@@ -407,7 +457,6 @@ class ModelGroupComparison:
             overlap_agg = base.mark_rect().encode(
                 color=alt.Color('overlap', title='Top-k Overlap (%)', aggregate='mean'),
                 tooltip=[
-                    alt.Tooltip('overlap', title='overlap'),
                     alt.Tooltip('model_type_1:N', title='X: '),
                     alt.Tooltip('model_type_2:N', title='Y: ')
                 ]
@@ -420,7 +469,11 @@ class ModelGroupComparison:
             )
 
             overlapp_over_time = base.mark_rect().encode(
-                color=alt.Color('overlap', title='Top-k Overlap (%)', aggregate='mean')
+                color=alt.Color('overlap', title='Top-k Overlap (%)', aggregate='mean'),
+                tooltip=[
+                    alt.Tooltip('model_type_1:N', title='X: '),
+                    alt.Tooltip('model_type_2:N', title='Y: ')
+                ]
             )
 
             overlap_label_over_time = base.mark_text(color='black', fontSize=12).encode(
@@ -428,7 +481,11 @@ class ModelGroupComparison:
             )
 
             jaccard_agg = base.mark_rect().encode(
-                color=alt.Color('jaccard', title='Top-k Overlap (%)', aggregate='mean')
+                color=alt.Color('jaccard', title='Top-k Overlap (%)', aggregate='mean'),
+                tooltip=[
+                    alt.Tooltip('model_type_1:N', title='X: '),
+                    alt.Tooltip('model_type_2:N', title='Y: ')
+                ]
             ).properties(
                 title='Jaccard Sim. of Top-k: Average over time'
             )
@@ -438,7 +495,11 @@ class ModelGroupComparison:
             )
 
             jaccard_over_time = base.mark_rect().encode(
-                color=alt.Color('jaccard', title='Top-k Overlap (%)', aggregate='mean')
+                color=alt.Color('jaccard', title='Top-k Overlap (%)', aggregate='mean'),
+                tooltip=[
+                    alt.Tooltip('model_type_1:N', title='X: '),
+                    alt.Tooltip('model_type_2:N', title='Y: ')
+                ]
             )
 
             jaccard_label_over_time = base.mark_text(color='black').encode(
@@ -449,10 +510,20 @@ class ModelGroupComparison:
             overlap_chart = overlap_agg + overlap_agg_label | (overlapp_over_time + overlap_label_over_time).facet(column=alt.Column('train_end_time', title='', header=alt.Header(labelFontSize=13))).properties(title=alt.TitleParams(text='Overlap by Validation Cohort', anchor='start'))
             jaccard_chart = jaccard_agg + jaccard_agg_label | (jaccard_over_time + jaccard_label_over_time).facet(column=alt.Column('train_end_time', title='')).properties(title=alt.TitleParams(text='Jaccard Similarity by Validation Cohort', anchor='start'))    
     
-        return overlaps, overlap_chart, jaccard_chart
+        return_objs = tuple()
+        if return_data:
+            return_objs = (overlaps, )
+        
+        if return_chart:
+            return_objs =  return_objs + (overlap_chart & jaccard_chart, )      
+    
+        if display_chart:
+            (overlap_chart & jaccard_chart).display()
+
+        return return_objs 
 
 
-    def metrics_over_thresholds(self, metric='recall@', return_data=True):
+    def metrics_over_thresholds(self, metric='recall@', return_data=True, return_chart=True, display_chart=True):
         ''' Comparing precision or recall curves at different thresholds
             
             args:
@@ -508,11 +579,18 @@ class ModelGroupComparison:
         
         chart = summ | chart
         
+        return_objs = tuple()
+        
         if return_data:
-            return chart, evaluations
+            return_objs = (evaluations, )
+        
+        if return_chart:
+            return_objs = return_objs + (chart, )
     
-        else:
-            return chart
+        if display_chart:
+            chart.display()
+        
+        return return_objs
         
         
         
