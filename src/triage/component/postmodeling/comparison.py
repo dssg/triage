@@ -31,6 +31,21 @@ class ModelGroupComparison:
         self.engine = engine
         
     def _handle_returns(self, data, chart, return_data, return_chart, display_chart):
+        '''
+            Handle what to return and whether to display the chart in all the functions
+            Args:
+                data (pd.DataFrame): Dataframe that contains the data for the plots
+                chart (altair.Chart): The Altair chart object
+                return_data (bool): Whether to return the bias and performance metric data
+                return_chart (bool): Whether to return the Altair Chart object
+                display_chart (bool): Whether to display the chart (when called in Jupyter)
+            
+            Return:
+                A tuple containing one or more or none of
+                    - DataFrame with bias metrics
+                    - Altair Chart object with the chart
+
+        '''
         return_obj = tuple()
         
         if return_data:
@@ -67,11 +82,9 @@ class ModelGroupComparison:
             display_chart (bool): Whether to display the chart (when called in Jupyter). Defaults to True
         
         Return: 
-            A tuple containing one or more of
+            A tuple containing one or more or none of
                 DataFrame with bias metrics
-                Altair Chart object with the chart
-            User can toggle what to return by using return_* args
-                
+                Altair Chart object with the chart               
         
         """
         
@@ -254,7 +267,7 @@ class ModelGroupComparison:
                 display_chart (bool): Whether to display the chart (when called in Jupyter). Defaults to True   
                 
             Return:
-                A tuple containing one or both of the following
+                A tuple containing one or both or none of the following
                     - Evaluation metrics (pd.DataFrame)
                     - Vertically concatenated charts for each metric (alt.Chart())     
         """
@@ -374,7 +387,7 @@ class ModelGroupComparison:
                 display_chart (bool): Whether to display the chart (when called in Jupyter). Defaults to True
                 
             Return:
-                A tuple containing one or both of the following
+                A tuple containing one or both or none of the following
                     - List overlap data (pd.DataFrame)
                     - Vertically concatenated charts of similarity measures (alt.Chart())     
         """
@@ -539,7 +552,7 @@ class ModelGroupComparison:
                 
             
             Return:
-                A tuple containing one or both of the following
+                A tuple containing one or both or none of the following
                     - Evaluation metrics (pd.DataFrame)
                     - Vertically concatenated charts for each metric (alt.Chart())     
                 
@@ -607,7 +620,7 @@ class ModelGroupComparison:
             
         
         Return:
-            A tuple containing one or both of the following
+            A tuple containing one or both or none of the following
                 - Predictions (pd.DataFrame)
                 - Vertically concatenated charts showing histogram and density plot (alt.Chart()) 
         '''
