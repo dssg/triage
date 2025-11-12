@@ -30,6 +30,20 @@ class ModelGroupComparison:
         self.model_group_ids = model_group_ids
         self.engine = engine
         
+    def _handle_returns(self, data, chart, return_data, return_chart, display_chart):
+        return_obj = tuple()
+        
+        if return_data:
+            return_obj += (data, )
+        
+        if return_chart:
+            return_obj += (chart, )
+            
+        if display_chart:
+            chart.display()
+            
+        return return_obj
+        
     def bias_and_performance(
         self, 
         performance_metric='precision@', 
@@ -622,7 +636,67 @@ class ModelGroupComparison:
         
         return return_objs
         
+    def score_distributions(self, score_extent=(0, 1), return_data=True, return_chart=True, display_chart=True, ):
+        '''
+        Compare score distributions for the three model groups
         
+        Args:
+            score_extent (tuple): The lower and the upper bound of the score distribution that's of interest
+            return_data (bool) : Whether to return the bias and performance metric data. Defaults to True
+            return_chart (bool): Whether to return the Altair Chart object. Defaults to True
+            display_chart (bool): Whether to display the chart (when called in Jupyter). Defaults to True
+            
+        
+        Return:
+            A tuple containing one or both of the following
+                - Predictions (pd.DataFrame)
+                - Vertically concatenated charts showing histogram and density plot (alt.Chart()) 
+        '''
+        
+        scores = pd.read_sql(
+            f'''
+            select
+            model_group_id, 
+            model_type,
+            train_end_time, 
+            entity_id, 
+            as_of_date,
+            score
+            from test_results.predictions p inner join triage_metadata.models m using(model_id)
+            where m.model_group_id in ({', '.join([str(x) for x in self.model_group_ids])})            
+            ''',
+            self.engine
+        )
+        
+        scores['model_type_display'] = scores.model_group_id.astype(str) + ' - ' + scores.model_type.str.split('.').str[-1]
+        
+        alt.data_transformers.disable_max_rows()
+        bar_chart = alt.Chart(scores).mark_bar(opacity=0.5, binSpacing=0).encode(
+            x=alt.X('score').bin(maxbins=50, extent=score_extent),
+            y=alt.Y('count()').stack(None),
+            color='model_type_display:N'
+        ).facet(
+            column=alt.Column('train_end_time', title=None, header=alt.Header(labelFontSize=14), sort=alt.EncodingSortField('train_end_time', order='descending'))
+        )
+        
+        density_chart = alt.Chart(scores).transform_density(
+            'score',
+            groupby=['model_type_display', 'train_end_time'],
+            as_= ['score', 'density'],
+            cumulative=False,
+            extent=score_extent
+        ).mark_area(opacity=0.5).encode(
+            x=alt.X('score:Q'),
+            y=alt.Y('density:Q').stack(None),
+            color='model_type_display:N'
+        ).facet(
+            column=alt.Column('train_end_time', title=None, header=alt.Header(labelFontSize=14), sort=alt.EncodingSortField('train_end_time', order='descending'))
+        )
+        
+        # vertical concatenation
+        chart = density_chart & bar_chart
+        
+        return self._handle_returns(scores, chart, return_data, return_chart, display_chart)
         
 
 class ModelComparisonError(ValueError):
