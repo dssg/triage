@@ -23,8 +23,9 @@ class ModelGroupComparison:
         """
         Initialize the ModelGroupComparison with experiment hashes, model group IDs, and a database engine.
         
-        :param model_group_ids: List of model group IDs to compare.
-        :param engine: Database engine for executing SQL queries.
+        Args:
+            model_group_ids: List of model group IDs to compare.
+            engine: Database engine for executing SQL queries.
         """
         self.model_group_ids = model_group_ids
         self.engine = engine
@@ -43,19 +44,19 @@ class ModelGroupComparison:
         Compare model groups based on performance and bias metrics.
         
         Args: 
-            performance_metric: The performance metric to use for comparison.
-            bias_metric: The bias metric to use for comparison.
-            parameter: The threshold for determining significant differences.
-            bias_tolerance: Tolerance range for the bias metric (parite +/- tolerance). Defaults to 0.2
-            return_data: Whether to return the bias and performance metric data. Defaults to True
-            return_chart: Whether to return the Altair Chart object. Defaults to True
-            display_chart: Whether to display the chart (when called in Jupyter). Defaults to True
+            performance_metric (str): The performance metric to use for comparison. Defaults to precision@
+            bias_metric (str): The bias metric to use for comparison. Defaults to recall disparity
+            parameter (str): The rank threshold for discretizing models scores (e.g., 1_pct, 100_abs). Defaults to 1_pct (1%)
+            bias_tolerance (float): Tolerance range for the bias metric (parite +/- tolerance). Defaults to 0.2
+            return_data (bool): Whether to return the bias and performance metric data. Defaults to True
+            return_chart (bool): Whether to return the Altair Chart object. Defaults to True
+            display_chart (bool): Whether to display the chart (when called in Jupyter). Defaults to True
         
         Return: 
             A tuple containing one or more of
                 DataFrame with bias metrics
                 Altair Chart object with the chart
-            User can toggle what to return by using return
+            User can toggle what to return by using return_* args
                 
         
         """
@@ -244,7 +245,15 @@ class ModelGroupComparison:
             - One with the recall@10_pct
 
             Args: 
-                priority_metrics (Dict[str: List[str]]): A dictionary with the metrics of interest as keys, and a list of thresholds of interest.        
+                priority_metrics (Dict[str: List[str]]): A dictionary with the metrics of interest as keys, and a list of thresholds of interest.
+                return_data (bool) : Whether to return the bias and performance metric data. Defaults to True
+                return_chart (bool): Whether to return the Altair Chart object. Defaults to True
+                display_chart (bool): Whether to display the chart (when called in Jupyter). Defaults to True   
+                
+            Return:
+                A tuple containing one or both of the following
+                    - Evaluation metrics (pd.DataFrame)
+                    - Vertically concatenated charts for each metric (alt.Chart())     
         """
         model_group_ids = self.model_group_ids
         db_engine = self.engine
@@ -362,6 +371,18 @@ class ModelGroupComparison:
         """ 
             Compare topk lists given a threshold type (one from: rank_abs_no_ties, rank_abs_with_ties, rank_pct_no_ties, or rank_pct_with_ties), 
             and a threshold (e.g. 100 for top 100)    
+            
+            Args:
+                threshold_type (str): Rank type of interest
+                threshold (Union[float, int]): The rank threshold for creating the predicted positives
+                return_data (bool) : Whether to return the bias and performance metric data. Defaults to True
+                return_chart (bool): Whether to return the Altair Chart object. Defaults to True
+                display_chart (bool): Whether to display the chart (when called in Jupyter). Defaults to True
+                
+            Return:
+                A tuple containing one or both of the following
+                    - List overlap data (pd.DataFrame)
+                    - Vertically concatenated charts of similarity measures (alt.Chart())     
         """
         
         q = f'''
@@ -524,10 +545,19 @@ class ModelGroupComparison:
 
 
     def metrics_over_thresholds(self, metric='recall@', return_data=True, return_chart=True, display_chart=True):
-        ''' Comparing precision or recall curves at different thresholds
+        ''' Comparing precision or recall at different thresholds
             
             args:
-                metric (str): The metric to plot over different thresholds. Can be either 'recall@' or 'precision@'
+                metric (str): The metric to plot over different thresholds. Can be either 'recall@' or 'precision@'. Defaults to 'recall@'
+                return_data (bool) : Whether to return the bias and performance metric data. Defaults to True
+                return_chart (bool): Whether to return the Altair Chart object. Defaults to True
+                display_chart (bool): Whether to display the chart (when called in Jupyter). Defaults to True
+                
+            
+            Return:
+                A tuple containing one or both of the following
+                    - Evaluation metrics (pd.DataFrame)
+                    - Vertically concatenated charts for each metric (alt.Chart())     
                 
         '''
         
