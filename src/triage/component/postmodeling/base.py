@@ -5,11 +5,11 @@ import logging
 import seaborn as sns
 import matplotlib.table as tab
 import matplotlib.pyplot as plt
+import itertools
 #from tabulate import tabulate
 
 from IPython.display import display
-import itertools
-
+from io import StringIO
 from descriptors import cachedproperty
 from sqlalchemy import create_engine
 from sklearn.calibration import calibration_curve
@@ -475,15 +475,55 @@ class SingleModelAnalyzer:
         crosstabs_df['model_id'] = self.model_id
         crosstabs_df['matrix_uuid'] = matrix_uuid
 
-    
         if push_to_db:
-            logging.info('Pushing the results to the DB')
-            crosstabs_df.set_index(
-                ['model_id', 'matrix_uuid', 'feature', 'metric', 'threshold_type', 'threshold'], inplace=True
-            )
+            # logging.info('Pushing the results to the DB')
+            # crosstabs_df.set_index(
+            #     ['model_id', 'matrix_uuid', 'feature', 'metric', 'threshold_type', 'threshold'], inplace=True
+            # )
 
-            # TODO: Figure out to change the owner of the table
-            crosstabs_df.pg_copy_to(schema='test_results', name=table_name, con=self.engine, if_exists='append')
+            # # TODO: Figure out to change the owner of the table
+            # crosstabs_df.pg_copy_to(schema='test_results', name=table_name, con=self.engine, if_exists='append')
+            logging.info(f'Pushing the results to the database, {len(crosstabs_df)} rows')
+                    
+            crosstabs_df.set_index(
+                ['model_id', 'matrix_uuid', 'feature', 'metric', 'threshold_type', 'threshold'],
+                inplace=True
+            )
+            
+            crosstabs_df = crosstabs_df.reset_index()
+            
+            if not table_exists(f'test_results.{table_name}', self.engine):
+                q = f'''
+                    create schema if not exists test_results;
+                    
+                    create table test_results.{table_name} (
+                    model_id INTEGER,
+                    matrix_uuid TEXT,
+                    feature TEXT,
+                    metric TEXT,
+                    threshold_type TEXT,
+                    threshold FLOAT,
+                    value FLOAT  
+                    );
+                
+                '''
+                # q = _generate_create_table_sql_statement_from_df(results, f'{table_schema}.{table_name}')
+                self.engine.execute(q)
+            
+            conn = self.engine.raw_connection()
+            cursor = conn.cursor()
+            
+            buffer = StringIO()
+            crosstabs_df.to_csv(buffer, index=False, header=False)
+            buffer.seek(0)
+            
+            columns = ', '.join(crosstabs_df.columns)
+            print(columns)
+            cursor.copy_expert(f"COPY test_results.{table_name} ({columns}) FROM STDIN WITH CSV", buffer)
+            # results.to_sql(con=db_engine, schema=table_schema, name=table_name, if_exists='append')
+            conn.commit()
+            cursor.close()
+            conn.close()
 
         if return_df:
             return crosstabs_df
@@ -1136,7 +1176,7 @@ class MultiModelAnalyzer:
             and model_group_id in ('{model_groups}')        
             """  
         # TODO do we really need experiment_hashes here? can we query with only model_group_ids?
-
+        
         # TODO: modify to remove pandas
         models = pd.read_sql(q, self.engine).to_dict(orient='records')
 
@@ -1197,7 +1237,7 @@ class MultiModelAnalyzer:
         """
         fig, axes = self._get_subplots(subplot_width=subplot_width, subplot_len=subplot_len, sharey=sharey, sharex=sharex)
         
-        print(len(axes), len(axes[0]))
+        logging.info(f"{len(axes), len(axes[0])}")
 
         for j, mg in enumerate(self.models):
             for i, train_end_time in enumerate(self.models[mg]):

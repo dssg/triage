@@ -63,6 +63,7 @@ from triage.component.catwalk.storage import (
     ProjectStorage,
     MatrixStorageEngine,
 )
+from triage.component.postmodeling.experiment_summarizer import ExperimentReport
 
 from triage.experiments import CONFIG_VERSION
 from triage.experiments.validate import ExperimentValidator
@@ -252,7 +253,7 @@ class ExperimentBase(ABC):
         ###################### RUBICON ######################
 
         self.experiment_hash = save_experiment_and_get_hash(self.config, self.db_engine)
-        logger.debug(f"Experiment hash [{self.experiment_hash}] assigned")
+        logger.info(f"Experiment hash [{self.experiment_hash}] assigned")
         self.run_id = initialize_tracking_and_get_run_id(
             self.experiment_hash,
             experiment_class_path=classpath(self.__class__),
@@ -260,7 +261,7 @@ class ExperimentBase(ABC):
             experiment_kwargs=experiment_kwargs,
             db_engine=self.db_engine,
         )
-        logger.debug(f"Experiment run id [{self.run_id}] assigned")
+        logger.info(f"Experiment run id [{self.run_id}] assigned")
 
         self.initialize_components()
 
@@ -910,6 +911,7 @@ class ExperimentBase(ABC):
             self.generate_subsets()
             self.generate_protected_groups()
             self.train_and_test_models()
+            self._summary_report()
             self._log_end_of_run_report()
         except Exception:
             logger.error("Uh oh... Houston we have a problem")
@@ -921,6 +923,11 @@ class ExperimentBase(ABC):
                 logger.notice(
                     "Cleanup flag was set to True, so label, cohort and subset tables were deleted"
                 )
+
+    def _summary_report(self):
+        logger.debug(f"experiment hash to send to experiment report for summary: {self.experiment_hash}")
+        er = ExperimentReport(self.db_engine, [self.experiment_hash])
+        er.generate_summary()
 
     def _log_end_of_run_report(self):
         missing_matrices = missing_matrix_uuids(self.experiment_hash, self.db_engine)
