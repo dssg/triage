@@ -44,7 +44,7 @@ with REQUIREMENTS_RQ_PATH.open() as rq_requirements_file:
 
 setup(
     name='triage',
-    version='5.5.4',
+    version='5.5.5',
     description="Risk modeling and prediction",
     long_description=README_PATH.read_text(),
     long_description_content_type="text/markdown",
@@ -73,7 +73,6 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
     ],
