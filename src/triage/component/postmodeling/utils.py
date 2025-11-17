@@ -1,4 +1,7 @@
 import pandas as pd 
+import numpy as np
+
+from scipy.stats import gaussian_kde
 
 
 def get_evaluations_for_metric(db_engine, model_group_ids, metric, parameter=None, subset_hash=''): 
@@ -119,4 +122,62 @@ def validation_metric_generated(model_group_id, metrics, db_engine):
     metrics_evaluated = pd.read_sql(q, db_engine)
 
     return metrics_evaluated
-    
+
+
+def generate_overall_kde(scores_df):
+    """Generates the Kernel Density Estimation for each model type """
+    kde_list_model_types = []
+
+    # Loop over each model type
+    #for model, df in scores.groupby("model_type_display"):
+    for model_type in scores_df.model_type_display.unique():
+        df = scores_df[scores_df.model_type_display == model_type]
+        kde = gaussian_kde(df.score.values)
+        
+        # Define x values for the density curve
+        x_vals = np.linspace(0, 1, 200)
+        y_vals = kde(x_vals)
+        
+        # Save to dataframe
+        kde_df = pd.DataFrame({
+            "score": x_vals,
+            "density": y_vals,
+            "model_type_display": model_type
+        })
+        
+        kde_list_model_types.append(kde_df)
+
+    overall_density_df = pd.concat(kde_list_model_types, ignore_index=True)
+
+    return overall_density_df
+
+
+def generate_kde_by_model_timechop(scores_df):
+    """Calculates the Kernel Density Estimation for a timechop-model type"""
+    kde_list_model_timechop = []
+
+    # Loop over each model type
+    #for model, df in scores.groupby("model_type_display"):
+    for timechop in scores_df.train_end_time.unique():
+        for model_type in scores_df.model_type_display.unique():
+            df = scores_df[(scores_df.model_type_display == model_type) & 
+                        (scores_df.train_end_time == timechop)]
+            kde = gaussian_kde(df.score.values)
+            
+            # Define x values for the density curve
+            x_vals = np.linspace(0, 1, 200)
+            y_vals = kde(x_vals)
+            
+            # Save to dataframe
+            kde_df = pd.DataFrame({
+                "score": x_vals,
+                "density": y_vals,
+                "train_end_time": timechop,
+                "model_type_display": model_type
+            })
+            
+            kde_list_model_timechop.append(kde_df)
+
+    density_timechop_df = pd.concat(kde_list_model_timechop, ignore_index=True)
+
+    return density_timechop_df
