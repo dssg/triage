@@ -11,7 +11,9 @@ import altair as alt
 
 from .utils import (
     get_evaluations_for_metric, 
-    validation_group_model_exists
+    validation_group_model_exists,
+    generate_overall_kde,
+    generate_kde_by_model_timechop
 ) 
 from triage.component.catwalk.evaluation import ModelEvaluator
 
@@ -639,34 +641,107 @@ class ModelGroupComparison:
             ''',
             self.engine
         )
-        
+
         scores['model_type_display'] = scores.model_group_id.astype(str) + ' - ' + scores.model_type.str.split('.').str[-1]
-        
+        # since Altair is not efficient on doing group by (uses json format) we will make things easier 
+        # so plots takes less that a second 
+        scores['score_bin'] = pd.cut(scores['score'], bins=50)
+        # calculate the count per timechop
+        agg = (
+            scores
+            .groupby(['train_end_time', 'model_type_display', 'score_bin'])
+            .size()
+            .reset_index(name='count')
+        )
+        # get the middle value of the interval (altair can't handle the interval)
+        agg["score_bin_center"] = agg["score_bin"].apply(lambda x: x.mid)
+        agg = agg.drop('score_bin', axis=1)
+
+        # calculate the overall count by model group 
+        agg_all = (
+            scores
+            .groupby(['model_type_display', 'score_bin'])
+            .size()
+            .reset_index(name='count')
+        )
+        agg_all["score_bin_center"] = agg_all["score_bin"].apply(lambda x: x.mid)
+        agg_all = agg_all.drop('score_bin', axis=1)
+
+        # plot with altair
         alt.data_transformers.disable_max_rows()
-        bar_chart = alt.Chart(scores).mark_bar(opacity=0.5, binSpacing=0).encode(
-            x=alt.X('score').bin(maxbins=50, extent=score_extent),
-            y=alt.Y('count()').stack(None),
-            color='model_type_display:N'
-        ).facet(
-            column=alt.Column('train_end_time', title=None, header=alt.Header(labelFontSize=14), sort=alt.EncodingSortField('train_end_time', order='descending'))
-        )
+        # overall histogram plot
+        overall_bar_chart = (
+                                alt.Chart(agg_all, title="Score distribution: Average over time")
+                                .mark_bar(opacity=0.3, binSpacing=0)
+                                .encode(
+                                    x=alt.X("score_bin_center:Q", title="Score"),
+                                    y=alt.Y("count:Q", title="Count"),
+                                    color=alt.Color("model_type_display:N", title="Model Type"),
+                                    tooltip=[alt.Tooltip('count:Q', title='Count')],
+                                )
+                            )
+        # timechop histogram plots 
+        bar_chart = (
+                        alt.Chart(agg)
+                        .mark_bar(opacity=0.3, binSpacing=0)
+                        .encode(
+                            x=alt.X("score_bin_center:Q", title="Score"),
+                            y=alt.Y("count:Q", title="Count"),
+                            color=alt.Color("model_type_display:N", title="Model Type"),
+                            tooltip=[alt.Tooltip('count:Q', title='Count')]
+                        )
+                        .facet(
+                            column=alt.Column(
+                                "train_end_time:T",
+                                title="Train End Time",
+                                sort=alt.EncodingSortField('train_end_time', order='descending'),
+                                header=alt.Header(labelFontSize=14)
+                            )
+                        )
+                    )
+
+        histogram_charts = overall_bar_chart | bar_chart
         
-        density_chart = alt.Chart(scores).transform_density(
-            'score',
-            groupby=['model_type_display', 'train_end_time'],
-            as_= ['score', 'density'],
-            cumulative=False,
-            extent=score_extent
-        ).mark_area(opacity=0.5).encode(
-            x=alt.X('score:Q'),
-            y=alt.Y('density:Q').stack(None),
-            color='model_type_display:N'
-        ).facet(
-            column=alt.Column('train_end_time', title=None, header=alt.Header(labelFontSize=14), sort=alt.EncodingSortField('train_end_time', order='descending'))
-        )
-        
+        # Altair v 4.1 has a bug on transform_density (╥﹏╥) as a workaround we are 
+        # calculating the KDE manually :( 
+        overall_kde_df = generate_overall_kde(scores)
+        model_timechop_kde_df = generate_kde_by_model_timechop(scores)
+
+        overall_density_chart = (
+                                    alt.Chart(overall_kde_df)
+                                    .mark_area(opacity=0.4)
+                                    .encode(
+                                        x=alt.X("score:Q", title="Score", scale=alt.Scale(domain=[0,1])),
+                                        y=alt.Y("density:Q", title="Density"),
+                                        color="model_type_display:N",
+                                        tooltip=["model_type_display:N", "density:Q"]
+                                    )
+                                    .properties(title="Score Density: Average overt time")
+                                )
+
+        density_charts_overtime = (
+                                    alt.Chart(model_timechop_kde_df)
+                                    .mark_area(opacity=0.4)
+                                    .encode(
+                                        x=alt.X("score:Q", title="Score", scale=alt.Scale(domain=[0,1])), 
+                                        y=alt.Y("density:Q", title="Density"),
+                                        color="model_type_display:N",
+                                        tooltip=['model_type_display:N', 'density:Q']
+                                    )
+                                    .facet(
+                                        column=alt.Column(
+                                                            "train_end_time:T",
+                                                            title="Train End Time",
+                                                            sort=alt.EncodingSortField('train_end_time', order='descending'),
+                                                            header=alt.Header(labelFontSize=14)
+                                                        )
+                                    )
+                                  )
+
+        density_charts = overall_density_chart | density_charts_overtime
+
         # vertical concatenation
-        chart = density_chart & bar_chart
+        chart = histogram_charts & density_charts
         
         return self._handle_returns(scores, chart, return_data, return_chart, display_chart)
         
