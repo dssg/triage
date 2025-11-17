@@ -644,7 +644,7 @@ class ModelGroupComparison:
 
         scores['model_type_display'] = scores.model_group_id.astype(str) + ' - ' + scores.model_type.str.split('.').str[-1]
         # since Altair is not efficient on doing group by (uses json format) we will make things easier 
-        # so plots takes less that a second 
+        # so plots takes less than a second 
         scores['score_bin'] = pd.cut(scores['score'], bins=50)
         # calculate the count per timechop
         agg = (
@@ -672,9 +672,12 @@ class ModelGroupComparison:
         # overall histogram plot
         overall_bar_chart = (
                                 alt.Chart(agg_all, title="Score distribution: Average over time")
-                                .mark_bar(opacity=0.3, binSpacing=0)
+                                .mark_bar(opacity=0.3)
                                 .encode(
-                                    x=alt.X("score_bin_center:Q", title="Score"),
+                                    x=alt.X("score_bin_center:Q", 
+                                            title="Score", 
+                                            bin=True, 
+                                            scale=alt.Scale(domain=[score_extent[0], score_extent[1]])),
                                     y=alt.Y("count:Q", title="Count"),
                                     color=alt.Color("model_type_display:N", title="Model Type"),
                                     tooltip=[alt.Tooltip('count:Q', title='Count')],
@@ -685,7 +688,10 @@ class ModelGroupComparison:
                         alt.Chart(agg)
                         .mark_bar(opacity=0.3, binSpacing=0)
                         .encode(
-                            x=alt.X("score_bin_center:Q", title="Score"),
+                            x=alt.X("score_bin_center:Q", 
+                                    title="Score", 
+                                    bin=True,
+                                    scale=alt.Scale(domain=[score_extent[0], score_extent[1]])),
                             y=alt.Y("count:Q", title="Count"),
                             color=alt.Color("model_type_display:N", title="Model Type"),
                             tooltip=[alt.Tooltip('count:Q', title='Count')]
@@ -711,7 +717,9 @@ class ModelGroupComparison:
                                     alt.Chart(overall_kde_df)
                                     .mark_area(opacity=0.4)
                                     .encode(
-                                        x=alt.X("score:Q", title="Score", scale=alt.Scale(domain=[0,1])),
+                                        x=alt.X("score:Q", 
+                                                title="Score", 
+                                                scale=alt.Scale(domain=[score_extent[0], score_extend[1]])),
                                         y=alt.Y("density:Q", title="Density"),
                                         color="model_type_display:N",
                                         tooltip=["model_type_display:N", "density:Q"]
@@ -723,7 +731,9 @@ class ModelGroupComparison:
                                     alt.Chart(model_timechop_kde_df)
                                     .mark_area(opacity=0.4)
                                     .encode(
-                                        x=alt.X("score:Q", title="Score", scale=alt.Scale(domain=[0,1])), 
+                                        x=alt.X("score:Q", 
+                                                title="Score", 
+                                                scale=alt.Scale(domain=[score_extent[0], score_extent[1]])), 
                                         y=alt.Y("density:Q", title="Density"),
                                         color="model_type_display:N",
                                         tooltip=['model_type_display:N', 'density:Q']
