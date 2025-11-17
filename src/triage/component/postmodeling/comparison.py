@@ -719,7 +719,7 @@ class ModelGroupComparison:
                                     .encode(
                                         x=alt.X("score:Q", 
                                                 title="Score", 
-                                                scale=alt.Scale(domain=[score_extent[0], score_extend[1]])),
+                                                scale=alt.Scale(domain=[score_extent[0], score_extent[1]])),
                                         y=alt.Y("density:Q", title="Density"),
                                         color="model_type_display:N",
                                         tooltip=["model_type_display:N", "density:Q"]
