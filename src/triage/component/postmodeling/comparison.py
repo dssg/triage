@@ -680,7 +680,7 @@ class ModelGroupComparison:
                                             scale=alt.Scale(domain=[score_extent[0], score_extent[1]])),
                                     y=alt.Y("count:Q", title="Count"),
                                     color=alt.Color("model_type_display:N", title="Model Type"),
-                                    tooltip=[alt.Tooltip('count:Q', title='Count')],
+                                    tooltip=["model_type_display:N", "count:Q"],
                                 )
                             )
         # timechop histogram plots 
@@ -694,7 +694,7 @@ class ModelGroupComparison:
                                     scale=alt.Scale(domain=[score_extent[0], score_extent[1]])),
                             y=alt.Y("count:Q", title="Count"),
                             color=alt.Color("model_type_display:N", title="Model Type"),
-                            tooltip=[alt.Tooltip('count:Q', title='Count')]
+                            tooltip=["model_type_display:N", "count:Q"]
                         )
                         .facet(
                             column=alt.Column(
