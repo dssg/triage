@@ -5,9 +5,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt 
 import numpy as np
 
-import itertools
+from itertools import combinations
 
 import altair as alt
+from scipy.stats import wasserstein_distance
 
 from .utils import (
     get_evaluations_for_metric, 
@@ -17,7 +18,7 @@ from .utils import (
 ) 
 from triage.component.catwalk.evaluation import ModelEvaluator
 
-from triage.component.postmodeling.base import SingleModelAnalyzer
+from triage.component.postmodeling.base import Model
 
 class ModelGroupComparison:
     
@@ -756,5 +757,22 @@ class ModelGroupComparison:
         return self._handle_returns(scores, chart, return_data, return_chart, display_chart)
         
 
-class ModelComparisonError(ValueError):
-    """Signifies that a something went wrong on the model comparison"""
+class ModelComparison:
+    def __init__(self, model_ids, engine):
+        self.models = [Model(model_id, engine) for model_id in model_ids]
+        self.model_ids = model_ids
+        
+    def score_distributions(self, **kw):
+        predictions = {
+            mod.model_id: mod.predictions(**kw) for mod in self.models
+        }
+        
+        pairs = combinations(self.model_ids, 2)
+        
+        distances = dict()
+        for p in pairs:
+            distances[p] = wasserstein_distance(predictions[p[0]].score, predictions[p[1]].score)
+        
+        return distances
+        
+        
