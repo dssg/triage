@@ -763,6 +763,11 @@ class ModelComparison:
         'overlap': lambda x: 'high' if x > 0.8 else ('moderate' if x > 0.4 else 'low')
     }
     
+    metrics = {
+        'jaccard': lambda s1, s2: len(s1.intersection(s2)) / len(s1.union(s2)),
+        'overlap': lambda s1, s2: len(s1.intersection(s2)) / min(len(s1), len(s2))
+    }
+    
     def __init__(self,engine, model_ids):
         self.models = [ModelAnalyzer(engine, model_id) for model_id in model_ids]
         self.model_ids = model_ids
@@ -800,12 +805,7 @@ class ModelComparison:
         }
                 
         results = [{'model1': m, 'model2':m, 'jaccard': 1, 'overlap': 1} for m in self.model_ids]
-        
-        metrics = {
-            'jaccard': lambda s1, s2: len(s1.intersection(s2)) / len(s1.union(s2)),
-            'overlap': lambda s1, s2: len(s1.intersection(s2)) / min(len(s1), len(s2))
-        }
-            
+                    
         for pair in self.model_pairs:
             logging.info(f'Comparing {pair[0]} and {pair[1]}')
             
@@ -821,8 +821,7 @@ class ModelComparison:
             d['model1'] = pair[0]
             d['model2'] = pair[1]
             
-            for m, f in metrics.items():
-                print(m, f)
+            for m, f in self.metrics.items():
                 d[m] = f(entities_1, entities_2)    
 
             results.append(d)
@@ -838,7 +837,7 @@ class ModelComparison:
                 height=100*len(self.model_ids)
             )
             plots = list()
-            for m in metrics.keys():
+            for m in self.metrics.keys():
                 text_color = (
                     alt.when(alt.datum[m] < 1)
                     .then(alt.value("white"))
@@ -868,10 +867,77 @@ class ModelComparison:
             
         return results[row_msk], chart
         
+    def feature_importance(self, n_top_features=100, plot=True):
+        
+        importances_ = {
+            mod.model.model_id: mod.model.feature_importances(n_top_features=n_top_features) for mod in self.models
+        }
+        results = [{'model1': m, 'model2':m, 'jaccard': 1, 'overlap': 1} for m in self.model_ids]
+        
+        for pair in self.model_pairs:
+            pair = sorted(pair)
+            
+            f1 = set(importances_[pair[0]].feature)
+            f2 = set(importances_[pair[1]].feature)
+            
+            d = dict()
+            d['model1'] = pair[0]
+            d['model2'] = pair[1]
+            
+            for m, f in self.metrics.items():
+                d[m] = f(f1, f2)    
+
+            results.append(d)
+        results = pd.DataFrame(results)
+        chart = None
+        if plot:
+            base = alt.Chart(results).encode(
+                x=alt.X('model1:N', axis=alt.Axis(title='')),
+                y=alt.Y('model2:N', axis=alt.Axis(title='')),
+            ).properties(
+                width=100* len(self.model_ids),
+                height=100*len(self.model_ids)
+            )
+            plots = list()
+            for m in self.metrics.keys():
+                text_color = (
+                    alt.when(alt.datum[m] < 1)
+                    .then(alt.value("white"))
+                    .otherwise(alt.value("black"))
+                )
+                p = (base.mark_rect().encode(
+                    color=alt.Color(m)
+                        .scale(scheme='blues')
+                        .title(m.capitalize())
+                ))+ (base.mark_text(baseline='middle', fontSize=11).encode(
+                    text=alt.Text(f'{m}:Q', format='.2f'),
+                    color=text_color
+                    
+                )).properties(
+                    title=m.capitalize(),
+                )
+                
+                plots.append(p)
+                                
+            chart = plots[0]
+            for p in plots[1:]:
+                chart |= p
+        
+               
+        # Only keeping rows we care about
+        row_msk = results.apply(lambda x: (x.model1 != x.model2), axis=1)
+        
+        return results[row_msk], chart
+        
+    
     def comparison_summary(self, **kw):
-        
+        # NOTE: This is very much WIP
         scores_ = self.score_distributions(**kw)
-        list_, _ = self.topk_lists(**kw)
+        list_, _ = self.topk_lists(**kw, plot=False)
+        feature_importance_, _= self.feature_importance(**kw, plot=False)
         
-        joined_ = scores_.merge(list_, on=['model_pair'])  
+        joined_ = scores_.merge(list_, on=['model1', 'model2']) 
+        joined_ = joined_.merge(feature_importance_, on=['model1', 'model2'], suffixes=['_list', '_feature_importance'])
+        
+        return joined_
         
