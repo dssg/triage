@@ -18,7 +18,7 @@ from .utils import (
 ) 
 from triage.component.catwalk.evaluation import ModelEvaluator
 
-from triage.component.postmodeling.base import Model
+from triage.component.postmodeling.base import Model, ModelAnalyzer
 
 class ModelGroupComparison:
     
@@ -375,8 +375,7 @@ class ModelGroupComparison:
                 chart &= c # Appending charts vertically 
         
         return self._handle_returns(pd.concat(evals, ignore_index=True), chart, return_data, return_chart, display_chart)
-
-                
+           
     def topk_list(self, threshold_type, threshold, return_data=True, return_chart=True, display_chart=True):
         """ 
             Compare topk lists given a threshold type (one from: rank_abs_no_ties, rank_abs_with_ties, rank_pct_no_ties, or rank_pct_with_ties), 
@@ -542,7 +541,6 @@ class ModelGroupComparison:
             jaccard_chart = jaccard_agg + jaccard_agg_label | (jaccard_over_time + jaccard_label_over_time).facet(column=alt.Column('train_end_time', title='')).properties(title=alt.TitleParams(text='Jaccard Similarity by Validation Cohort', anchor='start'))    
 
         return self._handle_returns(overlaps, (overlap_chart & jaccard_chart), return_data, return_chart, display_chart)
-
 
     def metrics_over_thresholds(self, metric='recall@', return_data=True, return_chart=True, display_chart=True):
         ''' Comparing precision or recall at different thresholds
@@ -758,21 +756,122 @@ class ModelGroupComparison:
         
 
 class ModelComparison:
-    def __init__(self, model_ids, engine):
-        self.models = [Model(model_id, engine) for model_id in model_ids]
+    
+    metric_similairity_bins = {
+        'wasserstein': lambda x: 'high' if x < 0.1 else ('moderate' if x < 0.4 else 'low'),
+        'jaccard': lambda x: 'high' if x > 0.6 else ('moderate' if x > 0.4 else 'low'),
+        'overlap': lambda x: 'high' if x > 0.8 else ('moderate' if x > 0.4 else 'low')
+    }
+    
+    def __init__(self,engine, model_ids):
+        self.models = [ModelAnalyzer(engine, model_id) for model_id in model_ids]
         self.model_ids = model_ids
+        self.engine=engine
         
+        self.model_pairs = list(combinations(self.model_ids, 2))
+        
+    def _validate(self):
+        """This function is meant to validate the model_ids
+        - Are they scoring the same cohorts? S 
+        """
+        pass 
+    
     def score_distributions(self, **kw):
         predictions = {
-            mod.model_id: mod.predictions(**kw) for mod in self.models
+            mod.model.model_id: mod.model.predictions(**kw) for mod in self.models
         }
         
-        pairs = combinations(self.model_ids, 2)
+        # print(predictions)
+        distances = list()
+        for p in self.model_pairs:
+            p = sorted(p)
+            d = dict()
+            d['model1'] = p[0]
+            d['model2'] = p[1]
+            d['wasserstein'] = wasserstein_distance(predictions[p[0]].score, predictions[p[1]].score)  
+            distances.append(d)
+            
+        return pd.DataFrame(distances)
+    
+    def topk_lists(self, matrix_uuid=None, threshold=None, include_ties=None, plot=True):
         
-        distances = dict()
-        for p in pairs:
-            distances[p] = wasserstein_distance(predictions[p[0]].score, predictions[p[1]].score)
+        lists = {
+            mod.model.model_id: mod.predicted_positives(matrix_uuid, threshold, include_ties) for mod in self.models
+        }
+                
+        results = [{'model1': m, 'model2':m, 'jaccard': 1, 'overlap': 1} for m in self.model_ids]
         
-        return distances
+        metrics = {
+            'jaccard': lambda s1, s2: len(s1.intersection(s2)) / len(s1.union(s2)),
+            'overlap': lambda s1, s2: len(s1.intersection(s2)) / min(len(s1), len(s2))
+        }
+            
+        for pair in self.model_pairs:
+            logging.info(f'Comparing {pair[0]} and {pair[1]}')
+            
+            pair = sorted(pair)
+            
+            entities_1 = set(lists[pair[0]].entity_id)
+            entities_2 = set(lists[pair[1]].entity_id)
+            
+            if (len(entities_1) == 0 or len(entities_2)) == 0:
+                logging.error('No prediction saved for the models!') 
+            
+            d = dict()
+            d['model1'] = pair[0]
+            d['model2'] = pair[1]
+            
+            for m, f in metrics.items():
+                print(m, f)
+                d[m] = f(entities_1, entities_2)    
+
+            results.append(d)
         
+        results = pd.DataFrame(results)
+        chart = None
+        if plot:
+            base = alt.Chart(results).encode(
+                x=alt.X('model1:N', axis=alt.Axis(title='')),
+                y=alt.Y('model2:N', axis=alt.Axis(title='')),
+            ).properties(
+                width=100* len(self.model_ids),
+                height=100*len(self.model_ids)
+            )
+            plots = list()
+            for m in metrics.keys():
+                text_color = (
+                    alt.when(alt.datum[m] < 1)
+                    .then(alt.value("white"))
+                    .otherwise(alt.value("black"))
+                )
+                p = (base.mark_rect().encode(
+                    color=alt.Color(m)
+                        .scale(scheme='blues')
+                        .title(m.capitalize())
+                ))+ (base.mark_text(baseline='middle', fontSize=11).encode(
+                    text=alt.Text(f'{m}:Q', format='.2f'),
+                    color=text_color
+                    
+                )).properties(
+                    title=m.capitalize(),
+                )
+                
+                plots.append(p)
+                                
+            chart = plots[0]
+            for p in plots[1:]:
+                chart |= p
+        
+               
+        # Only keeping rows we care about
+        row_msk = results.apply(lambda x: (x.model1 != x.model2), axis=1)
+            
+        return results[row_msk], chart
+        
+    def comparison_summary(self, **kw):
+        
+        scores_ = self.score_distributions(**kw)
+        list_, _ = self.topk_lists(**kw)
+        
+        joined_ = scores_.merge(list_, on=['model_pair'])  
         
