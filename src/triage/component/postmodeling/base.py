@@ -132,7 +132,8 @@ class Model:
                    rank_pct_no_ties, 
                    test_label_timespan
             FROM test_results.predictions
-            {where_clause}        
+            {where_clause}  
+            order by score desc      
         """
 
         preds = pd.read_sql(query, self.engine)
@@ -285,15 +286,21 @@ class ModelAnalyzer:
         self.threshold=threshold
         self.include_ties=include_ties 
     
-    def predicted_positives(self, matrix_uuid=None):
+    def predicted_positives(self, matrix_uuid=None, threshold=None, include_ties=None):
         """ Fetch the k intities with highest model score for a given model
         
             Args:
                 matrix_uuid (optional, str): If a list should be generated out of a matrix that were not used to validate the model during the experiment
         """
+        
+        if threshold is None:
+            threshold = self.threshold
+        
+        if include_ties is None:
+            include_ties = self.include_ties
 
-        ties_suffix = 'with_ties' if self.include_ties else 'no_ties'
-        rank_column = f"rank_{self.threshold.split('_')[1]}_{ties_suffix}"
+        ties_suffix = 'with_ties' if include_ties else 'no_ties'
+        rank_column = f"rank_{threshold.split('_')[1]}_{ties_suffix}"
         
         q = f"""
             select 
@@ -307,8 +314,8 @@ class ModelAnalyzer:
                 rank_pct_with_ties,
                 matrix_uuid
             from test_results.predictions
-            where model_id={self.model_id}
-            and {rank_column} <= {self.threshold.split('_')[0]}
+            where model_id={self.model.model_id}
+            and {rank_column} <= {threshold.split('_')[0]}
         """
         
         if matrix_uuid is not None: 
