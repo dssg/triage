@@ -413,7 +413,7 @@ class Model:
         results['threshold_type'] = rank_column
         results['threshold'] = threshold
 
-        crosstabs_df = pd.concat(results).reset_index()
+        crosstabs_df = results.reset_index()
 
         crosstabs_df.rename(columns={'index': 'feature', 0: 'value'}, inplace=True)
         crosstabs_df['model_id'] = self.model_id
