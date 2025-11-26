@@ -124,7 +124,7 @@ def validation_metric_generated(model_group_id, metrics, db_engine):
     return metrics_evaluated
 
 
-def generate_overall_kde(scores_df):
+def generate_overall_kde_model_type(scores_df):
     """Generates the Kernel Density Estimation for each model type """
     kde_list_model_types = []
 
@@ -150,6 +150,22 @@ def generate_overall_kde(scores_df):
     overall_density_df = pd.concat(kde_list_model_types, ignore_index=True)
 
     return overall_density_df
+
+def generate_kde_single_model(df):
+    """Generates the Kernel Density Estimation given the scores"""
+    kde = gaussian_kde(df.score.values)
+    
+    # Define x values for the density curve
+    x_vals = np.linspace(0, 1, 200)
+    y_vals = kde(x_vals)
+    
+    # Save to dataframe
+    kde_df = pd.DataFrame({
+        "score": x_vals,
+        "density": y_vals
+    })
+
+    return kde_df
 
 
 def generate_kde_by_model_timechop(scores_df):
@@ -181,3 +197,22 @@ def generate_kde_by_model_timechop(scores_df):
     density_timechop_df = pd.concat(kde_list_model_timechop, ignore_index=True)
 
     return density_timechop_df
+
+def generate_binned_scores(df, n_bins, group_by_elements=None):
+    # calculate the overall count by model group 
+    df['score_bin'] = pd.cut(df['score'], bins=n_bins)
+
+    grps = ['score_bin']
+    if group_by_elements is not None: 
+        grps = grps + group_by_elements
+
+    agg_all = (
+        df
+        .groupby(grps)
+        .size()
+        .reset_index(name='count')
+    )
+    agg_all["score_bin_center"] = agg_all["score_bin"].apply(lambda x: x.mid)
+    agg_all = agg_all.drop('score_bin', axis=1)
+
+    return agg_all
