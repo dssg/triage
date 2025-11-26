@@ -151,22 +151,6 @@ def generate_overall_kde_model_type(scores_df):
 
     return overall_density_df
 
-def generate_kde_single_model(df):
-    """Generates the Kernel Density Estimation given the scores"""
-    kde = gaussian_kde(df.score.values)
-    
-    # Define x values for the density curve
-    x_vals = np.linspace(0, 1, 200)
-    y_vals = kde(x_vals)
-    
-    # Save to dataframe
-    kde_df = pd.DataFrame({
-        "score": x_vals,
-        "density": y_vals
-    })
-
-    return kde_df
-
 
 def generate_kde_by_model_timechop(scores_df):
     """Calculates the Kernel Density Estimation for a timechop-model type"""
