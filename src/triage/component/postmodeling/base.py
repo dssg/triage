@@ -19,6 +19,7 @@ from scipy.stats import spearmanr
 
 from triage.component.catwalk.storage import ProjectStorage
 from triage.component.postmodeling.error_analysis import generate_error_analysis, output_all_analysis
+from triage.component.postmodeling.utils import generate_binned_scores
 from triage.database_reflection import table_exists
 from triage.component.catwalk.utils import sort_predictions_and_labels
 
@@ -263,7 +264,7 @@ class Model:
         
         return pd.read_sql(q, self.engine)
     
-    def predicted_positives(self, matrix_uuid=None, threshold=None, include_ties=None):
+    def predicted_positives(self, threshold, matrix_uuid=None, include_ties=None):
         """ Fetch the k intities with highest model score for a given model
         
             Args:
@@ -484,26 +485,35 @@ class Model:
         return error_analysis_results 
     
     def score_distribution(self, matrix_uuid=None, subset_hash=None, n_bins=50, score_extent=(0, 1), display_chart=True, return_chart=True):
-        predictions = self.predictions(matrix_uuid=matrix_uuid, subset_hash=subset_hash)
+        matrix_uuid = self.pred_matrix_uuid
+        predictions = self.predictions(matrix_uuid, subset_hash=subset_hash)
+        predictions = predictions.reset_index()
+        # altair v4.1 can't deal with timedelta, since we don't use it we are removing it from the df 
+        predictions = predictions.drop('test_label_timespan', axis=1)
+
+        binned_scores = generate_binned_scores(predictions, n_bins)
         
         alt.data_transformers.disable_max_rows()
         
-        bar_chart = alt.Chart(predictions).mark_bar(
-            opacity=0.8,
-            binSpacing=0
-        ).encode(
-            x=alt.X('score').bin(maxbins=n_bins, extent=score_extent),
-            y=alt.Y('count()').stack(None)
+        bar_chart = (
+                        alt.Chart(binned_scores)
+                        .mark_bar(opacity=0.8, binSpacing=0)
+                        .encode(
+                              x=alt.X('score:Q', 
+                                bin=True, 
+                                scale=alt.Scale(domain=[score_extent[0], score_extent[1]])),
+                              y=alt.Y('count:Q')
+                        )
         )
-        
-        density_chart = alt.Chart(predictions).transform_density(
-            'score',
-            as_= ['score', 'density'],
-            cumulative=False,
-            extent=score_extent
-        ).mark_area(opacity=0.5).encode(
-            x=alt.X('score:Q'),
-            y=alt.Y('density:Q').stack(None),
+
+        density_chart = (
+                            alt.Chart(binned_scores)
+                            .mark_area(opacity=0.4)
+                            .encode(
+                                    x=alt.X("score:Q", 
+                                    scale=alt.Scale(domain=[score_extent[0], score_extent[1]])),
+                                    y=alt.Y("density:Q"),
+                            )
         )
         
         chart = (density_chart | bar_chart).properties(
