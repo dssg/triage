@@ -300,8 +300,8 @@ class Model:
     
         args:
             project_path (str): Path where the experiment artifacts (models and matrices) are stored
-            threshold (str): 
-            include_ties (bool): 
+            threshold (str): The threshold to use, i.e., '100_abs' for the top 100 entities, or '5_pct' for the top 5 percent
+            include_ties (bool): Wheter to include the ties or not. Default False
             thresholds (Dict{str: Union[float, int}]): A dictionary that maps threhold type to the threshold
                                                     The threshold type can be one of the rank columns in the test_results.predictions_table
             return_df (bool, optional): Whether to return the constructed df or just to store in the database
@@ -393,19 +393,19 @@ class Model:
 
         ties_suffix = 'with_ties' if include_ties else 'no_ties'
         rank_column = f"rank_{threshold.split('_')[1]}_{ties_suffix}"
-        threshold = threshold.split('_')[0]
+        threshold = int(threshold.split('_')[0])
        
         logging.info(f'Crosstabs using threshold: {rank_column} <= {threshold}')
 
         msk = matrix[rank_column] <= threshold
-        postive_preds = matrix[msk][features]
+        positive_preds = matrix[msk][features]
         negative_preds = matrix[~msk][features]
 
         results = list()
         for name, func in crosstab_functions:
             logging.info(name)
 
-            this_result = pd.DataFrame(func(postive_preds, negative_preds))
+            this_result = pd.DataFrame(func(positive_preds, negative_preds))
             this_result['metric'] = name
             results.append(this_result)
         
