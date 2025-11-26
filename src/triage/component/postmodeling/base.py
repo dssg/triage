@@ -295,7 +295,7 @@ class Model:
 
         return pd.read_sql(q, self.engine)
 
-    def calculate_crosstabs(self, project_path, threshold, include_ties, matrix_uuid=None, push_to_db=True, table_name='crosstabs', return_df=True, replace=True, predictions_table='test_results.predictions'):
+    def calculate_crosstabs(self, project_path, threshold, include_ties=False, matrix_uuid=None, push_to_db=True, table_name='crosstabs', return_df=True, replace=True, predictions_table='test_results.predictions'):
         """ Generate crosstabs for the predicted positives (top-k) vs the rest
     
         args:
