@@ -491,32 +491,30 @@ class Model:
         # altair v4.1 can't deal with timedelta, since we don't use it we are removing it from the df 
         predictions = predictions.drop('test_label_timespan', axis=1)
 
-        binned_scores = generate_binned_scores(predictions, n_bins)
+        #binned_scores = generate_binned_scores(predictions, n_bins)
         
         alt.data_transformers.disable_max_rows()
         
         bar_chart = (
-                        alt.Chart(binned_scores)
-                        .mark_bar(opacity=0.8, binSpacing=0)
+                        alt.Chart(predictions.filter(['score'], axis=1))
+                        .mark_bar()
                         .encode(
-                              x=alt.X('score_bin_center:Q',
-                                      title='Score', 
-                                      bin=True, 
-                                      scale=alt.Scale(domain=[score_extent[0], score_extent[1]])),
-                              y=alt.Y('count:Q')
+                            alt.X("score:Q", 
+                                bin=True, 
+                                scale=alt.Scale(domain=[score_extent[0], score_extent[1]])),
+                            alt.Y('count()'),
                         )
         )
 
         # generate kde manually (becasue altair 4.1 has a bug :( for density transformation)
-        kde_scores = generate_kde_single_model(predictions)
+        #kde_scores = generate_kde_single_model(predictions)
         density_chart = (
-                            alt.Chart(kde_scores)
+                            alt.Chart(predictions[['score']])
+                            .transform_density("score")
                             .mark_area(opacity=0.4)
                             .encode(
-                                    x=alt.X("score:Q", 
-                                            title="Score",
-                                            scale=alt.Scale(domain=[score_extent[0], score_extent[1]])),
-                                    y=alt.Y("density:Q"),
+                                    x="value:Q",
+                                    y="density:Q"
                             )
         )
         
