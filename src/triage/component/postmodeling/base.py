@@ -19,7 +19,6 @@ from scipy.stats import spearmanr
 
 from triage.component.catwalk.storage import ProjectStorage
 from triage.component.postmodeling.error_analysis import generate_error_analysis, output_all_analysis
-from triage.component.postmodeling.utils import generate_binned_scores, generate_kde_single_model
 from triage.database_reflection import table_exists
 from triage.component.catwalk.utils import sort_predictions_and_labels
 
