@@ -19,7 +19,7 @@ from scipy.stats import spearmanr
 
 from triage.component.catwalk.storage import ProjectStorage
 from triage.component.postmodeling.error_analysis import generate_error_analysis, output_all_analysis
-from triage.component.postmodeling.utils import generate_binned_scores
+from triage.component.postmodeling.utils import generate_binned_scores, generate_kde_single_model
 from triage.database_reflection import table_exists
 from triage.component.catwalk.utils import sort_predictions_and_labels
 
@@ -499,19 +499,23 @@ class Model:
                         alt.Chart(binned_scores)
                         .mark_bar(opacity=0.8, binSpacing=0)
                         .encode(
-                              x=alt.X('score:Q', 
-                                bin=True, 
-                                scale=alt.Scale(domain=[score_extent[0], score_extent[1]])),
+                              x=alt.X('score_bin_center:Q',
+                                      title='Score', 
+                                      bin=True, 
+                                      scale=alt.Scale(domain=[score_extent[0], score_extent[1]])),
                               y=alt.Y('count:Q')
                         )
         )
 
+        # generate kde manually (becasue altair 4.1 has a bug :( for density transformation)
+        kde_scores = generate_kde_single_model(predictions)
         density_chart = (
-                            alt.Chart(binned_scores)
+                            alt.Chart(kde_scores)
                             .mark_area(opacity=0.4)
                             .encode(
                                     x=alt.X("score:Q", 
-                                    scale=alt.Scale(domain=[score_extent[0], score_extent[1]])),
+                                            title="Score",
+                                            scale=alt.Scale(domain=[score_extent[0], score_extent[1]])),
                                     y=alt.Y("density:Q"),
                             )
         )
