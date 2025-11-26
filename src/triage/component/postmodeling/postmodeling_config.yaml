@@ -7,4 +7,4 @@ error_analysis:
     max_depth: [5]
 
   # Flag to define if plots are going to be displayed (True) or saved (False)
-  view_plots: False
+  view_plots: True
