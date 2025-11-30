@@ -18,7 +18,7 @@ from .utils import (
 ) 
 from triage.component.catwalk.evaluation import ModelEvaluator
 
-from triage.component.postmodeling.base import Model, ModelAnalyzer
+from triage.component.postmodeling.base import Model
 
 class ModelGroupComparison:
     
@@ -769,7 +769,7 @@ class ModelComparison:
     }
     
     def __init__(self,engine, model_ids):
-        self.models = [ModelAnalyzer(engine, model_id) for model_id in model_ids]
+        self.models = [Model(model_id, engine) for model_id in model_ids]
         self.model_ids = model_ids
         self.engine=engine
         
