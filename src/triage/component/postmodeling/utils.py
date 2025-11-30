@@ -124,7 +124,7 @@ def validation_metric_generated(model_group_id, metrics, db_engine):
     return metrics_evaluated
 
 
-def generate_overall_kde_model_type(scores_df):
+def generate_overall_kde(scores_df):
     """Generates the Kernel Density Estimation for each model type """
     kde_list_model_types = []
 
