@@ -144,7 +144,7 @@ class Model:
         
         return preds.set_index(ID_COLUMNS)
 
-    def evaluations(self, matrix_uuid=None, subset_hash=None):
+    def evaluations(self, metrics=None, matrix_uuid=None, subset_hash=None):
         ''' 
         Get evaluations for the model from the DB
 
@@ -490,8 +490,6 @@ class Model:
         # altair v4.1 can't deal with timedelta, since we don't use it we are removing it from the df 
         predictions = predictions.drop('test_label_timespan', axis=1)
 
-        #binned_scores = generate_binned_scores(predictions, n_bins)
-        
         alt.data_transformers.disable_max_rows()
         
         bar_chart = (
@@ -505,11 +503,9 @@ class Model:
                         )
         )
 
-        # generate kde manually (becasue altair 4.1 has a bug :( for density transformation)
-        #kde_scores = generate_kde_single_model(predictions)
         density_chart = (
                             alt.Chart(predictions[['score']])
-                            .transform_density("score")
+                            .transform_density("score") # the as_ parameter has a bug :( as of 2025-11-24
                             .mark_area(opacity=0.4)
                             .encode(
                                     x="value:Q",
