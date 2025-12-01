@@ -801,7 +801,9 @@ class ModelComparison:
     def topk_lists(self, matrix_uuid=None, threshold=None, include_ties=None, plot=True):
         
         lists = {
-            mod.model.model_id: mod.predicted_positives(matrix_uuid, threshold, include_ties) for mod in self.models
+            mod.model_id: mod.predicted_positives(threshold=threshold, 
+                                                  matrix_uuid=matrix_uuid,
+                                                  include_ties=include_ties) for mod in self.models
         }
                 
         results = [{'model1': m, 'model2':m, 'jaccard': 1, 'overlap': 1} for m in self.model_ids]
@@ -839,21 +841,25 @@ class ModelComparison:
             plots = list()
             for m in self.metrics.keys():
                 text_color = (
-                    alt.when(alt.datum[m] < 1)
-                    .then(alt.value("white"))
-                    .otherwise(alt.value("black"))
-                )
-                p = (base.mark_rect().encode(
-                    color=alt.Color(m)
-                        .scale(scheme='blues')
-                        .title(m.capitalize())
-                ))+ (base.mark_text(baseline='middle', fontSize=11).encode(
-                    text=alt.Text(f'{m}:Q', format='.2f'),
-                    color=text_color
-                    
-                )).properties(
-                    title=m.capitalize(),
-                )
+                                alt.condition(alt.datum[m] < 1, # condition
+                                              alt.value("white"), # if true
+                                              alt.value("black")  # if false
+                                             )
+                             )
+                p = (base.mark_rect()
+                     .encode(
+                                color=alt.Color(m, scale=alt.Scale(scheme='blues'))
+                            ).properties(
+                                            title = m.capitalize()
+                                        )
+                    ) + (base.mark_text(baseline='middle', fontSize=11)
+                         .encode(
+                                    text=alt.Text(f'{m}:Q', format='.2f'),
+                                    color=text_color   
+                                )
+                        ).properties(
+                                        title=m.capitalize(),
+                                    ) 
                 
                 plots.append(p)
                                 
@@ -861,7 +867,6 @@ class ModelComparison:
             for p in plots[1:]:
                 chart |= p
         
-               
         # Only keeping rows we care about
         row_msk = results.apply(lambda x: (x.model1 != x.model2), axis=1)
             
