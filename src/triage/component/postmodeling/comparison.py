@@ -783,7 +783,7 @@ class ModelComparison:
     
     def score_distributions(self, **kw):
         predictions = {
-            mod.model.model_id: mod.model.predictions(**kw) for mod in self.models
+            mod.model_id: mod.predictions(**kw) for mod in self.models
         }
         
         # print(predictions)
@@ -914,7 +914,7 @@ class ModelComparison:
                 p = (base.mark_rect()
                      .encode(
                                 color=alt.Color(m, scale=alt.Scale(scheme='blues'))
-                        ).properites(title=m.capitalize())
+                        ).properties(title=m.capitalize())
                     ) + (base.mark_text(baseline='middle', fontSize=11)
                          .encode(
                                     text=alt.Text(f'{m}:Q', format='.2f'),
