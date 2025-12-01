@@ -875,7 +875,7 @@ class ModelComparison:
     def feature_importance(self, n_top_features=100, plot=True):
         
         importances_ = {
-            mod.model.model_id: mod.model.feature_importances(n_top_features=n_top_features) for mod in self.models
+            mod.model_id: mod.feature_importances(n_top_features=n_top_features) for mod in self.models
         }
         results = [{'model1': m, 'model2':m, 'jaccard': 1, 'overlap': 1} for m in self.model_ids]
         
@@ -906,29 +906,30 @@ class ModelComparison:
             plots = list()
             for m in self.metrics.keys():
                 text_color = (
-                    alt.when(alt.datum[m] < 1)
-                    .then(alt.value("white"))
-                    .otherwise(alt.value("black"))
+                    alt.condition(alt.datum[m] < 1, 
+                                  alt.value("white"), 
+                                  alt.value("black")
+                                 )
                 )
-                p = (base.mark_rect().encode(
-                    color=alt.Color(m)
-                        .scale(scheme='blues')
-                        .title(m.capitalize())
-                ))+ (base.mark_text(baseline='middle', fontSize=11).encode(
-                    text=alt.Text(f'{m}:Q', format='.2f'),
-                    color=text_color
-                    
-                )).properties(
-                    title=m.capitalize(),
-                )
+                p = (base.mark_rect()
+                     .encode(
+                                color=alt.Color(m, scale=alt.Scale(scheme='blues'))
+                        ).properites(title=m.capitalize())
+                    ) + (base.mark_text(baseline='middle', fontSize=11)
+                         .encode(
+                                    text=alt.Text(f'{m}:Q', format='.2f'),
+                                    color=text_color 
+                                ).properties(
+                                                title=m.capitalize()
+                                            )
+                        )
                 
                 plots.append(p)
                                 
             chart = plots[0]
             for p in plots[1:]:
-                chart |= p
+                chart = alt.hconcat(chart, p)
         
-               
         # Only keeping rows we care about
         row_msk = results.apply(lambda x: (x.model1 != x.model2), axis=1)
         
