@@ -768,7 +768,7 @@ class ModelComparison:
         'overlap': lambda s1, s2: len(s1.intersection(s2)) / min(len(s1), len(s2))
     }
     
-    def __init__(self,engine, model_ids):
+    def __init__(self, engine, model_ids):
         self.models = [Model(model_id, engine) for model_id in model_ids]
         self.model_ids = model_ids
         self.engine=engine
@@ -798,7 +798,7 @@ class ModelComparison:
             
         return pd.DataFrame(distances)
     
-    def topk_lists(self, matrix_uuid=None, threshold=None, include_ties=None, plot=True):
+    def topk_lists(self, threshold, matrix_uuid=None, include_ties=None, plot=True):
         
         lists = {
             mod.model_id: mod.predicted_positives(threshold=threshold, 
@@ -936,10 +936,10 @@ class ModelComparison:
         return results[row_msk], chart
         
     
-    def comparison_summary(self, **kw):
+    def comparison_summary(self, threshold, **kw):
         # NOTE: This is very much WIP
         scores_ = self.score_distributions(**kw)
-        list_, _ = self.topk_lists(**kw, plot=False)
+        list_, _ = self.topk_lists(threshold, **kw, plot=False)
         feature_importance_, _= self.feature_importance(**kw, plot=False)
         
         joined_ = scores_.merge(list_, on=['model1', 'model2']) 
