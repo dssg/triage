@@ -493,24 +493,24 @@ class Model:
         alt.data_transformers.disable_max_rows()
         
         bar_chart = (
-                        alt.Chart(predictions.filter(['score'], axis=1))
-                        .mark_bar()
-                        .encode(
-                            alt.X("score:Q", 
-                                bin=True, 
-                                scale=alt.Scale(domain=[score_extent[0], score_extent[1]])),
-                            alt.Y('count()'),
-                        )
+            alt.Chart(predictions.filter(['score'], axis=1))
+            .mark_bar()
+            .encode(
+                alt.X("score:Q",
+                bin=True,
+                scale=alt.Scale(domain=[score_extent[0], score_extent[1]])),
+                alt.Y('count()'),
+            )
         )
 
         density_chart = (
-                            alt.Chart(predictions[['score']])
-                            .transform_density("score") # the as_ parameter has a bug :( as of 2025-11-24
-                            .mark_area(opacity=0.4)
-                            .encode(
-                                    x="value:Q",
-                                    y="density:Q"
-                            )
+            alt.Chart(predictions[['score']])
+            .transform_density("score") # the as_ parameter has a bug :( as of 2025-11-24
+            .mark_area(opacity=0.4)
+            .encode(
+                x="value:Q",
+                y="density:Q"
+            )
         )
         
         chart = (density_chart | bar_chart).properties(
