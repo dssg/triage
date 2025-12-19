@@ -5,6 +5,7 @@ import wrapt
 from contextlib import contextmanager
 from sqlalchemy.orm import Session
 from sqlalchemy.engine import make_url
+from sqlalchemy import inspect
 
 import json
 import functools
@@ -52,6 +53,9 @@ class SerializableDbEngine(wrapt.ObjectProxy):
     def __reduce_ex__(self, protocol):
         # wrapt requires reduce_ex to be implemented
         return self.__reduce__()
+    
+    def get_inspector(self):
+        return inspect(self.__wrapped__)
 
     @classmethod
     def __reconstruct__(cls, url, creator, kwargs):
