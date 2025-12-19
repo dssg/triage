@@ -80,7 +80,7 @@ def table_has_data(table_name, db_engine):
         return False
     
     sql = text(f"select * from {table_name} limit 1")
-    with db_engine.context() as conn:
+    with db_engine.connect() as conn:
         return conn.execute(sql).first() is not None
    
 
@@ -96,7 +96,7 @@ def table_row_count(table_name, db_engine):
     Returns: (int) The number of rows in the table
     """
     sql = text(f"select count(*) from {table_name}")
-    with db_engine.context() as conn:
+    with db_engine.connect() as conn:
         return conn.execute(sql).scalar_one()
    
 
