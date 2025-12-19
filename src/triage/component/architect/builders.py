@@ -383,13 +383,9 @@ class MatrixBuilder(BuilderBase):
         else:
             lookback = matrix_metadata["test_duration"]
 
-        row_count = table_row_count(
-            '{schema}."{table}"'.format(
-                schema=self.db_config["features_schema_name"],
-                table=entity_date_table_name,
-            ),
-            self.db_engine
-        )
+        row_count = table_row_count(f'{self.db_config['features_schema_name']}."{entity_date_table_name}"', 
+                                    self.db_engine
+                                   )
 
         matrix = Matrix(
             matrix_id=matrix_metadata["matrix_id"],
