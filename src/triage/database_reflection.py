@@ -64,8 +64,6 @@ def table_exists(table_name, db_engine):
     """
     schema, table = split_table(table_name)
     inspector = db_engine.get_inspector()
-    print(f"########### schema: {schema}, table: {table}")
-    print(f"inspect object {inspector}")
     return inspector.has_table(table, schema=schema)
 
 
