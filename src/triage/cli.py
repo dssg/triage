@@ -12,6 +12,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 import typer
 import yaml
+from dotenv import load_dotenv
 from rich import box
 from rich.console import Console
 from rich.live import Live
@@ -42,8 +43,12 @@ from triage.component.results_schema import (
 )
 from triage.component.timechop import Timechop
 from triage.component.timechop.plotting import visualize_chops
-from triage.experiments import CONFIG_VERSION, MultiCoreExperiment, SingleThreadedExperiment
-from triage.logging import get_logger
+from triage.experiments import (
+    CONFIG_VERSION,
+    MultiCoreExperiment,
+    SingleThreadedExperiment,
+)
+from triage.logging import configure_logging, get_logger
 from triage.predictlist import Retrainer, predict_forward_with_existed_model
 from triage.util.conf import load_query_if_needed
 from triage.util.db import create_engine
@@ -97,30 +102,89 @@ def load_yaml_from_store(path: str) -> Dict[str, Any]:
 
 
 def resolve_db_url(dbfile: Optional[pathlib.Path]) -> str:
+    """Resolve database URL from multiple sources.
+
+    Precedence order:
+    1. --dbfile CLI argument
+    2. database.yaml in current directory
+    3. DATABASE_URL environment variable
+    4. PGHOST, PGUSER, PGDATABASE, PGPASSWORD, PGPORT (PostgreSQL standard)
+    5. .env file (loaded automatically)
+    """
+    # Load .env file if it exists in current directory
+    env_path = pathlib.Path.cwd() / ".env"
+    logger.debug(f"Looking for .env file at: {env_path}")
+    logger.debug(f".env file exists: {env_path.exists()}")
+
+    if env_path.exists():
+        dotenv_loaded = load_dotenv(dotenv_path=env_path, override=True)
+        logger.debug(f"dotenv loaded from {env_path}: {dotenv_loaded}")
+    else:
+        logger.debug("No .env file found, skipping")
+
+    # Try explicit dbfile or default database.yaml
     if dbfile:
         config = yaml.full_load(dbfile.read_text())
     elif DEFAULT_DATABASE_FILE.exists():
         config = yaml.full_load(DEFAULT_DATABASE_FILE.read_text())
     else:
+        # Try DATABASE_URL environment variable
         environ_url = os.getenv("DATABASE_URL")
         if environ_url:
             return environ_url
-        raise typer.BadParameter(
-            "Database connection not provided. Use --dbfile, DATABASE_URL, "
-            "or ensure database.yaml exists."
+
+        # Try PostgreSQL standard environment variables
+        pg_host = os.getenv("PGHOST")
+        pg_user = os.getenv("PGUSER")
+        pg_database = os.getenv("PGDATABASE")
+        pg_password = os.getenv("PGPASSWORD")
+        pg_port = os.getenv("PGPORT")
+
+        # Debug: Log what we found
+        logger.debug(
+            f"Environment variables: PGHOST={pg_host}, PGUSER={pg_user}, PGDATABASE={pg_database}, PGPASSWORD={'***' if pg_password else None}, PGPORT={pg_port}"
         )
 
-    try:
-        return str(
-            URL(
-                "postgresql",
-                host=config["host"],
-                username=config["user"],
-                database=config["db"],
-                password=config["pass"],
-                port=config["port"],
-            )
+        # If we have at least host and database, build URL from environment
+        if pg_host and pg_database:
+            url_components = {
+                "drivername": "postgresql+psycopg",  # Use psycopg (version 3)
+                "host": pg_host,
+                "username": pg_user or "postgres",
+                "database": pg_database,
+                "port": int(pg_port) if pg_port else 5432,
+            }
+
+            # Only add password if it's not None
+            if pg_password:
+                url_components["password"] = pg_password
+
+            url = URL.create(**url_components)
+            # Use render_as_string with hide_password=False to preserve the actual password
+            return url.render_as_string(hide_password=False)
+
+        # No configuration found
+        raise typer.BadParameter(
+            "Database connection not provided. Use one of:\n"
+            "  --dbfile DATABASE.YAML\n"
+            "  DATABASE_URL environment variable\n"
+            "  PGHOST, PGUSER, PGDATABASE environment variables (PostgreSQL standard)\n"
+            "  database.yaml file in current directory\n"
+            "  .env file with PostgreSQL variables"
         )
+
+    # Build URL from yaml config
+    try:
+        url = URL.create(
+            "postgresql+psycopg",  # Use psycopg (version 3)
+            host=config["host"],
+            username=config["user"],
+            database=config["db"],
+            password=config["pass"],
+            port=config["port"],
+        )
+        # Use render_as_string with hide_password=False to preserve the actual password
+        return url.render_as_string(hide_password=False)
     except KeyError as exc:
         raise typer.BadParameter(
             "database.yaml is missing required keys: host, user, pass, port, db"
@@ -231,7 +295,17 @@ def triage_callback(
         "-s",
         help="Python module to import before executing commands.",
     ),
+    log_level: str = typer.Option(
+        "INFO",
+        "--log-level",
+        "-l",
+        help="Logging level (TRACE, DEBUG, INFO, WARNING, ERROR, CRITICAL).",
+        case_sensitive=False,
+    ),
 ) -> None:
+    # Reconfigure logging with the requested level
+    configure_logging(default_level=log_level.upper())
+
     db_url = resolve_db_url(dbfile)
     setup_path = resolve_setup_path(setup)
     if setup_path:
@@ -312,7 +386,9 @@ def experiment_command(
         help="Matrix storage backend.",
         show_choices=list(MATRIX_STORAGE_MAP.keys()),
     ),
-    replace: bool = typer.Option(False, "--replace", help="Replace existing artifacts."),
+    replace: bool = typer.Option(
+        False, "--replace", help="Replace existing artifacts."
+    ),
     validate: bool = typer.Option(
         True, "--validate/--no-validate", help="Validate config before running."
     ),
@@ -372,11 +448,7 @@ def experiment_command(
     console.print(f"[cyan]Project path:[/cyan] {project_path}")
 
     try:
-        if (
-            n_db_processes > 1
-            or n_processes > 1
-            or n_bigtrain_processes > 1
-        ):
+        if n_db_processes > 1 or n_processes > 1 or n_bigtrain_processes > 1:
             experiment = MultiCoreExperiment(
                 n_db_processes=n_db_processes,
                 n_processes=n_processes,
@@ -479,9 +551,7 @@ def predictlist_command(
     ),
 ) -> None:
     engine = get_engine(ctx)
-    predict_forward_with_existed_model(
-        engine, str(project_path), model_id, as_of_date
-    )
+    predict_forward_with_existed_model(engine, str(project_path), model_id, as_of_date)
     console.print("[green]Prediction list generated.[/green]")
 
 
@@ -533,7 +603,9 @@ def analyze_config(
     table.add_column("Statistic")
     table.add_column("Value", justify="right")
     table.add_row("Config Version", config_data.get("config_version", CONFIG_VERSION))
-    table.add_row("Feature Aggregations", str(len(config_data.get("feature_aggregations", []))))
+    table.add_row(
+        "Feature Aggregations", str(len(config_data.get("feature_aggregations", [])))
+    )
     table.add_row("Cohorts", "1" if cohort_config else "Default (labels-driven)")
     table.add_row("Train matrix sets", str(total_train))
     table.add_row("Test matrices", str(total_test))
@@ -560,100 +632,6 @@ def analyze_config(
         title="Cohort Configuration",
     )
     console.print(cohort_panel)
-
-
-@app.command("dashboard")
-def dashboard_command(
-    ctx: typer.Context,
-    experiment_hash: Optional[str] = typer.Option(
-        None,
-        "--experiment-hash",
-        "-e",
-        help="Filter runs by experiment hash.",
-    ),
-    watch: bool = typer.Option(
-        False, "--watch", "-w", help="Continuously refresh the dashboard."
-    ),
-    refresh_seconds: float = typer.Option(
-        5.0, "--refresh-seconds", help="Refresh interval when watching."
-    ),
-    limit: int = typer.Option(20, "--limit", help="Number of runs to display."),
-) -> None:
-    engine = get_engine(ctx)
-    session_factory = sessionmaker(bind=engine)
-
-    def fetch_rows():
-        with session_factory() as session:
-            query = session.query(TriageRun).order_by(TriageRun.start_time.desc())
-            if experiment_hash:
-                query = query.filter(TriageRun.run_hash == experiment_hash)
-            return query.limit(limit).all()
-
-    def render(rows: List[TriageRun]) -> Table:
-        table = Table(box=box.SIMPLE_HEAVY, title="Recent Triage Runs")
-        table.add_column("ID", justify="right")
-        table.add_column("Hash")
-        table.add_column("Status")
-        table.add_column("Start Time")
-        table.add_column("Matrices")
-        table.add_column("Models")
-        for row in rows:
-            status = row.current_status.name if row.current_status else "unknown"
-            table.add_row(
-                str(row.run_id),
-                row.run_hash or "",
-                status,
-                row.start_time.isoformat() if row.start_time else "",
-                f"{row.matrices_made}/{row.matrices_needed or ''}",
-                f"{row.models_made}/{row.models_needed or ''}",
-            )
-        return table
-
-    if watch:
-        with Live(refresh_per_second=max(1.0 / max(refresh_seconds, 0.1), 1.0)) as live:
-            while True:
-                live.update(render(fetch_rows()))
-                time.sleep(refresh_seconds)
-    else:
-        console.print(render(fetch_rows()))
-
-
-@app.command("tui")
-def tui_command(
-    ctx: typer.Context,
-) -> None:
-    """
-    Launch interactive TUI (Text User Interface) for exploring experiments.
-
-    The TUI provides a rich, navigable interface for:
-    - Browsing all experiments with live status updates
-    - Viewing experiment details (overview, models, config)
-    - Real-time monitoring of running experiments
-    - Model comparison and analytics
-
-    Keyboard shortcuts:
-    - ↑/↓ or j/k: Navigate
-    - Enter: View details
-    - r: Refresh
-    - q: Quit
-    - Esc: Go back
-    """
-    try:
-        from triage.tui import TriageApp
-
-        engine = get_engine(ctx)
-        app = TriageApp(engine)
-        app.run()
-    except ImportError as e:
-        console.print("[red]Error:[/red] Could not import TUI components.")
-        console.print(f"[yellow]Details:[/yellow] {e}")
-        console.print("\n[cyan]Tip:[/cyan] Make sure textual is installed:")
-        console.print("  uv sync --extra dev")
-        raise typer.Exit(1)
-    except Exception as e:
-        console.print(f"[red]Error launching TUI:[/red] {e}")
-        logger.exception("TUI launch failed")
-        raise typer.Exit(1)
 
 
 @db_app.command("upgrade")

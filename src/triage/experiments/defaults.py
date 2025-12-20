@@ -1,5 +1,6 @@
 import os
 import yaml
+from sqlalchemy import text
 
 def fill_timechop_config_missing(config, db_engine):
     """
@@ -41,7 +42,7 @@ def fill_timechop_config_missing(config, db_engine):
         query = "select to_char(min(min_date), 'YYYY-MM-DD'), to_char(max(max_date), 'YYYY-MM-DD') from ({unions}) as u".format(unions=unions)
 
         with db_engine.connect() as conn:
-            rs = conn.execute(query)
+            rs = conn.execute(text(query))
             min_date, max_date = rs.fetchall()[0]
 
         default_config['feature_start_time'] = default_config['label_start_time'] = min_date

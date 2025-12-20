@@ -6,6 +6,7 @@ Create Date: 2020-08-21 09:29:04.751933
 
 """
 from alembic import op
+from sqlalchemy import text
 import os
 
 from triage.logging import get_logger
@@ -21,7 +22,7 @@ depends_on = None
 
 def get_pg_major_version(op):
     conn = op.get_bind()
-    pg_major_version = conn.execute('show server_version').fetchone()[0].split('.')[0]
+    pg_major_version = conn.execute(text('show server_version')).fetchone()[0].split('.')[0]
     logger.debug(f'PostgreSQL major version {pg_major_version}')
     return int(pg_major_version)
 

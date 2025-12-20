@@ -1,5 +1,7 @@
-Triage
-======
+🟦🟦🟦🟦 Triage
+  🟦🟦
+  🟦🟦
+  🟦🟦
 
 ML/Data Science Toolkit for Social Good and Public Policy Problems
 
@@ -59,7 +61,15 @@ To test if triage was installed correctly, type:
 
 
 ## Data
-Triage needs data in a postgres database and a configuration file that has credentials for the database. The Triage CLI defaults database connection information to a file stored in 'database.yaml' (example in [example/database.yaml](https://github.com/dssg/triage/blob/master/example/database.yaml)).
+Triage needs data in a postgres database and database credentials. Triage supports multiple ways to configure database connections (checked in this order):
+
+1. **`--dbfile` CLI argument**: Path to a YAML file with database credentials
+2. **`database.yaml`**: Default file in current directory (example in [example/database.yaml](https://github.com/dssg/triage/blob/master/example/database.yaml))
+3. **`DATABASE_URL`**: Full PostgreSQL connection string (e.g., `postgresql://user:pass@host:port/db`)
+4. **PostgreSQL environment variables**: `PGHOST`, `PGUSER`, `PGDATABASE`, `PGPASSWORD`, `PGPORT`
+5. **`.env` file**: Automatically loaded if present (see `.env.example` for template)
+
+For development with direnv, create a `.envrc` file with `dotenv` to auto-load environment variables.
 
 If you don't want to install Postgres yourself, try `triage db up` to create a vanilla Postgres 12 database using docker. For more details on this command, check out [Triage Database Provisioner](db.md)
 

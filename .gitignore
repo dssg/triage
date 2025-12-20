@@ -18,6 +18,9 @@ venv/
 my_db_config.yaml
 database.yaml
 database*.yaml
+.env
+.envrc
+triage_tui.log
 dirtyduck/triage/**
 
 *~
@@ -29,3 +32,10 @@ src/triage/component/postmodeling/postmodeling_tmp.ipynb
 src/triage/component/postmodeling/model_class_testing.py
 src/triage/component/postmodeling/model_class_testing.ipynb
 src/triage/component/postmodeling/model_groups_testing.ipynb
+
+# Personal/local files
+.secrets
+TODO.org
+TRIAGE_ICON.md
+channels-lock.scm
+manifest.scm

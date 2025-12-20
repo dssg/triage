@@ -49,7 +49,8 @@ class SerializableDbEngine(wrapt.ObjectProxy):
         self.creator = creator
         self.kwargs = kwargs
 
-        engine = creator(str(normalized_url), **kwargs)
+        # Pass URL object directly instead of str() to preserve password
+        engine = creator(normalized_url, **kwargs)
         super().__init__(engine)
 
     def __reduce__(self):

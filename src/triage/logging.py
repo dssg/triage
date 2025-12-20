@@ -109,7 +109,8 @@ class InterceptHandler(logging.Handler):
             frame = frame.f_back
             depth += 1
 
-        _logger.opt(depth=depth, exception=record.exc_info).log(
+        # Bind the module name from the logging record to match our format
+        _logger.bind(module=record.name).opt(depth=depth, exception=record.exc_info).log(
             level, record.getMessage()
         )
 

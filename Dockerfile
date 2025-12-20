@@ -1,115 +1,71 @@
-FROM python:3.8-slim AS development
+# Triage Dockerfile - Modernized
+# Uses Python 3.12+, uv for fast package management, and current best practices
 
-LABEL creator="Center for Data Science and Public Policy (DSaPP)" \
-        maintainer="Adolfo De Unánue <adolfo@cmu.edu>" \
-      triage.version="development"
+FROM python:3.12-slim AS base
 
+LABEL org.opencontainers.image.title="Triage" \
+      org.opencontainers.image.description="Risk modeling and prediction system" \
+      org.opencontainers.image.authors="Center for Data Science and Public Policy" \
+      org.opencontainers.image.source="https://github.com/dssg/triage"
 
+# Install system dependencies
 RUN apt-get update && \
-        apt-get install -y --no-install-recommends gcc build-essential libpq-dev liblapack-dev postgresql git curl
+    apt-get install -y --no-install-recommends \
+        gcc \
+        build-essential \
+        libpq-dev \
+        liblapack-dev \
+        postgresql-client \
+        git \
+        curl \
+        ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update -y && \
-        apt-get install -y --no-install-recommends gnupg2 wget && \
-        wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
-        echo "deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main" | tee  /etc/apt/sources.list.d/pgdg.list && \
-        apt-get update -y && \
-        apt-get install -y --no-install-recommends postgresql-client-12
+# Install uv - fast Python package installer
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-RUN mkdir -p triage
+# Create non-root user
+ENV USERNAME=triage \
+    USERID=1000 \
+    SHELL=/bin/bash
 
-WORKDIR triage
+RUN useradd \
+    --uid "${USERID}" \
+    --create-home \
+    --shell /bin/bash \
+    "${USERNAME}"
 
-ENV SHELL=/bin/bash
-ENV USERNAME=triage
-ENV USERID=1000
-ENV TRIAGE_IMAGE=development
+WORKDIR /triage
 
-RUN adduser \
-        --disabled-password \
-        --gecos "" \
-        --home "/home/triage" \
-        --uid "${USERID}" \
-        "${USERNAME}"
-
-
-RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 5)${TRIAGE_IMAGE}$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' >> /home/triage/.bashrc
-
-RUN mkdir -p /opt/venv
-RUN chown -R triage:triage /opt/venv
-RUN chown -R triage:triage .
-
-USER ${USERNAME}
-
-RUN python -m venv /opt/venv
-ENV PATH="/home/triage/.local/bin:/opt/venv/bin:$PATH"
-
-RUN pip install --upgrade pip && \
-    curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    ln -s /home/triage/.local/bin/uv /opt/venv/bin/uv
-
-COPY --chown=triage:triage pyproject.toml .
-COPY --chown=triage:triage README.md .
-COPY --chown=triage:triage LICENSE .
+# Copy project files
+COPY --chown=triage:triage pyproject.toml README.md LICENSE ./
 COPY --chown=triage:triage src/ src/
 
-RUN uv pip install --system --editable .[dev] && \
-    uv pip install --system ipython
-
-ENTRYPOINT [ "bash" ]
-
-FROM python:3.8-slim AS master
-
-LABEL triage.version="master"
-
-COPY --from=development /opt/venv /opt/venv
-
-# Make sure we use the virtualenv:
-ENV PATH="/home/triage/.local/bin:/opt/venv/bin:$PATH"
-
-RUN apt-get update && \
-        apt-get install -y --no-install-recommends git libpq-dev
-
-RUN uv pip install --system git+https://github.com/dssg/triage@master
-
-RUN mkdir triage
-
-WORKDIR triage
-
-ENV SHELL=/bin/bash
-ENV USERNAME=triage
-ENV USERID=1000
-
-RUN adduser \
-        --disabled-password \
-        --gecos "" \
-        --home "/home/triage" \
-        --uid "${USERID}" \
-        "${USERNAME}"
-
-RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 6)master$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' > /home/triage/.bashrc
-
-RUN chown -R triage:triage .
-
+# Switch to non-root user
 USER ${USERNAME}
 
-ENTRYPOINT [ "triage" ]
+# Install triage with uv
+RUN uv venv /home/triage/.venv && \
+    uv pip install --python /home/triage/.venv/bin/python -e ".[dev]" && \
+    uv pip install --python /home/triage/.venv/bin/python ipython
 
+# Add venv to PATH
+ENV PATH="/home/triage/.venv/bin:$PATH"
 
-FROM master AS production
+# Customize prompt
+RUN echo 'export PS1="\[\033[1;34m\][\[\033[1;35m\]triage\[\033[1;34m\]:\w]#\[\033[0m\] "' >> /home/triage/.bashrc
 
-LABEL triage.version="production"
+ENTRYPOINT ["bash"]
 
-COPY --from=development /opt/venv /opt/venv
+# Production stage - installs from PyPI
+FROM base AS production
 
-# Make sure we use the virtualenv:
-ENV PATH="/home/triage/.local/bin:/opt/venv/bin:$PATH"
+LABEL org.opencontainers.image.title="Triage Production"
 
-RUN uv pip install --system --upgrade triage
+# Install production version from PyPI
+RUN uv pip install --python /home/triage/.venv/bin/python triage
 
-RUN echo 'export PS1="\[$(tput setaf 4)$(tput bold)[\]triage@$(tput setaf 6)production$(tput setaf 4)$:\\w]#\[$(tput sgr0) \]"' > /home/triage/.bashrc
+# Override prompt
+RUN echo 'export PS1="\[\033[1;34m\][\[\033[1;32m\]triage-prod\[\033[1;34m\]:\w]#\[\033[0m\] "' >> /home/triage/.bashrc
 
-RUN chown -R triage:triage .
-
-USER ${USERNAME}
-
-ENTRYPOINT [ "triage" ]
+ENTRYPOINT ["triage"]

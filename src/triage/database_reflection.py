@@ -1,5 +1,5 @@
 """Functions to retrieve basic information about tables in a Postgres database"""
-from sqlalchemy import MetaData, Table
+from sqlalchemy import MetaData, Table, inspect
 
 
 def split_table(table_name):
@@ -32,7 +32,7 @@ def table_object(table_name, db_engine):
     Returns: (sqlalchemy.Table)
     """
     schema, table = split_table(table_name)
-    meta = MetaData(schema=schema, bind=db_engine)
+    meta = MetaData(schema=schema)
     return Table(table, meta)
 
 
@@ -49,8 +49,8 @@ def reflected_table(table_name, db_engine):
     Returns: (sqlalchemy.Table) A loaded table object
     """
     schema, table = split_table(table_name)
-    meta = MetaData(schema=schema, bind=db_engine)
-    return Table(table, meta, autoload=True, autoload_from=db_engine)
+    meta = MetaData(schema=schema)
+    return Table(table, meta, autoload_with=db_engine)
 
 
 def table_exists(table_name, db_engine):
@@ -62,7 +62,10 @@ def table_exists(table_name, db_engine):
 
     Returns: (boolean) Whether or not the table exists in the database
     """
-    return table_object(table_name, db_engine).exists()
+    schema, table = split_table(table_name)
+    # Handle SerializableDbEngine wrapper
+    engine = getattr(db_engine, '__wrapped__', db_engine)
+    return inspect(engine).has_table(table, schema=schema)
 
 
 def table_has_data(table_name, db_engine):
@@ -161,6 +164,8 @@ def column_type(table_name, column, db_engine):
 
 
 def schema_tables(schema_name, db_engine):
-    meta = MetaData(schema=schema_name, bind=db_engine)
-    meta.reflect()
+    # Handle SerializableDbEngine wrapper
+    engine = getattr(db_engine, '__wrapped__', db_engine)
+    meta = MetaData(schema=schema_name)
+    meta.reflect(bind=engine)
     return meta.tables

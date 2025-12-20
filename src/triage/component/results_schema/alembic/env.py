@@ -5,7 +5,7 @@ import os
 import yaml
 import re
 from alembic import context
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy import pool
 from sqlalchemy.engine.url import URL
 
@@ -124,7 +124,7 @@ def run_migrations_online():
             include_schemas=True,
             include_object=include_object,
         )
-        connection.execute('set search_path to "{}", public'.format("results"))
+        connection.execute(text('set search_path to "{}", public'.format("results")))
 
         with context.begin_transaction():
             context.run_migrations()
