@@ -1,22 +1,28 @@
-FROM postgres:12
+# DirtyDuck Food Inspections Database
+# Modernized: PostgreSQL 16 + PostGIS 3
 
-## Installing PostGIS
-RUN apt-get -y update \
-    && apt-get -y  install wget \
-    && wget --quiet -O - http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add - \
-    && apt-get -y update \
-    && apt-get -y install postgresql-12-postgis-3 postgis postgresql-12-pgrouting bzip2
+FROM postgres:16
 
-## Chigago Food Inspections
-## From https://data.cityofchicago.org/api/views/4ijn-s7e5/rows.csv?accessType=DOWNLOAD
-## Only the rows between the years 2014 and 2017 (inclusive) are included
-COPY inspections_2014_2017.csv.bz2 /tmp
+# Install PostGIS and dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        postgresql-16-postgis-3 \
+        postgresql-16-postgis-3-scripts \
+        postgis \
+        bzip2 && \
+    rm -rf /var/lib/apt/lists/*
 
-## DB setup
-ADD 00_create_extensions.sql /docker-entrypoint-initdb.d/
-ADD 01_create_inspections_table.sql /docker-entrypoint-initdb.d/
-ADD 02_create_cleaned_inspections_table.sql /docker-entrypoint-initdb.d/
-ADD 03_create_violations_table.sql /docker-entrypoint-initdb.d/
-ADD 04_create_semantic_tables.sql /docker-entrypoint-initdb.d/
+# Chicago Food Inspections dataset
+# From https://data.cityofchicago.org/api/views/4ijn-s7e5/rows.csv?accessType=DOWNLOAD
+# Only rows between 2014-2017 (inclusive) are included
+COPY inspections_2014_2017.csv.bz2 /tmp/
 
+# Database initialization scripts (run in order)
+COPY 00_create_extensions.sql /docker-entrypoint-initdb.d/
+COPY 01_create_inspections_table.sql /docker-entrypoint-initdb.d/
+COPY 02_create_cleaned_inspections_table.sql /docker-entrypoint-initdb.d/
+COPY 03_create_violations_table.sql /docker-entrypoint-initdb.d/
+COPY 04_create_semantic_tables.sql /docker-entrypoint-initdb.d/
+
+# Set proper permissions
 RUN chown postgres:postgres /docker-entrypoint-initdb.d/*.sql

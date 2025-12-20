@@ -7,7 +7,7 @@ put your model to work, e.g. a way that allows the model to ingest new
 data and make predictions (an **API**); and a way to examine the
 performance of trained models (e.g. monitor tools).
 
-This tutorial includes a script for managing the infrastructure[^2] in
+This tutorial uses [just](https://github.com/casey/just) for managing the infrastructure[^2] in
 a transparent way.
 
 The infrastructure of this tutorial has *three* pieces:
@@ -20,56 +20,55 @@ The infrastructure of this tutorial has *three* pieces:
 database)[^3] and a full `python` environment (so you can code or
 modify the things for the tutorial).
 
-The only thing you need installed on your laptop is `docker`.
+The only thing you need installed on your laptop is `docker` and `just`.
 
 From your command line (terminal) run the following command from the repo directory:
 
 ```shell
-    ./tutorial.sh
+    just --list
 ```
 
 ```org
-Usage: ./tutorial.sh {up|down|build|rebuild|run|logs|status|clean}
+Available DirtyDuck tutorial commands:
 
-OPTIONS:
-   -h|help             Show this message
-   up                  Starts Food DB
-   down                Stops Food DB
-   build               Builds images (food_db and bastion)
-   rebuild             Builds images (food_db and bastion) ignoring if they already exists
-   -l|logs             Shows container's logs
-   status              Shows status of the containers
-   -d|clean            Removes containers, images, volumes, netrowrks
+   tutorial-up          Start DirtyDuck tutorial database
+   tutorial-down        Stop DirtyDuck tutorial
+   tutorial-shell       Launch DirtyDuck bastion shell
+   tutorial-build       Build DirtyDuck images
+   tutorial-rebuild     Rebuild DirtyDuck images (no cache)
+   tutorial-status      Show DirtyDuck container status
+   tutorial-logs        View DirtyDuck logs
+   tutorial-clean       Clean up DirtyDuck resources (removes containers, images, volumes)
 
 INFRASTRUCTURE:
    Build the DB's infrastructure:
-        $ ./tutorial.sh up
+        $ just tutorial-up
 
    Check the status of the containers:
-        $ ./tutorial.sh status
+        $ just tutorial-status
 
    Stop the tutorial's DB's infrastructure:
-        $ ./tutorial.sh down
+        $ just tutorial-down
 
    Destroy all the resources related to the tutorial:
-        $ ./tutorial.sh clean
+        $ just tutorial-clean
 
    View the infrastructure logs:
-        $ ./tutorial.sh -l
+        $ just tutorial-logs
 
 ```
 
 Following the instructions on the screen, we can start the infrastructure with:
 
 ```sh
-    ./tutorial.sh up
+    just tutorial-up
 ```
 
 You can check that everything is running smoothly with `status` by
 using the following command:
 
 ```sh
-    ./tutorial.sh status
+    just tutorial-status
 ```
 
 ```org
@@ -81,7 +80,7 @@ using the following command:
 To access `bastion`, where the `postgresql` client is, submit the command:
 
 ```sh
-   ./tutorial.sh bastion
+   just tutorial-shell
 ```
 
 Your prompt should change to something like:

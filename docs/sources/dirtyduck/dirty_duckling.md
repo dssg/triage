@@ -13,7 +13,7 @@ We packed this a sample of Chicago Food Inspections data source as
 part of the dirty duck tutorial.  Just run in the folder that contains
 the `triage` local repository:
 
-    ./tutorial.sh up
+    just tutorial-up
 
  from you command line. This will start the database.
 
@@ -22,7 +22,7 @@ the `triage` local repository:
 We also containerized `triage`, so, in this tutorial it is already
 installed for you! Just run
 
-    ./tutorial.sh bastion
+    just tutorial-shell
 
 The prompt in your command line should change to something like
 

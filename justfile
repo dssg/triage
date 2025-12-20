@@ -46,3 +46,35 @@ triage *ARGS:
 # Launch the interactive TUI
 tui:
     uv run triage tui
+
+# Start DirtyDuck tutorial database
+tutorial-up:
+    docker compose -f dirtyduck/docker-compose.yml up -d food_db
+
+# Stop DirtyDuck tutorial
+tutorial-down:
+    docker compose -f dirtyduck/docker-compose.yml stop
+
+# Launch DirtyDuck bastion shell
+tutorial-shell:
+    docker compose -f dirtyduck/docker-compose.yml run --service-ports --rm bastion
+
+# Build DirtyDuck images
+tutorial-build:
+    docker compose -f dirtyduck/docker-compose.yml build
+
+# Rebuild DirtyDuck images (no cache)
+tutorial-rebuild:
+    docker compose -f dirtyduck/docker-compose.yml build --no-cache
+
+# Show DirtyDuck container status
+tutorial-status:
+    docker compose -f dirtyduck/docker-compose.yml ps
+
+# View DirtyDuck logs
+tutorial-logs:
+    docker compose -f dirtyduck/docker-compose.yml logs -f -t
+
+# Clean up DirtyDuck resources (removes containers, images, volumes)
+tutorial-clean:
+    docker compose -f dirtyduck/docker-compose.yml down --rmi all --remove-orphans --volumes
