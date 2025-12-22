@@ -438,10 +438,10 @@ class LabelConfigValidator(Validator):
         bound_query = query.replace("{as_of_date}", "2016-01-01").replace(
             "{label_timespan}", "6month"
         )
-        conn = self.db_engine.connect()
         logger.spam("Validating label query via SQL EXPLAIN")
         try:
-            conn.execute(text(f"explain {bound_query}"))
+            with self.db_engine.connect() as conn:
+                conn.execute(text(f"explain {bound_query}"))
             logger.debug("Validation of label query was successful")
         except Exception as e:
             raise ValueError(
