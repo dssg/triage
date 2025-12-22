@@ -1,10 +1,12 @@
-from triage.component.results_schema import RetrainModel, Retrain
-from triage.component.catwalk.utils import db_retry, filename_friendly_hash
 
 import re
-from sqlalchemy.orm import sessionmaker
 import verboselogs, logging
 logger = verboselogs.VerboseLogger(__name__)
+
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text
+from triage.component.results_schema import RetrainModel, Retrain
+from triage.component.catwalk.utils import db_retry, filename_friendly_hash
 
 
 def experiment_config_from_model_id(db_engine, model_id):
@@ -22,7 +24,7 @@ def experiment_config_from_model_id(db_engine, model_id):
         on (experiments.experiment_hash = triage_runs.run_hash and triage_runs.run_type='experiment')
     where model_id = %s
     '''
-    (config,) = db_engine.execute(get_experiment_query, model_id).first()
+    (config,) = db_engine.execute(text(get_experiment_query), model_id).first()
     return config
 
 
@@ -44,7 +46,7 @@ def experiment_config_from_model_group_id(db_engine, model_group_id):
     where model_group_id = %s
     order by triage_runs.start_time desc
     '''
-    (run_id, config) = db_engine.execute(get_experiment_query, model_group_id).first()
+    (run_id, config) = db_engine.execute(text(get_experiment_query), model_group_id).first()
     return run_id, config
 
 
@@ -55,7 +57,7 @@ def get_model_group_info(db_engine, model_group_id):
     WHERE model_group_id = %s
     ORDER BY train_end_time DESC
     """
-    model_group_info = db_engine.execute(query, model_group_id).fetchone()
+    model_group_info = db_engine.execute(text(query), model_group_id).fetchone()
     return dict(model_group_info)
 
 
@@ -73,7 +75,7 @@ def train_matrix_info_from_model_id(db_engine, model_id):
         join triage_metadata.models on (models.train_matrix_uuid = matrices.matrix_uuid)
         where model_id = %s
     """
-    return db_engine.execute(get_train_matrix_query, model_id).first()
+    return db_engine.execute(text(get_train_matrix_query), model_id).first()
 
 
 def test_matrix_info_from_model_id(db_engine, model_id):
@@ -101,7 +103,7 @@ def test_matrix_info_from_model_id(db_engine, model_id):
         order by start_time DESC, RANDOM()
         limit 1
     """
-    return db_engine.execute(get_test_matrix_query, model_id).first()
+    return db_engine.execute(text(get_test_matrix_query), model_id).first()
 
 
 
@@ -165,7 +167,7 @@ def get_feature_needs_imputation_in_production(aggregation, db_engine):
         db_engine (sqlalchemy.db.engine)
     """
     with db_engine.begin() as conn:
-        nulls_results = conn.execute(aggregation.find_nulls())
+        nulls_results = conn.execute(text(aggregation.find_nulls()))
     
     null_counts = nulls_results.first().items()
     features_imputed_in_production = [col for (col, val) in null_counts if val is not None and val > 0]
@@ -183,7 +185,7 @@ def get_retrain_config_from_model_id(db_engine, model_id):
     WHERE m.model_id = %s;
     """
 
-    (config,) = db_engine.execute(query, model_id).first()
+    (config,) = db_engine.execute(text(query), model_id).first()
     return config
 
 

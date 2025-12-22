@@ -1,11 +1,11 @@
 import verboselogs, logging
 logger = verboselogs.VerboseLogger(__name__)
 
-from collections import OrderedDict
-
 import sqlalchemy
 import sqlparse
 
+from collections import OrderedDict
+from sqlalchemy import text
 from triage.util.conf import convert_str_to_relativedelta
 from triage.database_reflection import table_exists
 
@@ -94,7 +94,7 @@ class FeatureGenerator:
 
                 try:
                     with self.db_engine.begin() as conn:
-                        conn.execute("explain {}".format(categorical["choice_query"]))
+                        conn.execute(text("explain {}".format(categorical["choice_query"])))
                 except Exception as exc:
                     raise ValueError(
                         f"choice query does not run. \n"
@@ -105,7 +105,7 @@ class FeatureGenerator:
         logger.spam("Validating from_obj")
         try:
             with self.db_engine.begin() as conn:
-                conn.execute("explain select * from {}".format(from_obj))
+                conn.execute(text("explain select * from {}".format(from_obj)))
         except Exception as exc:
             raise ValueError(
                 "from_obj query does not run. \n"
@@ -214,7 +214,7 @@ class FeatureGenerator:
         if choice_query not in self.categorical_cache:
             with self.db_engine.begin() as conn:
                 self.categorical_cache[choice_query] = [
-                    row[0] for row in conn.execute(choice_query)
+                    row[0] for row in conn.execute(text(choice_query))
                 ]
 
             logger.debug(
@@ -344,7 +344,7 @@ class FeatureGenerator:
 
         if create_schema is not None:
             with self.db_engine.begin() as conn:
-                conn.execute(create_schema)
+                conn.execute(text(create_schema))
 
         if self.materialize_subquery_fromobjs:
             # materialize from obj
@@ -460,7 +460,7 @@ class FeatureGenerator:
         nullcols = []
         with self.db_engine.begin() as conn:
             for agg in aggs:
-                results = conn.execute(agg.find_nulls(imputed=True))
+                results = conn.execute(text(agg.find_nulls(imputed=True)))
                 null_counts = results.first().items()
                 nullcols += [col for (col, val) in null_counts if val > 0]
 
@@ -487,7 +487,7 @@ class FeatureGenerator:
                 for selectlist in aggregation.get_selects().values():
                     for select in selectlist:
                         query = "explain " + str(select)
-                        results = list(conn.execute(query))
+                        results = list(conn.execute(text(query)))
                         logger.spam(str(select))
                         logger.spam(results)
 
@@ -498,11 +498,9 @@ class FeatureGenerator:
     def _table_exists(self, table_name):
         try:
             with self.db_engine.begin() as conn:
-                conn.execute(
-                    "select 1 from {}.{} limit 1".format(
-                        self.features_schema_name, table_name
-                    )
-                ).first()
+                conn.execute(text(
+                    f"select 1 from {self.features_schema_name}.{table_name} limit 1"
+                )).first()
         except sqlalchemy.exc.ProgrammingError:
             return False
         else:
@@ -512,7 +510,7 @@ class FeatureGenerator:
         with self.db_engine.begin() as conn:
             for command in command_list:
                 logger.spam(f"Executing feature generation query: {command}")
-                conn.execute(command)
+                conn.execute(text(command))
 
     def _aggregation_index_query(self, aggregation, imputed=False):
         return f"CREATE INDEX ON {aggregation.get_table_name(imputed=imputed)} ({self.entity_id_column}, {aggregation.output_date_column})"
@@ -544,7 +542,7 @@ class FeatureGenerator:
                 f"using (entity_id, as_of_date) "
                 f"where {self.features_schema_name}.{imputed_table}.entity_id is null limit 1"
             )
-            if self.db_engine.execute(check_query).scalar():
+            if self.db_engine.execute(text(check_query)).scalar():
                 logger.notice(
                     f"Imputed feature table {imputed_table} did not contain rows from the "
                     f"entire cohort, need to rebuild features"
@@ -653,7 +651,7 @@ class FeatureGenerator:
         # excute query to find columns with null values and create lists of columns
         # that do and do not need imputation when creating the imputation table
         with self.db_engine.begin() as conn:
-            results = conn.execute(aggregation.find_nulls())
+            results = conn.execute(text(aggregation.find_nulls()))
             null_counts = results.first().items()
         if impute_cols is None:
             impute_cols = [col for (col, val) in null_counts if val > 0]

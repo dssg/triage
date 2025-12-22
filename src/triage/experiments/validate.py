@@ -7,7 +7,7 @@ logger = verboselogs.VerboseLogger(__name__)
 from itertools import permutations
 from datetime import datetime
 from textwrap import dedent
-
+from sqlalchemy import text
 from sklearn.model_selection import ParameterGrid
 
 from triage.component import architect
@@ -234,7 +234,7 @@ class FeatureAggregationsValidator(Validator):
                 logger.spam("Validating choice query")
                 choice_query = categorical["choice_query"]
                 try:
-                    conn.execute("explain {}".format(choice_query))
+                    conn.execute(text("explain {}".format(choice_query)))
                     logger.debug("Validation of choice query was successful")
                 except Exception as e:
                     raise ValueError(
@@ -255,7 +255,7 @@ class FeatureAggregationsValidator(Validator):
         conn = self.db_engine.connect()
         logger.spam("Validating from_obj")
         try:
-            conn.execute("explain select * from {}".format(from_obj))
+            conn.execute(text(f"explain select * from {from_obj}"))
             logger.debug("Validation of from_obj was successful")
         except Exception as e:
             raise ValueError(
@@ -441,7 +441,7 @@ class LabelConfigValidator(Validator):
         conn = self.db_engine.connect()
         logger.spam("Validating label query via SQL EXPLAIN")
         try:
-            conn.execute("explain {}".format(bound_query))
+            conn.execute(text(f"explain {bound_query}"))
             logger.debug("Validation of label query was successful")
         except Exception as e:
             raise ValueError(
@@ -542,7 +542,7 @@ class CohortConfigValidator(Validator):
         dated_query = query.replace("{as_of_date}", "2016-01-01")
         logger.spam("Validating cohort query via SQL EXPLAIN")
         try:
-            self.db_engine.execute(f"explain {dated_query}")
+            self.db_engine.execute(text(f"explain {dated_query}"))
             logger.debug("Validation of cohort query was successful")
         except Exception as e:
             raise ValueError(

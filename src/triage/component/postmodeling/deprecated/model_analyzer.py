@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from tabulate import tabulate
 
 from descriptors import cachedproperty
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sklearn.calibration import calibration_curve
 from sklearn import metrics
 
@@ -28,7 +28,8 @@ class ModelAnalyzer:
     @cachedproperty
     def metadata(self):
         return next(self.engine.execute(
-                    f'''
+            text(
+                f'''
                     WITH individual_model_ids_metadata AS(
                         SELECT m.model_id,
                            m.model_group_id,
@@ -60,7 +61,7 @@ class ModelAnalyzer:
                     LEFT JOIN individual_model_id_matrices AS test
                     USING(model_id);'''
             )
-        )
+        ))
     
     @property
     def model_group_id(self):
@@ -421,7 +422,11 @@ class ModelAnalyzer:
                 if replace:
                     logging.warning('Deleting the existing crosstabs!')
                     with self.engine.connect() as conn:
-                        conn.execute(f"delete from test_results.{table_name} where model_id={self.model_id} and matrix_uuid='{matrix_uuid}';")
+                        conn.execute(
+                            text(
+                                f"delete from test_results.{table_name} where model_id={self.model_id} and matrix_uuid='{matrix_uuid}';"
+                            )
+                        )
                 else:
                     logging.info(f"Replace set to False. Not calculating crosstabs for model {self.model_id} and matrix_uuid='{matrix_uuid}';")
                     if return_df: return df 
