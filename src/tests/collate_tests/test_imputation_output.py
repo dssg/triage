@@ -14,6 +14,7 @@ import pytest
 import sqlalchemy
 import testing.postgresql
 
+from sqlalchemy import text
 from triage.component.collate import (
     Aggregate,
     available_imputations,
@@ -113,20 +114,22 @@ def test_imputation_output(feat_list, exp_imp_cols, feat_table):
     with testing.postgresql.Postgresql() as psql:
         engine = sqlalchemy.create_engine(psql.url())
 
-        engine.execute("create table states (entity_id int, as_of_date date)")
+        engine.execute(text("create table states (entity_id int, as_of_date date)"))
         for state in states_table:
-            engine.execute("insert into states values (%s, %s)", state)
+            engine.execute(text("insert into states values (%s, %s)", state))
 
         feat_sql = "\n".join(
             [", prefix_entity_id_1y_%s_max int" % f for f in feat_list]
         )
         engine.execute(
-            """create table prefix_aggregation (
-                entity_id int
-                , as_of_date date
-                %s
-                )"""
-            % feat_sql
+            text(
+                """create table prefix_aggregation (
+                    entity_id int
+                    , as_of_date date
+                    %s
+                    )"""
+                % feat_sql
+            )
         )
         ins_sql = (
             "insert into prefix_aggregation values (%s, %s"
@@ -134,7 +137,7 @@ def test_imputation_output(feat_list, exp_imp_cols, feat_table):
             + ")"
         )
         for rec in feat_table:
-            engine.execute(ins_sql, rec)
+            engine.execute(text(ins_sql), rec)
 
         for imp in available_imputations.keys():
             # skip error imputation
@@ -175,7 +178,7 @@ def test_imputation_output(feat_list, exp_imp_cols, feat_table):
 
                 # excute query to find columns with null values and create lists of columns
                 # that do and do not need imputation when creating the imputation table
-                res = conn.execute(st.find_nulls())
+                res = conn.execute(text(st.find_nulls()))
                 null_counts = list(zip(res.keys(), res.fetchone()))
                 impute_cols = [col for col, val in null_counts if val > 0]
                 nonimpute_cols = [col for col, val in null_counts if val == 0]
@@ -187,8 +190,8 @@ def test_imputation_output(feat_list, exp_imp_cols, feat_table):
                 )
 
                 # create the imputation table
-                conn.execute(drop_imp)
-                conn.execute(create_imp)
+                conn.execute(text(drop_imp))
+                conn.execute(text(create_imp))
 
                 trans.commit()
 

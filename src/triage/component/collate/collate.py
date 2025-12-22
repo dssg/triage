@@ -1,10 +1,12 @@
+import re
+import sqlalchemy.sql.expression as ex
 import verboselogs, logging
 logger = verboselogs.VerboseLogger(__name__)
 
+
 from numbers import Number
 from itertools import product, chain
-import sqlalchemy.sql.expression as ex
-import re
+from sqlalchemy import text
 from descriptors import cachedproperty
 
 from .sql import make_sql_clause, to_sql_name, CreateTableAs, InsertFromSelect
@@ -825,22 +827,22 @@ class Aggregation:
         trans = conn.begin()
 
         if create_schema is not None:
-            conn.execute(create_schema)
+            conn.execute(text(create_schema))
 
         for group in self.groups:
-            conn.execute(drops[group])
-            conn.execute(creates[group])
+            conn.execute(text(drops[group]))
+            conn.execute(text(creates[group]))
             for insert in inserts[group]:
-                conn.execute(insert)
-            conn.execute(indexes[group])
+                conn.execute(text(insert))
+            conn.execute(text(indexes[group]))
 
         # create the aggregation table
-        conn.execute(drop)
-        conn.execute(create)
+        conn.execute(text(drop))
+        conn.execute(text(create))
 
         # excute query to find columns with null values and create lists of columns
         # that do and do not need imputation when creating the imputation table
-        res = conn.execute(self.find_nulls())
+        res = conn.execute(text(self.find_nulls()))
         null_counts = list(zip(res.keys(), res.fetchone()))
         impute_cols = [col for col, val in null_counts if val > 0]
         nonimpute_cols = [col for col, val in null_counts if val == 0]
@@ -853,8 +855,8 @@ class Aggregation:
         )
 
         # create the imputation table
-        conn.execute(drop_imp)
-        conn.execute(create_imp)
+        conn.execute(text(drop_imp))
+        conn.execute(text(create_imp))
 
         trans.commit()
 
