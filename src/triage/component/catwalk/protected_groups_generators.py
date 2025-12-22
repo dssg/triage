@@ -42,24 +42,30 @@ class ProtectedGroupsGenerator:
         logger.spam("Creating protected groups table")
         table_is_new = False
         if not table_exists(self.protected_groups_table_name, self.db_engine):
-            self.db_engine.execute(
-                f"""
-                create table if not exists {self.protected_groups_table_name} (
-                entity_id int,
-                as_of_date date,
-                {', '.join([str(col) + " varchar" for col in self.attribute_columns])},
-                cohort_hash text
-                )"""
-            )
+            with self.db_engine.connect() as conn:
+                conn.execute(
+                    text(
+                        f"""
+                        create table if not exists {self.protected_groups_table_name} (
+                        entity_id int,
+                        as_of_date date,
+                        {', '.join([str(col) + " varchar" for col in self.attribute_columns])},
+                        cohort_hash text
+                        )"""
+                    )
+                )
             logger.debug(f"Protected groups table {self.protected_groups_table_name} created")
             table_is_new = True
         else:
             logger.debug(f"Protected groups table {self.protected_groups_table_name} exist")
 
         if self.replace:
-            self.db_engine.execute(
-                f"delete from {self.protected_groups_table_name} where cohort_hash = '{cohort_hash}'"
-            )
+            with self.db_engine.connect() as conn:
+                conn.execute(
+                    text(
+                        f"delete from {self.protected_groups_table_name} where cohort_hash = '{cohort_hash}'"
+                    )
+                )
             logger.debug(f"Removed from {self.protected_groups_table_name} all rows from cohort {cohort_hash}")
 
         logger.spam(
@@ -71,13 +77,16 @@ class ProtectedGroupsGenerator:
                 logger.spam(
                     "Looking for existing protected_groups for as of date {as_of_date}"
                 )
-                any_existing_rows = list(self.db_engine.execute(
-                    f"""select 1 from {self.protected_groups_table_name}
-                    where as_of_date = '{as_of_date}'
-                    and cohort_hash = '{cohort_hash}'
-                    limit 1
-                    """
-                ))
+                with self.db_engine.connect() as conn:
+                    any_existing_rows = list(conn.execute(
+                        text(
+                            f"""select 1 from {self.protected_groups_table_name}
+                            where as_of_date = '{as_of_date}'
+                            and cohort_hash = '{cohort_hash}'
+                            limit 1
+                            """
+                        )
+                    ))
                 if len(any_existing_rows) == 1:
                     logger.debug("Since nonzero existing protected_groups found, skipping")
                     continue
@@ -91,10 +100,13 @@ class ProtectedGroupsGenerator:
                 cohort_hash=cohort_hash
             )
         if table_is_new:
-            self.db_engine.execute(f"create index on {self.protected_groups_table_name} (cohort_hash, as_of_date)")
-        nrows = self.db_engine.execute(
-            "select count(*) from {}".format(self.protected_groups_table_name)
-        ).scalar()
+            with self.db_engine.connect() as conn:
+                conn.execute(text(f"create index on {self.protected_groups_table_name} (cohort_hash, as_of_date)"))
+            nrows = conn.execute(
+                text(
+                    f"select count(*) from {self.protected_groups_table_name}"
+                )
+            ).scalar()
         if nrows == 0:
             logger.warning("Done creating protected_groups, but no rows in protected_groups table!")
         else:
@@ -130,7 +142,8 @@ class ProtectedGroupsGenerator:
         ))
         logger.debug("Running protected_groups creation query")
         logger.spam(full_insert_query)
-        self.db_engine.execute(full_insert_query)
+        with self.db_engine.connect() as conn:
+            conn.execute(text(full_insert_query))
 
     def as_dataframe(self, as_of_dates, cohort_hash):
         """Queries the protected groups table to retrieve the protected attributes for each date

@@ -542,12 +542,13 @@ class FeatureGenerator:
                 f"using (entity_id, as_of_date) "
                 f"where {self.features_schema_name}.{imputed_table}.entity_id is null limit 1"
             )
-            if self.db_engine.execute(text(check_query)).scalar():
-                logger.notice(
-                    f"Imputed feature table {imputed_table} did not contain rows from the "
-                    f"entire cohort, need to rebuild features"
-                )
-                return True
+            with self.db_engine.connect() as conn:
+                if conn.execute(text(check_query)).scalar():
+                    logger.notice(
+                        f"Imputed feature table {imputed_table} did not contain rows from the "
+                        f"entire cohort, need to rebuild features"
+                    )
+                    return True
         else:
             logger.notice(
                 f"Imputed feature table {imputed_table} did not exist, "

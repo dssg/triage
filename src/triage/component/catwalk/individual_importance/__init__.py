@@ -1,6 +1,7 @@
 import verboselogs, logging
 logger = verboselogs.VerboseLogger(__name__)
 
+from sqlalchemy import text
 from triage.component.catwalk.utils import save_db_objects
 from triage.component.results_schema import IndividualImportance
 
@@ -48,18 +49,23 @@ class IndividualImportanceCalculator:
         self.replace = replace
 
     def _num_existing_importances(self, model_id, as_of_date, method):
-        return [
-            row[0]
-            for row in self.db_engine.execute(
-                """select count(*) from test_results.individual_importances
-            where model_id = %s
-            and as_of_date = %s
-            and method = %s""",
-                model_id,
-                as_of_date,
-                method,
+        sql = text(
+                f"""select count(*) from test_results.individual_importances
+                    where model_id = :model_id
+                    and as_of_date = :as_of_date
+                    and method = :method"""
             )
-        ][0]
+        
+        with self.db_engine.connect() as conn: 
+            return conn.execute(
+                sql,
+                {
+                   "model_id": model_id, 
+                   "as_of_date": as_of_date,
+                   "method": method, 
+                }
+            ).scalar_one()
+        
 
     def _needs_new_importances(self, model_id, as_of_date, method, matrix_store):
         """Determines whether or not importances matching the arguments are present in the database
@@ -150,15 +156,18 @@ class IndividualImportanceCalculator:
             method_name (string) The name of the method that produced the importance records
 
         """
-        self.db_engine.execute(
-            """delete from test_results.individual_importances
-            where model_id = %s
-            and as_of_date = %s
-            and method = %s""",
-            model_id,
-            as_of_date,
-            method_name,
-        )
+        with self.db_engine.connect() as conn:
+            conn.execute(
+                text(
+                    """delete from test_results.individual_importances
+                    where model_id = %s
+                    and as_of_date = %s
+                    and method = %s""",
+                    model_id,
+                    as_of_date,
+                    method_name,
+                )
+            )
         record_stream = (
             IndividualImportance(
                 model_id=int(model_id),
