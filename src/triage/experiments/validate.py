@@ -234,7 +234,7 @@ class FeatureAggregationsValidator(Validator):
                 logger.spam("Validating choice query")
                 choice_query = categorical["choice_query"]
                 try:
-                    conn.execute(text("explain {}".format(choice_query)))
+                    conn.execute(text(f"explain {choice_query}"))
                     logger.debug("Validation of choice query was successful")
                 except Exception as e:
                     raise ValueError(
@@ -542,7 +542,8 @@ class CohortConfigValidator(Validator):
         dated_query = query.replace("{as_of_date}", "2016-01-01")
         logger.spam("Validating cohort query via SQL EXPLAIN")
         try:
-            self.db_engine.execute(text(f"explain {dated_query}"))
+            with self.db_engine.connect() as conn:
+                conn.execute(text(f"explain {dated_query}"))
             logger.debug("Validation of cohort query was successful")
         except Exception as e:
             raise ValueError(
