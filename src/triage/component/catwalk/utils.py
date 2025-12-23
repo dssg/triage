@@ -5,17 +5,17 @@ import numpy as np
 import os
 import pandas as pd
 import json
-
+import postgres_copy
+import sqlalchemy
+import random
 import verboselogs, logging
 
 logger = verboselogs.VerboseLogger(__name__)
 
-import random
 from itertools import chain
 from functools import partial
+from sqlalchemy import text, select
 
-import postgres_copy
-import sqlalchemy
 from retrying import retry
 from sqlalchemy.orm import sessionmaker
 from ohio import PipeTextIO
@@ -67,7 +67,7 @@ db_retry = retry(**DEFAULT_RETRY_KWARGS)
 @db_retry
 def save_experiment_and_get_hash(config, db_engine):
     experiment_hash = filename_friendly_hash(config)
-    session = sessionmaker(bind=db_engine)()
+    session = sessionmaker(db_engine, future=True)()
     session.merge(Experiment(experiment_hash=experiment_hash, config=config))
     session.commit()
     session.close()
@@ -76,7 +76,7 @@ def save_experiment_and_get_hash(config, db_engine):
 
 @db_retry
 def associate_matrices_with_experiment(experiment_hash, matrix_uuids, db_engine):
-    session = sessionmaker(bind=db_engine)()
+    session = sessionmaker(db_engine, future=True)()
     for matrix_uuid in matrix_uuids:
         session.merge(
             ExperimentMatrix(experiment_hash=experiment_hash, matrix_uuid=matrix_uuid)
@@ -88,7 +88,7 @@ def associate_matrices_with_experiment(experiment_hash, matrix_uuids, db_engine)
 
 @db_retry
 def associate_models_with_experiment(experiment_hash, model_hashes, db_engine):
-    session = sessionmaker(bind=db_engine)()
+    session = sessionmaker(db_engine, future=True)()
     for model_hash in model_hashes:
         session.merge(
             ExperimentModel(experiment_hash=experiment_hash, model_hash=model_hash)
@@ -109,10 +109,11 @@ def missing_matrix_uuids(experiment_hash, db_engine):
         from {ExperimentMatrix.__table__.fullname} experiment_matrices
         left join {Matrix.__table__.fullname} matrices
         on (experiment_matrices.matrix_uuid = matrices.matrix_uuid)
-        where experiment_hash = %s
+        where experiment_hash = :experiment_hash
         and matrices.matrix_uuid is null
     """
-    return [row[0] for row in db_engine.execute(query, experiment_hash)]
+    with db_engine.connect() as conn:
+        return conn.execute(text(query), {"experiment_hash": experiment_hash}).scalars().all()
 
 
 @db_retry
@@ -126,10 +127,11 @@ def missing_model_hashes(experiment_hash, db_engine):
         from {ExperimentModel.__table__.fullname} experiment_models
         left join {Model.__table__.fullname} models
         on (experiment_models.model_hash = models.model_hash)
-        where experiment_hash = %s
+        where experiment_hash = :experiment_hash
         and models.model_hash is null
     """
-    return [row[0] for row in db_engine.execute(query, experiment_hash)]
+    with db_engine.connect() as conn:
+        return conn.execute(text(query), {"experiment_hash": experiment_hash},).scalars().all()
 
 
 class Batch:
@@ -225,9 +227,11 @@ def retrieve_model_id_from_hash(db_engine, model_hash):
 
     Returns: (int) The model id (if found in DB), None (if not)
     """
-    session = sessionmaker(bind=db_engine)()
+    session = sessionmaker(db_engine, future=True)()
     try:
-        saved = session.query(Model).filter_by(model_hash=model_hash).one_or_none()
+        stmt = select(Model).where(Model.model_hash == model_hash)
+        saved = session.execute(stmt).scalar_one_or_none()
+        #saved = session.query(Model).filter_by(model_hash=model_hash).one_or_none()
         return saved.model_id if saved else None
     finally:
         session.close()
@@ -242,8 +246,9 @@ def retrieve_model_hash_from_id(db_engine, model_id):
 
     Returns: (str) the stored hash of the model
     """
-    session = sessionmaker(bind=db_engine)()
+    session = sessionmaker(db_engine, future=True)()
     try:
+        return session.get(Model, model_id).model_hash
         return session.query(Model).get(model_id).model_hash
     finally:
         session.close()
@@ -262,7 +267,7 @@ def retrieve_existing_model_random_seeds(
     experiment-level random seed to allow for reusing seeds before creating a
     new one.
     """
-    query = f"""
+    query = text(f"""
         select models.random_seed
         from {ExperimentModel.__table__.fullname} experiment_models
         join {Model.__table__.fullname} models
@@ -273,19 +278,25 @@ def retrieve_existing_model_random_seeds(
             --makes sure that the model has been created before, and not being created in this run
             and models.built_in_triage_run = triage_runs.id
         )
-        where models.model_group_id = {model_group_id}
-        and models.train_end_time = '{train_end_time}'
-        and models.train_matrix_uuid = '{train_matrix_uuid}'
-        and models.training_label_timespan = '{training_label_timespan}'
-        and triage_runs.random_seed = {experiment_random_seed}
+        where models.model_group_id = :model_group_id
+        and models.train_end_time = :train_end_time
+        and models.train_matrix_uuid = :train_matrix_uuid
+        and models.training_label_timespan = :training_label_timespan
+        and triage_runs.random_seed = :experiment_random_seed
         order by models.run_time DESC, random()
-    """
+    """)
     logging.debug(f"Query that will retrieve random seeds for the model: {query}")
-    return [
-        row[0]
-        for row in db_engine.execute(query)
-    ]
-
+    with db_engine.connect() as conn:
+        return conn.execute(query,
+                            {
+                                "model_group_id": model_group_id,
+                                "train_end_time": train_end_time,
+                                "train_matrix_uuid": train_matrix_uuid,
+                                "training_label_timespan": training_label_timespan,
+                                "experiment_random_seed": experiment_random_seed, 
+                            }
+                            ).scalars().all()
+        
 
 @db_retry
 def retrieve_experiment_seed_from_run_id(db_engine, run_id):
@@ -296,9 +307,10 @@ def retrieve_experiment_seed_from_run_id(db_engine, run_id):
 
     Returns: (int) the stored random seed from the experiment
     """
-    session = sessionmaker(bind=db_engine)()
+    session = sessionmaker(db_engine, future=True)()
     try:
-        return session.query(TriageRun).get(run_id).random_seed
+        return session.get(TriageRun, run_id).random_seed
+        #return session.query(TriageRun).get(run_id).random_seed
     finally:
         session.close()
 
