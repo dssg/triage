@@ -124,7 +124,7 @@ def upgrade_if_clean(dburl):
             text(
                 'select version_num from results_schema_versions limit 1'
             )
-        ).scalar()
+        ).scalar_one()
         logger.debug("Database's triage_metadata schema version is %s", current_revision)
         triage_head = script_.get_current_head()
         logger.debug("Code's triage_metadata schema version is %s", triage_head)
