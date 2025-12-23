@@ -45,7 +45,7 @@ class Predictor:
 
     @property
     def sessionmaker(self):
-        return sessionmaker(bind=self.db_engine)
+        return sessionmaker(self.db_engine, future=True)
 
     @db_retry
     def load_model(self, model_id):
