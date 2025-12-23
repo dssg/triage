@@ -127,22 +127,21 @@ class LabelGenerator:
         """
         # we want to apply the as-of-date and label in the database driver,
         # so replace the user {as_of_date} with the SQL %(as_of_date)
-
         query_with_db_variables = self.query.format(
             as_of_date=start_date, label_timespan=label_timespan
         )
 
         full_insert_query = textwrap.dedent(
             f"""
-            insert into {quoted_name(labels_table, quote=True)}
+            insert into {labels_table}
             select
                 entities_and_outcomes.entity_id,
-                :start_date as as_of_date,
-                :label_timespan::interval as label_timespan,
-                :label_name as label_name,
+                '{start_date}' as as_of_date,
+                '{label_timespan}'::interval as label_timespan,
+                '{self.label_name}' as label_name,
                 'binary' as label_type,
                 entities_and_outcomes.outcome as label
-            from ({quoted_name(query_with_db_variables, quote=True)}) entities_and_outcomes
+            from ({query_with_db_variables}) entities_and_outcomes
             """
         )
 
@@ -151,11 +150,6 @@ class LabelGenerator:
         with self.db_engine.begin() as conn:
             conn.execute(
                 text(full_insert_query),
-                {
-                    "start_date": start_date, 
-                    "label_timespan": label_timespan,
-                    "label_name": self.label_name, 
-                },
             )
 
     def clean_up(self, labels_table_name):
