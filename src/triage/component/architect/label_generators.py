@@ -2,7 +2,7 @@ import verboselogs, logging
 logger = verboselogs.VerboseLogger(__name__)
 
 import textwrap
-from sqlalchemy import text
+from sqlalchemy import text, quoted_name
 from triage.database_reflection import table_row_count, table_exists, table_has_duplicates
 
 DEFAULT_LABEL_NAME = "outcome"
@@ -34,12 +34,12 @@ class LabelGenerator:
 
     def _create_labels_table(self, labels_table_name):
         if self.replace or not table_exists(labels_table_name, self.db_engine):
-            with self.db_engine.connect() as conn:
-                conn.execute(text(f"drop table if exists {labels_table_name}"))
+            with self.db_engine.begin() as conn:
+                conn.execute(text(f"drop table if exists {quoted_name(labels_table_name, quote=True)}"))
                 conn.execute(
                     text(
                         f"""
-                            create table {labels_table_name} (
+                            create table {quoted_name(labels_table_name, quote=True)} (
                             entity_id int,
                             as_of_date date,
                             label_timespan interval,
@@ -61,18 +61,21 @@ class LabelGenerator:
                 if not self.replace:
                     logger.spam(f"Looking for existing labels for as of date {as_of_date} and label timespan {label_timespan}")
                     with self.db_engine.connect() as conn:    
-                        any_existing_labels = list(
-                            conn.execute(
+                        any_existing_labels = conn.execute(
                                 text(
-                                    f"""select 1 from {labels_table}
-                                    where as_of_date = '{as_of_date}'
-                                    and label_timespan = '{label_timespan}'::interval
-                                    and label_name = '{self.label_name}'
+                                    f"""select 1 from {quoted_name(labels_table, quote=True)}
+                                    where as_of_date = :as_of_date
+                                    and label_timespan = :label_timespan::interval
+                                    and label_name = :label_name
                                     limit 1
                                     """
-                                )
-                            )
-                        )
+                                ),
+                                {
+                                   "as_of_date": as_of_date,
+                                   "label_timespan": label_timespan,
+                                   "label_name": self.label_name, 
+                                },
+                            ).first() is not None
                     if len(any_existing_labels) == 1:
                         logger.spam("Since nonzero existing labels found, skipping")
                         continue
@@ -86,10 +89,10 @@ class LabelGenerator:
                     labels_table=labels_table,
                 )
 
-        with self.db_engine.connect() as conn:
+        with self.db_engine.begin() as conn:
             conn.execute(
                 text(
-                    f"create index on {labels_table} (entity_id, as_of_date)"
+                    f"create index on {quoted_name(labels_table, quote=True)} (entity_id, as_of_date)"
                 )
             )
         logger.spam("Added index to labels table")
@@ -131,23 +134,30 @@ class LabelGenerator:
 
         full_insert_query = textwrap.dedent(
             f"""
-            insert into {labels_table}
+            insert into {quoted_name(labels_table, quote=True)}
             select
                 entities_and_outcomes.entity_id,
-                '{start_date}' as as_of_date,
-                '{label_timespan}'::interval as label_timespan,
-                '{self.label_name}' as label_name,
+                :start_date as as_of_date,
+                :label_timespan::interval as label_timespan,
+                :label_name as label_name,
                 'binary' as label_type,
                 entities_and_outcomes.outcome as label
-            from ({query_with_db_variables}) entities_and_outcomes
+            from ({quoted_name(query_with_db_variables, quote=True)}) entities_and_outcomes
             """
         )
 
         logger.spam("Running label insertion query")
         logger.spam(full_insert_query)
-        with self.db_engine.connect() as conn:
-            conn.execute(text(full_insert_query))
+        with self.db_engine.begin() as conn:
+            conn.execute(
+                text(full_insert_query),
+                {
+                    "start_date": start_date, 
+                    "label_timespan": label_timespan,
+                    "label_name": self.label_name, 
+                },
+            )
 
     def clean_up(self, labels_table_name):
-        with self.db_engine.connect() as conn:
-            conn.execute(text(f"drop table if exists {labels_table_name}"))
+        with self.db_engine.begin() as conn:
+            conn.execute(text(f"drop table if exists {quoted_name(labels_table_name, quote=True)}"))
