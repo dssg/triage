@@ -1,6 +1,6 @@
 import verboselogs
 
-from sqlalchemy import text
+from sqlalchemy import text, quoted_name
 from triage.database_reflection import table_has_data, table_row_count, table_exists, table_has_duplicates
 
 
@@ -70,7 +70,7 @@ class EntityDateTableGenerator:
     def _maybe_create_entity_date_table(self):
         if self.replace or not table_exists(self.entity_date_table_name, self.db_engine):
             logger.spam(f"Creating entity_date table {self.entity_date_table_name}")
-            with self.db_engine.connect() as conn:
+            with self.db_engine.begin() as conn:
                 conn.execute(text(f"drop table if exists {self.entity_date_table_name}"))
                 conn.execute(
                     text(
@@ -84,10 +84,10 @@ class EntityDateTableGenerator:
                 )
 
             logger.spam(f"Creating indices on entity_id and as_of_date for entity_date table {self.entity_date_table_name}")
-            with self.db_engine.connect() as conn:
+            with self.db_engine.begin() as conn:
                 conn.execute(
                     text(
-                        f"create index on {self.entity_date_table_name} (entity_id, as_of_date)"
+                        f"create index on {quoted_name(self.entity_date_table_name, quote=True)} (entity_id, as_of_date)"
                     )
                 )
         else:
@@ -122,13 +122,13 @@ class EntityDateTableGenerator:
                 logger.notice(f"Since >0 entity_date rows found for date {as_of_date}, skipping")
                 continue
             dated_query = self.query.format(as_of_date=formatted_date)
-            full_query = f"""insert into {self.entity_date_table_name}
+            full_query = f"""insert into {quoted_name(self.entity_date_table_name, quote=True)}
                 select q.entity_id, '{formatted_date}'::timestamp, true
                 from ({dated_query}) q
                 group by 1, 2, 3
             """
             logger.spam(f"Running entity_date query for date: {as_of_date}, {full_query}")
-            with self.db_engine.connect() as conn:
+            with self.db_engine.begin() as conn:
                 conn.execute(text(full_query))
 
     def _create_and_populate_entity_date_table_from_labels(self):
@@ -178,7 +178,7 @@ class EntityDateTableGenerator:
             ) as sub
         """
         logger.spam(f"Running entity_date query from labels table: {insert_query}")
-        with self.db_engine.connect() as conn:
+        with self.db_engine.begin() as conn:
             conn.execute(text(insert_query))
 
     def _empty_table_message(self, as_of_dates):
@@ -195,7 +195,7 @@ class EntityDateTableGenerator:
         )
 
     def clean_up(self):
-        with self.db_engine.connect() as conn:
+        with self.db_engine.begin() as conn:
             conn.execute(text(f"drop table if exists {self.entity_date_table_name}"))
 
 
@@ -241,31 +241,41 @@ class SubsetEntityDateTableGenerator(EntityDateTableGenerator):
             with self.db_engine.connect() as conn:
                 any_existing = list(conn.execute(
                     text(
-                        f"""select 1 from {self.entity_date_table_name}
-                        where as_of_date = '{formatted_date}'
+                        f"""select 1 from :entity_date_table_name
+                        where as_of_date = :formatted_date
                         limit 1
                         """
-                    )
+                    ),
+                    {
+                        'entity_date_table_name': self.entity_date_table_name,
+                        'formatted_date': formatted_date
+                    },
                 ))
             if len(any_existing) == 1:
                 logger.notice(f"Since >0 entity_date rows found for date {as_of_date}, skipping")
                 continue
             dated_query = self.query.format(as_of_date=formatted_date)
             full_query = f"""insert into {self.entity_date_table_name}
-                select q.entity_id, '{formatted_date}'::timestamp, true
+                select q.entity_id, :formatted_date::timestamp, true
                 from (
                     with subset as ({dated_query})
                     select 
                         c. entity_id
-                    from subset s inner join {self.cohort_table} c
+                    from subset s inner join :cohort_table c
                     on s.entity_id = c.entity_id
-                    and c.as_of_date = '{formatted_date}'::date
+                    and c.as_of_date = :formatted_date::date
                 ) q 
                 group by 1, 2, 3
             """
             logger.spam(f"Running entity_date query for date: {as_of_date}, {full_query}")
-            with self.db_engine.connect() as conn:
-                conn.execute(text(full_query))
+            with self.db_engine.begin() as conn:
+                conn.execute(
+                    text(full_query), 
+                    {
+                        'formatted_date': formatted_date,
+                        'cohort_table': self.cohort_table, 
+                    }
+                )
             
             
     def generate_entity_date_table(self, as_of_dates):
