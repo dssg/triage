@@ -256,8 +256,8 @@ class SpacetimeAggregation(Aggregation):
             index is a raw create index query for the corresponding table
         """
         return {
-            group: "CREATE INDEX ON %s (%s, %s);"
-            % (self.get_table_name(group), groupby, self.output_date_column)
+            group: text("CREATE INDEX ON %s (%s, %s);"
+            % (self.get_table_name(group), groupby, self.output_date_column))
             for group, groupby in self.groups.items()
         }
 

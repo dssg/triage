@@ -510,7 +510,7 @@ class FeatureGenerator:
         with self.db_engine.begin() as conn:
             for command in command_list:
                 logger.spam(f"Executing feature generation query: {command}")
-                conn.execute(text(command))
+                conn.execute(command)
 
     def _aggregation_index_query(self, aggregation, imputed=False):
         return f"CREATE INDEX ON {aggregation.get_table_name(imputed=imputed)} ({self.entity_id_column}, {aggregation.output_date_column})"
