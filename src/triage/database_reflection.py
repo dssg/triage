@@ -1,5 +1,5 @@
 """Functions to retrieve basic information about tables in a Postgres database"""
-from sqlalchemy import MetaData, Table, inspect, text
+from sqlalchemy import MetaData, Table, inspect, text, quoted_name
 
 
 def split_table(table_name):
@@ -79,7 +79,7 @@ def table_has_data(table_name, db_engine):
     if not table_exists(table_name, db_engine):
         return False
     
-    sql = text(f"select * from {table_name} limit 1")
+    sql = text(f"select * from {quoted_name(table_name, qoute=True)} limit 1")
     with db_engine.connect() as conn:
         return conn.execute(sql).first() is not None
    
@@ -95,7 +95,7 @@ def table_row_count(table_name, db_engine):
 
     Returns: (int) The number of rows in the table
     """
-    sql = text(f"select count(*) from {table_name}")
+    sql = text(f"select count(*) from {quoted_name(table_name, quote=True)}")
     with db_engine.connect() as conn:
         return conn.execute(sql).scalar_one()
    
@@ -115,13 +115,13 @@ def table_has_duplicates(table_name, column_list, db_engine):
     if not table_has_data(table_name, db_engine):
         return False
 
-    cols = ','.join([f'"{c}"' for c in column_list])
+    cols = ", ".join(str(quoted_name(c, quote=True)) for c in column_list)
     sql = text(f"""
         WITH counts AS (
             SELECT 
                {cols}, 
                COUNT(*) AS num_records
-            FROM {table_name}
+            FROM {quoted_name(table_name, quote=True)}
             GROUP BY {cols}
         )
         SELECT MAX(num_records) FROM counts
