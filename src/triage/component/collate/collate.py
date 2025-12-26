@@ -6,7 +6,8 @@ logger = verboselogs.VerboseLogger(__name__)
 
 from numbers import Number
 from itertools import product, chain
-from sqlalchemy import text
+from sqlalchemy import text, literal_column
+from sqlalchemy.sql import select, column
 from descriptors import cachedproperty
 
 from .sql import make_sql_clause, to_sql_name, CreateTableAs, InsertFromSelect
@@ -118,7 +119,7 @@ class AggregateExpression:
         columns2 = self.aggregate2.get_columns(when)
 
         for c1, c2 in product(columns1, columns2):
-            c = ex.literal_column(
+            c = literal_column(
                 "({}{} {} {})".format(c1, self.cast, self.operator, c2)
             )
             yield c.label(
@@ -266,7 +267,7 @@ class Aggregate(AggregateExpression):
             column = column_template.format(**kwargs).format(**format_kwargs)
             name = name_template.format(**kwargs)
 
-            yield ex.literal_column(column).label(to_sql_name(name))
+            yield literal_column(column).label(to_sql_name(name))
 
     def column_imputation_lookup(self, prefix=None):
         """
@@ -478,7 +479,7 @@ class Aggregation:
         of aggregation.
         """
         self.aggregates = aggregates
-        self.from_obj = make_sql_clause(from_obj, ex.text)
+        self.from_obj = make_sql_clause(from_obj, text)
         self.groups = (
             groups if isinstance(groups, dict) else {str(g): g for g in groups}
         )
@@ -549,11 +550,11 @@ class Aggregation:
         queries = {}
 
         for group, groupby in self.groups.items():
-            columns = [make_sql_clause(groupby, ex.text)]
+            columns = [make_sql_clause(groupby, text)]
             columns += self._get_aggregates_sql(group)
 
-            gb_clause = make_sql_clause(groupby, ex.literal_column)
-            query = ex.select(columns=columns, from_obj=make_sql_clause(self.from_obj, ex.text)).group_by(
+            gb_clause = make_sql_clause(groupby, literal_column)
+            query = select(*columns).select_from(make_sql_clause(self.from_obj, text)).group_by(
                 gb_clause
             )
 
@@ -635,7 +636,7 @@ class Aggregation:
             drop is a raw drop table query for the corresponding table
         """
         return {
-            group: "DROP TABLE IF EXISTS %s;" % self.get_table_name(group)
+            group: text("DROP TABLE IF EXISTS %s;" % self.get_table_name(group))
             for group in self.groups
         }
 
@@ -648,7 +649,7 @@ class Aggregation:
             index is a raw create index query for the corresponding table
         """
         return {
-            group: "CREATE INDEX ON %s (%s);" % (self.get_table_name(group), groupby)
+            group: text("CREATE INDEX ON %s (%s);" % (self.get_table_name(group), groupby))
             for group, groupby in self.groups.items()
         }
 
@@ -656,10 +657,8 @@ class Aggregation:
         """
         Generate a query for a join table
         """
-        return ex.Select(
-            columns=[make_sql_clause(group, ex.column) for group in self.groups.values()],
-            from_obj=self.from_obj
-        ).group_by(
+        columns=[make_sql_clause(group, column) for group in self.groups.values()]
+        return select(*columns).select_from(self.from_obj).group_by(
             *self.groups.values()
         )
 
@@ -676,14 +675,14 @@ class Aggregation:
         for group, groupby in self.groups.items():
             query += "LEFT JOIN %s USING (%s)" % (self.get_table_name(group), groupby)
 
-        return "CREATE TABLE %s AS (%s);" % (self.get_table_name(), query)
+        return text("CREATE TABLE %s AS (%s);" % (self.get_table_name(), query))
 
     def get_drop(self, imputed=False):
         """
         Generate a drop table statement for the aggregation table
         Returns: string sql query
         """
-        return "DROP TABLE IF EXISTS %s" % self.get_table_name(imputed=imputed)
+        return text("DROP TABLE IF EXISTS %s" % self.get_table_name(imputed=imputed))
 
     def get_create_schema(self):
         """
@@ -807,7 +806,7 @@ class Aggregation:
             self.state_group,
         )
 
-        return "CREATE TABLE %s AS (%s)" % (self.get_table_name(imputed=True), query)
+        return text("CREATE TABLE %s AS (%s)" % (self.get_table_name(imputed=True), query))
 
     def execute(self, conn, join_table=None):
         """
