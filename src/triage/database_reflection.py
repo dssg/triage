@@ -79,7 +79,7 @@ def table_has_data(table_name, db_engine):
     if not table_exists(table_name, db_engine):
         return False
     
-    sql = text(f"select * from {quoted_name(table_name, qoute=True)} limit 1")
+    sql = text(f"select * from {quoted_name(table_name, quote=True)} limit 1")
     with db_engine.connect() as conn:
         return conn.execute(sql).first() is not None
    
