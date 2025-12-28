@@ -513,7 +513,7 @@ class FeatureGenerator:
                 conn.execute(command)
 
     def _aggregation_index_query(self, aggregation, imputed=False):
-        return f"CREATE INDEX ON {aggregation.get_table_name(imputed=imputed)} ({self.entity_id_column}, {aggregation.output_date_column})"
+        return text(f"CREATE INDEX ON {aggregation.get_table_name(imputed=imputed)} ({self.entity_id_column}, {aggregation.output_date_column})")                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
 
     def _aggregation_index_columns(self, aggregation):
         return sorted(
@@ -653,7 +653,7 @@ class FeatureGenerator:
         # that do and do not need imputation when creating the imputation table
         with self.db_engine.begin() as conn:
             results = conn.execute(text(aggregation.find_nulls()))
-            null_counts = results.first().items()
+            null_counts = results.first()._mapping.items()
         if impute_cols is None:
             impute_cols = [col for (col, val) in null_counts if val > 0]
         if nonimpute_cols is None:
