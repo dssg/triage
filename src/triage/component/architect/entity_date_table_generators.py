@@ -241,40 +241,32 @@ class SubsetEntityDateTableGenerator(EntityDateTableGenerator):
             with self.db_engine.connect() as conn:
                 any_existing = list(conn.execute(
                     text(
-                        f"""select 1 from :entity_date_table_name
-                        where as_of_date = :formatted_date
+                        f"""select 1 from "{self.entity_date_table_name}"
+                        where as_of_date = '{formatted_date}'
                         limit 1
                         """
-                    ),
-                    {
-                        'entity_date_table_name': self.entity_date_table_name,
-                        'formatted_date': formatted_date
-                    },
+                    )
                 ))
             if len(any_existing) == 1:
                 logger.notice(f"Since >0 entity_date rows found for date {as_of_date}, skipping")
                 continue
             dated_query = self.query.format(as_of_date=formatted_date)
             full_query = f"""insert into {self.entity_date_table_name}
-                select q.entity_id, :formatted_date::timestamp, true
+                select q.entity_id, '{formatted_date}'::timestamp, true
                 from (
                     with subset as ({dated_query})
                     select 
                         c. entity_id
-                    from subset s inner join :cohort_table c
+                    from subset s inner join {self.cohort_table} c
                     on s.entity_id = c.entity_id
-                    and c.as_of_date = :formatted_date::date
+                    and c.as_of_date = '{formatted_date}'::date
                 ) q 
                 group by 1, 2, 3
             """
             logger.spam(f"Running entity_date query for date: {as_of_date}, {full_query}")
             with self.db_engine.begin() as conn:
                 conn.execute(
-                    text(full_query), 
-                    {
-                        'formatted_date': formatted_date,
-                        'cohort_table': self.cohort_table, 
-                    }
+                    text(full_query)
                 )
             
             
