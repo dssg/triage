@@ -1,5 +1,5 @@
 import pytest
-import testing.postgresql
+from pytest_postgresql import factories
 import tempfile
 from unittest import mock
 
@@ -11,18 +11,25 @@ from tests.results_tests.factories import init_engine
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader
 from triage.experiments import SingleThreadedExperiment
 
+# Create postgresql process fixture (session-scoped, starts PostgreSQL once)
+postgresql_proc = factories.postgresql_proc(port=None)
+
+# Create postgresql client fixture (function-scoped, creates fresh db per test)
+postgresql = factories.postgresql("postgresql_proc")
+
 
 @pytest.fixture(name="db_engine", scope="function")
-def fixture_db_engine():
+def fixture_db_engine(postgresql):
     """pytest fixture provider to set up and teardown a "test" database
     and provide the test function a connection engine with which to
     query that database.
 
     """
-    with testing.postgresql.Postgresql() as postgresql:
-        engine = create_engine(postgresql.url())
-        yield engine
-        engine.dispose()
+    # Build connection URL from pytest-postgresql fixture
+    connection_url = f"postgresql+psycopg://{postgresql.info.user}@{postgresql.info.host}:{postgresql.info.port}/{postgresql.info.dbname}"
+    engine = create_engine(connection_url)
+    yield engine
+    engine.dispose()
 
 
 @pytest.fixture(scope="function")
@@ -47,15 +54,43 @@ def project_storage(project_path):
     yield ProjectStorage(project_path)
 
 
+@pytest.fixture(scope="function")
+def rig_engines(db_engine, project_storage):
+    """Set up a db engine and project storage engine with results schema.
+
+    Yields (tuple) (database engine, project storage engine)
+
+    This replaces the context manager in utils.py for pytest compatibility.
+    """
+    ensure_db(db_engine)
+    init_engine(db_engine)
+    yield db_engine, project_storage
+
+
 @pytest.fixture(scope="module")
-def shared_db_engine():
+def shared_db_engine(postgresql_proc):
     """pytest fixture provider to set up and teardown a "test" database
     and provide a test module a connection engine with which to
     query that database.
 
+    Uses pytest-postgresql's DatabaseJanitor for module-scoped database management.
     """
-    with testing.postgresql.Postgresql() as postgresql:
-        engine = create_engine(postgresql.url())
+    from pytest_postgresql.janitor import DatabaseJanitor
+    import uuid
+
+    # Create a unique database name for this module
+    db_name = f"test_module_{uuid.uuid4().hex[:8]}"
+
+    with DatabaseJanitor(
+        user=postgresql_proc.user,
+        host=postgresql_proc.host,
+        port=postgresql_proc.port,
+        dbname=db_name,
+        version=postgresql_proc.version,
+        password=postgresql_proc.password or "",
+    ):
+        connection_url = f"postgresql+psycopg://{postgresql_proc.user}@{postgresql_proc.host}:{postgresql_proc.port}/{db_name}"
+        engine = create_engine(connection_url)
         yield engine
         engine.dispose()
 

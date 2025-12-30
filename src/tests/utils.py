@@ -10,7 +10,7 @@ from unittest import mock
 import matplotlib
 import numpy as np
 import pandas as pd
-import testing.postgresql
+# testing.postgresql replaced by pytest-postgresql fixtures in conftest.py
 from functools import cached_property
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -246,19 +246,8 @@ def get_matrix_store(project_storage, matrix=None, metadata=None, write_to_db=Tr
     return matrix_store
 
 
-@contextmanager
-def rig_engines():
-    """Set up a db engine and project storage engine
-
-    Yields (tuple) (database engine, project storage engine)
-    """
-    with testing.postgresql.Postgresql() as postgresql:
-        db_engine = create_engine(postgresql.url())
-        ensure_db(db_engine)
-        init_engine(db_engine)
-        with tempfile.TemporaryDirectory() as temp_dir:
-            project_storage = ProjectStorage(temp_dir)
-            yield db_engine, project_storage
+# rig_engines() has been moved to conftest.py as a pytest fixture
+# Use: def test_foo(rig_engines): db_engine, project_storage = rig_engines
 
 
 def populate_source_data(db_engine):
