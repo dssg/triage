@@ -42,7 +42,7 @@ class ProtectedGroupsGenerator:
         logger.spam("Creating protected groups table")
         table_is_new = False
         if not table_exists(self.protected_groups_table_name, self.db_engine):
-            with self.db_engine.connect() as conn:
+            with self.db_engine.begin() as conn:
                 conn.execute(
                     text(
                         f"""
@@ -107,12 +107,12 @@ class ProtectedGroupsGenerator:
                     f"select count(*) from {self.protected_groups_table_name}"
                 )
             ).scalar()
-        if nrows == 0:
-            logger.warning("Done creating protected_groups, but no rows in protected_groups table!")
-        else:
-            logger.success(f"Protected groups stored in the table "
-                           f"{self.protected_groups_table_name} successfully")
-            logger.spam(f"Protected groups table has {nrows} rows")
+            if nrows == 0:
+                logger.warning("Done creating protected_groups, but no rows in protected_groups table!")
+            else:
+                logger.success(f"Protected groups stored in the table "
+                            f"{self.protected_groups_table_name} successfully")
+                logger.spam(f"Protected groups table has {nrows} rows")
 
     def generate(self, start_date, cohort_table_name, cohort_hash):
         full_insert_query = text(textwrap.dedent(
@@ -142,8 +142,8 @@ class ProtectedGroupsGenerator:
         ))
         logger.debug("Running protected_groups creation query")
         logger.spam(full_insert_query)
-        with self.db_engine.connect() as conn:
-            conn.execute(text(full_insert_query))
+        with self.db_engine.begin() as conn:
+            conn.execute(full_insert_query)
 
     def as_dataframe(self, as_of_dates, cohort_hash):
         """Queries the protected groups table to retrieve the protected attributes for each date
