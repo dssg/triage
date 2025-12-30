@@ -10,7 +10,7 @@ import polars as pl
 import time
 
 from sqlalchemy.orm import sessionmaker
-
+from sqlalchemy import text
 from triage.component.results_schema import Matrix
 from triage.database_reflection import table_has_data, table_row_count
 from triage.tracking import built_matrix, skipped_matrix, errored_matrix
@@ -235,7 +235,8 @@ class BuilderBase:
             f"Creating matrix-specific entity-date table for matrix {matrix_uuid} ",
         )
         logger.debug(f"with query {query}")
-        self.db_engine.execute(query)
+        with self.db_engine.begin() as conn:
+            conn.execute(text(query))
 
         return table_name
 
