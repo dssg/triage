@@ -1,6 +1,6 @@
-from contextlib import contextmanager
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import make_transient
+from sqlalchemy import text
 import datetime
 from unittest.mock import Mock
 from numpy.testing import assert_array_almost_equal
@@ -24,7 +24,6 @@ from tests.utils import (
     matrix_creator,
     matrix_metadata_creator,
     get_matrix_store,
-    rig_engines,
 )
 import pytest
 
@@ -40,34 +39,28 @@ with_matrix_types = pytest.mark.parametrize(
 MODEL_RANDOM_SEED = 123456
 
 
-@contextmanager
-def prepare():
-    with rig_engines() as (db_engine, project_storage):
-        train_matrix_uuid = "1234"
-        try:
-            session = sessionmaker(db_engine)()
-            session.add(Matrix(matrix_uuid=train_matrix_uuid))
-
-            # Create the fake trained model and store in db
-            trained_model = MockTrainedModel()
-            model_hash = "abcd"
-            project_storage.model_storage_engine().write(trained_model, model_hash)
-            db_model = Model(
-                model_hash=model_hash,
-                train_matrix_uuid=train_matrix_uuid,
-                random_seed=MODEL_RANDOM_SEED
-            )
-            session.add(db_model)
-            session.commit()
-            yield project_storage, db_engine, db_model.model_id
-        finally:
-            session.close()
-
-
 @pytest.fixture(name='predict_setup_args', scope='function')
-def fixture_predict_setup_args():
-    with prepare() as predict_setup_args:
-        yield predict_setup_args
+def fixture_predict_setup_args(rig_engines):
+    db_engine, project_storage = rig_engines
+    train_matrix_uuid = "1234"
+    session = sessionmaker(db_engine)()
+    try:
+        session.add(Matrix(matrix_uuid=train_matrix_uuid))
+
+        # Create the fake trained model and store in db
+        trained_model = MockTrainedModel()
+        model_hash = "abcd"
+        project_storage.model_storage_engine().write(trained_model, model_hash)
+        db_model = Model(
+            model_hash=model_hash,
+            train_matrix_uuid=train_matrix_uuid,
+            random_seed=MODEL_RANDOM_SEED
+        )
+        session.add(db_model)
+        session.commit()
+        yield project_storage, db_engine, db_model.model_id
+    finally:
+        session.close()
 
 
 @pytest.fixture(name='predictor', scope='function')
@@ -112,16 +105,17 @@ def test_predictor(predict_proba):
 @with_matrix_types
 def test_predictions_table(predictor, predict_proba, matrix_type):
     """assert that the predictions table entries are present, linked to the original models"""
-    records = [
-        row
-        for row in predictor.db_engine.execute(
-            """select entity_id, as_of_date
-        from {}_results.predictions
-        join triage_metadata.models using (model_id)""".format(
-                matrix_type, matrix_type
+    with predictor.db_engine.connect() as conn:
+        records = [
+            row
+            for row in conn.execute(
+                text("""select entity_id, as_of_date
+            from {}_results.predictions
+            join triage_metadata.models using (model_id)""".format(
+                    matrix_type, matrix_type
+                ))
             )
-        )
-    ]
+        ]
     assert len(records) == 6
 
 
@@ -217,16 +211,17 @@ def test_predictor_get_train_columns(predict_setup_args):
 
         # 2. that the predictions table entries are present and
         # can be linked to the original models
-        records = [
-            row
-            for row in db_engine.execute(
-                """select entity_id, as_of_date
-            from {}_results.predictions
-            join triage_metadata.models using (model_id)""".format(
-                    mat_type, mat_type
+        with db_engine.connect() as conn:
+            records = [
+                row
+                for row in conn.execute(
+                    text("""select entity_id, as_of_date
+                from {}_results.predictions
+                join triage_metadata.models using (model_id)""".format(
+                        mat_type, mat_type
+                    ))
                 )
-            )
-        ]
+            ]
         assert len(records) > 0
 
 

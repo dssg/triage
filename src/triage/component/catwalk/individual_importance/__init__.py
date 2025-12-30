@@ -1,3 +1,5 @@
+from sqlalchemy import text
+
 from triage.logging import get_logger
 logger = get_logger(__name__)
 
@@ -48,18 +50,17 @@ class IndividualImportanceCalculator:
         self.replace = replace
 
     def _num_existing_importances(self, model_id, as_of_date, method):
-        return [
-            row[0]
-            for row in self.db_engine.execute(
-                """select count(*) from test_results.individual_importances
-            where model_id = %s
-            and as_of_date = %s
-            and method = %s""",
-                model_id,
-                as_of_date,
-                method,
-            )
-        ][0]
+        with self.db_engine.connect() as conn:
+            return [
+                row[0]
+                for row in conn.execute(
+                    text("""select count(*) from test_results.individual_importances
+                where model_id = :model_id
+                and as_of_date = :as_of_date
+                and method = :method"""),
+                    {"model_id": model_id, "as_of_date": as_of_date, "method": method},
+                )
+            ][0]
 
     def _needs_new_importances(self, model_id, as_of_date, method, matrix_store):
         """Determines whether or not importances matching the arguments are present in the database
@@ -150,15 +151,15 @@ class IndividualImportanceCalculator:
             method_name (string) The name of the method that produced the importance records
 
         """
-        self.db_engine.execute(
-            """delete from test_results.individual_importances
-            where model_id = %s
-            and as_of_date = %s
-            and method = %s""",
-            model_id,
-            as_of_date,
-            method_name,
-        )
+        with self.db_engine.connect() as conn:
+            conn.execute(
+                text("""delete from test_results.individual_importances
+                where model_id = :model_id
+                and as_of_date = :as_of_date
+                and method = :method"""),
+                {"model_id": model_id, "as_of_date": as_of_date, "method": method_name},
+            )
+            conn.commit()
         record_stream = (
             IndividualImportance(
                 model_id=int(model_id),
