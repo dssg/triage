@@ -251,6 +251,8 @@ def get_matrix_store(project_storage, matrix=None, metadata=None, write_to_db=Tr
 
 
 def populate_source_data(db_engine):
+    from sqlalchemy import text
+
     complaints = [
         (1, "2010-10-01", 5),
         (1, "2011-10-01", 4),
@@ -310,59 +312,71 @@ def populate_source_data(db_engine):
         (3, 0, "2015-01-01"),
     ]
 
-    db_engine.execute(
-        """create table cat_complaints (
-        entity_id int,
-        as_of_date date,
-        cat_sightings int
+    with db_engine.connect() as conn:
+        conn.execute(text(
+            """create table cat_complaints (
+            entity_id int,
+            as_of_date date,
+            cat_sightings int
+            )"""
+        ))
+
+        conn.execute(text(
+            """create table entity_zip_codes (
+            entity_id int,
+            zip_code text
+            )"""
+        ))
+
+        conn.execute(text(
+            "create table zip_code_demographics (zip_code text, ethnicity text, as_of_date date)"
+        ))
+        for zip_code, ethnicity, as_of_date in zip_code_demographics:
+            conn.execute(
+                text("insert into zip_code_demographics values (:zip_code, :ethnicity, :as_of_date)"),
+                {"zip_code": zip_code, "ethnicity": ethnicity, "as_of_date": as_of_date}
+            )
+
+        for entity_id, zip_code in entity_zip_codes:
+            conn.execute(
+                text("insert into entity_zip_codes values (:entity_id, :zip_code)"),
+                {"entity_id": entity_id, "zip_code": zip_code}
+            )
+
+        conn.execute(text(
+            """create table zip_code_events (
+            zip_code text,
+            as_of_date date,
+            num_events int
         )"""
-    )
+        ))
+        for zip_code, as_of_date, num_events in zip_code_events:
+            conn.execute(
+                text("insert into zip_code_events values (:zip_code, :as_of_date, :num_events)"),
+                {"zip_code": zip_code, "as_of_date": as_of_date, "num_events": num_events}
+            )
 
-    db_engine.execute(
-        """create table entity_zip_codes (
-        entity_id int,
-        zip_code text
+        for entity_id, as_of_date, cat_sightings in complaints:
+            conn.execute(
+                text("insert into cat_complaints values (:entity_id, :as_of_date, :cat_sightings)"),
+                {"entity_id": entity_id, "as_of_date": as_of_date, "cat_sightings": cat_sightings}
+            )
+
+        conn.execute(text(
+            """create table events (
+            entity_id int,
+            outcome int,
+            outcome_date date
         )"""
-    )
+        ))
 
-    db_engine.execute(
-        "create table zip_code_demographics (zip_code text, ethnicity text, as_of_date date)"
-    )
-    for demographic_row in zip_code_demographics:
-        db_engine.execute(
-            "insert into zip_code_demographics values (%s, %s, %s)", demographic_row
-        )
+        for entity_id, outcome, outcome_date in events:
+            conn.execute(
+                text("insert into events values (:entity_id, :outcome, :outcome_date)"),
+                {"entity_id": entity_id, "outcome": outcome, "outcome_date": outcome_date}
+            )
 
-    for entity_zip_code in entity_zip_codes:
-        db_engine.execute(
-            "insert into entity_zip_codes values (%s, %s)", entity_zip_code
-        )
-
-    db_engine.execute(
-        """create table zip_code_events (
-        zip_code text,
-        as_of_date date,
-        num_events int
-    )"""
-    )
-    for zip_code_event in zip_code_events:
-        db_engine.execute(
-            "insert into zip_code_events values (%s, %s, %s)", zip_code_event
-        )
-
-    for complaint in complaints:
-        db_engine.execute("insert into cat_complaints values (%s, %s, %s)", complaint)
-
-    db_engine.execute(
-        """create table events (
-        entity_id int,
-        outcome int,
-        outcome_date date
-    )"""
-    )
-
-    for event in events:
-        db_engine.execute("insert into events values (%s, %s, %s)", event)
+        conn.commit()
 
 
 def sample_cohort_config(query_source="filepath"):

@@ -1,5 +1,10 @@
 """Functions to retrieve basic information about tables in a Postgres database"""
-from sqlalchemy import MetaData, Table, inspect
+from sqlalchemy import MetaData, Table, inspect, text
+
+
+def _unwrap_engine(db_engine):
+    """Unwrap SerializableDbEngine wrapper if present."""
+    return getattr(db_engine, '__wrapped__', db_engine)
 
 
 def split_table(table_name):
@@ -50,7 +55,8 @@ def reflected_table(table_name, db_engine):
     """
     schema, table = split_table(table_name)
     meta = MetaData(schema=schema)
-    return Table(table, meta, autoload_with=db_engine)
+    engine = _unwrap_engine(db_engine)
+    return Table(table, meta, autoload_with=engine)
 
 
 def table_exists(table_name, db_engine):
@@ -63,8 +69,7 @@ def table_exists(table_name, db_engine):
     Returns: (boolean) Whether or not the table exists in the database
     """
     schema, table = split_table(table_name)
-    # Handle SerializableDbEngine wrapper
-    engine = getattr(db_engine, '__wrapped__', db_engine)
+    engine = _unwrap_engine(db_engine)
     return inspect(engine).has_table(table, schema=schema)
 
 
@@ -79,10 +84,8 @@ def table_has_data(table_name, db_engine):
     """
     if not table_exists(table_name, db_engine):
         return False
-    results = [
-        row for row in db_engine.execute("select * from {} limit 1".format(table_name))
-    ]
-
+    with db_engine.connect() as conn:
+        results = list(conn.execute(text(f"select * from {table_name} limit 1")))
     return len(results) > 0
 
 
@@ -97,9 +100,9 @@ def table_row_count(table_name, db_engine):
 
     Returns: (int) The number of rows in the table
     """
-    return next(
-        row for row in db_engine.execute("select count(*) from {}".format(table_name))
-    )
+    with db_engine.connect() as conn:
+        result = conn.execute(text(f"select count(*) from {table_name}"))
+        return next(result)[0]
 
 
 def table_has_duplicates(table_name, column_list, db_engine):
@@ -127,7 +130,8 @@ def table_has_duplicates(table_name, column_list, db_engine):
     )
     SELECT MAX(num_records) FROM counts
     """
-    result = next(db_engine.execute(sql))[0]
+    with db_engine.connect() as conn:
+        result = next(conn.execute(text(sql)))[0]
     return result > 1
 
 

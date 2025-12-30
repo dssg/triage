@@ -20,7 +20,10 @@ def test_reflected_table(db_engine):
     with db_engine.connect() as conn:
         conn.execute(text("create table incidents (col1 varchar)"))
         conn.commit()
-    assert dbreflect.reflected_table("incidents", db_engine).exists()
+    # Table.exists() was removed in SQLAlchemy 2.0, just verify we get a Table back
+    table = dbreflect.reflected_table("incidents", db_engine)
+    assert table is not None
+    assert "col1" in table.columns
 
 
 def test_table_exists(db_engine):
