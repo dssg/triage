@@ -1,7 +1,6 @@
 from datetime import date
 from itertools import product
-import sqlalchemy
-import testing.postgresql
+from sqlalchemy import text
 from triage.component.collate import FromObj
 from triage.database_reflection import table_exists
 import pytest
@@ -60,11 +59,16 @@ def test_materialized_from_obj_drop():
 
 @pytest.fixture(name="db_engine_with_events_table", scope='function')
 def db_engine_with_events_table(db_engine):
-    db_engine.execute(
-        "create table events (entity_id int, event_date date, outcome bool)"
-    )
-    for event in events_data:
-        db_engine.execute("insert into events values (%s, %s, %s::bool)", event)
+    with db_engine.connect() as conn:
+        conn.execute(text(
+            "create table events (entity_id int, event_date date, outcome bool)"
+        ))
+        for event in events_data:
+            conn.execute(
+                text("insert into events values (:entity_id, :event_date, CAST(:outcome AS bool))"),
+                {"entity_id": event[0], "event_date": event[1], "outcome": event[2]}
+            )
+        conn.commit()
     return db_engine
 
 
@@ -74,7 +78,9 @@ def test_materialized_from_obj_validate_needs_entity_id(db_engine_with_events_ta
         name="myquery",
         knowledge_date_column='event_date'
     )
-    db_engine_with_events_table.execute(from_obj.create_materialized_table_sql)
+    with db_engine_with_events_table.connect() as conn:
+        conn.execute(text(from_obj.create_materialized_table_sql))
+        conn.commit()
     with pytest.raises(ValueError):
         from_obj.validate(db_engine_with_events_table)
 
@@ -85,7 +91,9 @@ def test_materialized_from_obj_validate_needs_knowledge_date(db_engine_with_even
         name="myquery",
         knowledge_date_column='event_date'
     )
-    db_engine_with_events_table.execute(from_obj.create_materialized_table_sql)
+    with db_engine_with_events_table.connect() as conn:
+        conn.execute(text(from_obj.create_materialized_table_sql))
+        conn.commit()
     with pytest.raises(ValueError):
         from_obj.validate(db_engine_with_events_table)
 
@@ -96,7 +104,9 @@ def test_materialized_from_obj_validate_success(db_engine_with_events_table):
         name="myquery",
         knowledge_date_column='event_date'
     )
-    db_engine_with_events_table.execute(from_obj.create_materialized_table_sql)
+    with db_engine_with_events_table.connect() as conn:
+        conn.execute(text(from_obj.create_materialized_table_sql))
+        conn.commit()
     from_obj.validate(db_engine_with_events_table)
 
 

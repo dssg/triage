@@ -2,6 +2,7 @@ from triage.logging import get_logger
 logger = get_logger(__name__)
 
 import textwrap
+from sqlalchemy import text
 from triage.database_reflection import table_row_count, table_exists, table_has_duplicates
 
 DEFAULT_LABEL_NAME = "outcome"
@@ -33,18 +34,20 @@ class LabelGenerator:
 
     def _create_labels_table(self, labels_table_name):
         if self.replace or not table_exists(labels_table_name, self.db_engine):
-            self.db_engine.execute(f"drop table if exists {labels_table_name}")
-            self.db_engine.execute(
-                f"""
-                create table {labels_table_name} (
-                entity_id int,
-                as_of_date date,
-                label_timespan interval,
-                label_name varchar,
-                label_type varchar,
-                label smallint
-                )"""
-            )
+            with self.db_engine.connect() as conn:
+                conn.execute(text(f"drop table if exists {labels_table_name}"))
+                conn.execute(
+                    text(f"""
+                    create table {labels_table_name} (
+                    entity_id int,
+                    as_of_date date,
+                    label_timespan interval,
+                    label_name varchar,
+                    label_type varchar,
+                    label smallint
+                    )""")
+                )
+                conn.commit()
         else:
             logger.notice(f"Not dropping and recreating {labels_table_name} table because "
                           f"replace flag was set to False and table was found to exist")
@@ -56,14 +59,15 @@ class LabelGenerator:
             for label_timespan in label_timespans:
                 if not self.replace:
                     logger.spam(f"Looking for existing labels for as of date {as_of_date} and label timespan {label_timespan}")
-                    any_existing_labels = list(self.db_engine.execute(
-                        f"""select 1 from {labels_table}
-                        where as_of_date = '{as_of_date}'
-                        and label_timespan = '{label_timespan}'::interval
-                        and label_name = '{self.label_name}'
-                        limit 1
-                        """)
-                    )
+                    with self.db_engine.connect() as conn:
+                        any_existing_labels = list(conn.execute(
+                            text(f"""select 1 from {labels_table}
+                            where as_of_date = '{as_of_date}'
+                            and label_timespan = '{label_timespan}'::interval
+                            and label_name = '{self.label_name}'
+                            limit 1
+                            """))
+                        )
                     if len(any_existing_labels) == 1:
                         logger.spam("Since nonzero existing labels found, skipping")
                         continue
@@ -77,9 +81,11 @@ class LabelGenerator:
                     labels_table=labels_table,
                 )
 
-        self.db_engine.execute(
-            f"create index on {labels_table} (entity_id, as_of_date)"
-        )
+        with self.db_engine.connect() as conn:
+            conn.execute(
+                text(f"create index on {labels_table} (entity_id, as_of_date)")
+            )
+            conn.commit()
         logger.spam("Added index to labels table")
 
         nrows = table_row_count(labels_table, self.db_engine)
@@ -133,7 +139,11 @@ class LabelGenerator:
 
         logger.spam("Running label insertion query")
         logger.spam(full_insert_query)
-        self.db_engine.execute(full_insert_query)
+        with self.db_engine.connect() as conn:
+            conn.execute(text(full_insert_query))
+            conn.commit()
 
     def clean_up(self, labels_table_name):
-        self.db_engine.execute(f"drop table if exists {labels_table_name}")
+        with self.db_engine.connect() as conn:
+            conn.execute(text(f"drop table if exists {labels_table_name}"))
+            conn.commit()

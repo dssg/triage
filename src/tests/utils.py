@@ -414,7 +414,7 @@ def sample_config(query_source="filepath"):
                 "query": """\
                     select distinct entity_id
                     from events
-                    where entity_id %% 2 = 0
+                    where entity_id % 2 = 0
                     and outcome_date < '{as_of_date}'::date
                 """,
             },
@@ -480,7 +480,7 @@ def sample_config(query_source="filepath"):
             "parameters",
         ],
         "feature_aggregations": feature_config,
-        # "cohort_config": cohort_config,
+        "cohort_config": cohort_config,
         "temporal_config": temporal_config,
         "grid_config": grid_config,
         "bias_audit_config": bias_audit_config,

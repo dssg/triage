@@ -1,6 +1,8 @@
 from triage.logging import get_logger
 logger = get_logger(__name__)
 
+from sqlalchemy import text
+
 from .metric_directionality import is_better_operator
 import pandas as pd
 from datetime import datetime
@@ -77,7 +79,9 @@ def model_groups_filter(
         ) as t
         WHERE train_end_time_list @> {end_times_sql}
         """
-    model_group_ids = {row['model_group_id'] for row in db_engine.execute(query)}
+    with db_engine.connect() as conn:
+        result = conn.execute(text(query))
+        model_group_ids = {row.model_group_id for row in result}
 
     if not model_group_ids:
         raise ValueError("The train_end_times passed in is not a subset of train end times of any model group. Please double check that all the model groups have the specified train end times.")

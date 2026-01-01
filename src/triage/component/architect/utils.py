@@ -14,6 +14,7 @@ import subprocess
 import gzip
 
 import sqlalchemy
+from sqlalchemy import text
 
 import pandas as pd
 import numpy as np
@@ -49,24 +50,26 @@ def convert_string_column_to_date(column):
 
 
 def create_features_table(table_number, table, engine):
-    engine.execute(
-        """
-            create table features.features{} (
-                entity_id int, as_of_date date, f{} int, f{} int
-            )
-        """.format(
-            table_number, (table_number * 2) + 1, (table_number * 2) + 2
-        )
-    )
-    for row in table:
-        engine.execute(
-            """
-                insert into features.features{} values (%s, %s, %s, %s)
+    with engine.connect() as conn:
+        conn.execute(
+            text("""
+                create table features.features{} (
+                    entity_id int, as_of_date date, f{} int, f{} int
+                )
             """.format(
-                table_number
-            ),
-            row,
+                table_number, (table_number * 2) + 1, (table_number * 2) + 2
+            ))
         )
+        for row in table:
+            conn.execute(
+                text("""
+                    insert into features.features{} values (:v1, :v2, :v3, :v4)
+                """.format(
+                    table_number
+                )),
+                {"v1": row[0], "v2": row[1], "v3": row[2], "v4": row[3]},
+            )
+        conn.commit()
 
 
 def create_entity_date_df(
@@ -196,36 +199,43 @@ def assert_index(engine, table, column):
     """.format(
         table_name=table, column_name=column
     )
-    num_results = len([row for row in engine.execute(query)])
+    with engine.connect() as conn:
+        num_results = len(list(conn.execute(text(query))))
     assert num_results >= 1
 
 
 def create_dense_state_table(db_engine, table_name, data):
-    db_engine.execute(
-        """create table {} (
-        entity_id int,
-        state text,
-        start_time timestamp,
-        end_time timestamp
-    )""".format(
-            table_name
+    with db_engine.connect() as conn:
+        conn.execute(
+            text("""create table {} (
+            entity_id int,
+            state text,
+            start_time timestamp,
+            end_time timestamp
+        )""".format(
+                table_name
+            ))
         )
-    )
 
-    for row in data:
-        db_engine.execute(
-            "insert into {} values (%s, %s, %s, %s)".format(table_name), row
-        )
+        for row in data:
+            conn.execute(
+                text("insert into {} values (:v1, :v2, :v3, :v4)".format(table_name)),
+                {"v1": row[0], "v2": row[1], "v3": row[2], "v4": row[3]}
+            )
+        conn.commit()
 
 
 def create_binary_outcome_events(db_engine, table_name, events_data):
-    db_engine.execute(
-        "create table events (entity_id int, outcome_date date, outcome bool)"
-    )
-    for event in events_data:
-        db_engine.execute(
-            "insert into {} values (%s, %s, %s::bool)".format(table_name), event
+    with db_engine.connect() as conn:
+        conn.execute(
+            text("create table events (entity_id int, outcome_date date, outcome bool)")
         )
+        for event in events_data:
+            conn.execute(
+                text("insert into {} values (:v1, :v2, :v3::bool)".format(table_name)),
+                {"v1": event[0], "v2": event[1], "v3": event[2]}
+            )
+        conn.commit()
 
 
 def retry_if_db_error(exception):

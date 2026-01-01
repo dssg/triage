@@ -8,6 +8,7 @@ from itertools import permutations
 from datetime import datetime
 from textwrap import dedent
 
+from sqlalchemy import text
 from sklearn.model_selection import ParameterGrid
 
 from triage.component import architect
@@ -234,7 +235,7 @@ class FeatureAggregationsValidator(Validator):
                 logger.spam("Validating choice query")
                 choice_query = categorical["choice_query"]
                 try:
-                    conn.execute("explain {}".format(choice_query))
+                    conn.execute(text("explain {}".format(choice_query)))
                     logger.debug("Validation of choice query was successful")
                 except Exception as e:
                     raise ValueError(
@@ -252,23 +253,23 @@ class FeatureAggregationsValidator(Validator):
         logger.debug("Validation of categoricals was successful")
 
     def _validate_from_obj(self, from_obj):
-        conn = self.db_engine.connect()
-        logger.spam("Validating from_obj")
-        try:
-            conn.execute("explain select * from {}".format(from_obj))
-            logger.debug("Validation of from_obj was successful")
-        except Exception as e:
-            raise ValueError(
-                dedent(
-                    """
-                Section: feature_aggregations -
-                from_obj query does not run.
-                from_obj: "{}"
-                Full error: {}""".format(
-                        from_obj, e
+        with self.db_engine.connect() as conn:
+            logger.spam("Validating from_obj")
+            try:
+                conn.execute(text("explain select * from {}".format(from_obj)))
+                logger.debug("Validation of from_obj was successful")
+            except Exception as e:
+                raise ValueError(
+                    dedent(
+                        """
+                    Section: feature_aggregations -
+                    from_obj query does not run.
+                    from_obj: "{}"
+                    Full error: {}""".format(
+                            from_obj, e
+                        )
                     )
                 )
-            )
 
     def _validate_time_intervals(self, intervals):
         logger.spam("Validating time intervals")
@@ -438,23 +439,23 @@ class LabelConfigValidator(Validator):
         bound_query = query.replace("{as_of_date}", "2016-01-01").replace(
             "{label_timespan}", "6month"
         )
-        conn = self.db_engine.connect()
-        logger.spam("Validating label query via SQL EXPLAIN")
-        try:
-            conn.execute("explain {}".format(bound_query))
-            logger.debug("Validation of label query was successful")
-        except Exception as e:
-            raise ValueError(
-                dedent(
-                    """
-                Section: label_config -
-                given query can not be run with a sample as_of_date and label_timespan.
-                query: "{}"
-                Full error: {}""".format(
-                        query, e
+        with self.db_engine.connect() as conn:
+            logger.spam("Validating label query via SQL EXPLAIN")
+            try:
+                conn.execute(text("explain {}".format(bound_query)))
+                logger.debug("Validation of label query was successful")
+            except Exception as e:
+                raise ValueError(
+                    dedent(
+                        """
+                    Section: label_config -
+                    given query can not be run with a sample as_of_date and label_timespan.
+                    query: "{}"
+                    Full error: {}""".format(
+                            query, e
+                        )
                     )
                 )
-            )
 
     @staticmethod
     def _validate_include_missing_labels_in_train_as(missing_label_flag):
@@ -542,7 +543,8 @@ class CohortConfigValidator(Validator):
         dated_query = query.replace("{as_of_date}", "2016-01-01")
         logger.spam("Validating cohort query via SQL EXPLAIN")
         try:
-            self.db_engine.execute(f"explain {dated_query}")
+            with self.db_engine.connect() as conn:
+                conn.execute(text(f"explain {dated_query}"))
             logger.debug("Validation of cohort query was successful")
         except Exception as e:
             raise ValueError(

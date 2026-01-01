@@ -405,8 +405,10 @@ class MatrixStore:
         if matrix_with_labels.index.names != self.indices:
             matrix_with_labels.set_index(self.indices, inplace=True)
         index_of_date = matrix_with_labels.index.names.index('as_of_date')
-        if matrix_with_labels.index.levels[index_of_date].dtype != "datetime64[ns]":
-            raise ValueError(f"Woah is {matrix_with_labels.index.levels[index_of_date].dtype}")
+        # Accept both datetime64[ns] (psycopg2) and datetime64[us] (psycopg3)
+        date_dtype = str(matrix_with_labels.index.levels[index_of_date].dtype)
+        if not date_dtype.startswith("datetime64"):
+            raise ValueError(f"Expected datetime64 type but got {date_dtype}")
         matrix_with_labels = downcast_matrix(matrix_with_labels)
         labels = matrix_with_labels.pop(self.label_column_name)
         design_matrix = matrix_with_labels

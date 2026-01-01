@@ -2,13 +2,14 @@ from triage.component.results_schema import RetrainModel, Retrain
 from triage.component.catwalk.utils import db_retry, filename_friendly_hash
 
 import re
+from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 from triage.logging import get_logger
 logger = get_logger(__name__)
 
 
 def experiment_config_from_model_id(db_engine, model_id):
-    """Get original experiment config from model_id 
+    """Get original experiment config from model_id
     Args:
             db_engine (sqlalchemy.db.engine)
             model_id (int) The id of a given model in the database
@@ -18,16 +19,18 @@ def experiment_config_from_model_id(db_engine, model_id):
     get_experiment_query = '''select experiments.config
     from triage_metadata.triage_runs
     join triage_metadata.models on (triage_runs.id = models.built_in_triage_run)
-    join triage_metadata.experiments 
+    join triage_metadata.experiments
         on (experiments.experiment_hash = triage_runs.run_hash and triage_runs.run_type='experiment')
-    where model_id = %s
+    where model_id = :model_id
     '''
-    (config,) = db_engine.execute(get_experiment_query, model_id).first()
+    with db_engine.connect() as conn:
+        result = conn.execute(text(get_experiment_query), {"model_id": model_id}).first()
+    (config,) = result
     return config
 
 
 def experiment_config_from_model_group_id(db_engine, model_group_id):
-    """Get original experiment config from model_id 
+    """Get original experiment config from model_id
     Args:
             db_engine (sqlalchemy.db.engine)
             model_id (int) The id of a given model in the database
@@ -41,10 +44,12 @@ def experiment_config_from_model_group_id(db_engine, model_group_id):
     on (triage_runs.id = models.built_in_triage_run)
     join triage_metadata.experiments
     on (experiments.experiment_hash = triage_runs.run_hash and triage_runs.run_type='experiment')
-    where model_group_id = %s
+    where model_group_id = :model_group_id
     order by triage_runs.start_time desc
     '''
-    (run_id, config) = db_engine.execute(get_experiment_query, model_group_id).first()
+    with db_engine.connect() as conn:
+        result = conn.execute(text(get_experiment_query), {"model_group_id": model_group_id}).first()
+    (run_id, config) = result
     return run_id, config
 
 
@@ -52,15 +57,16 @@ def get_model_group_info(db_engine, model_group_id):
     query = """
     SELECT model_group_id, model_type, hyperparameters, model_id as model_id_last_split
     FROM triage_metadata.models
-    WHERE model_group_id = %s
+    WHERE model_group_id = :model_group_id
     ORDER BY train_end_time DESC
     """
-    model_group_info = db_engine.execute(query, model_group_id).fetchone()
-    return dict(model_group_info)
+    with db_engine.connect() as conn:
+        model_group_info = conn.execute(text(query), {"model_group_id": model_group_id}).fetchone()
+    return dict(model_group_info._mapping)
 
 
 def train_matrix_info_from_model_id(db_engine, model_id):
-    """Get original train matrix information from model_id 
+    """Get original train matrix information from model_id
     Args:
             db_engine (sqlalchemy.db.engine)
             model_id (int) The id of a given model in the database
@@ -71,20 +77,21 @@ def train_matrix_info_from_model_id(db_engine, model_id):
         select matrix_uuid, matrices.matrix_metadata
         from triage_metadata.matrices
         join triage_metadata.models on (models.train_matrix_uuid = matrices.matrix_uuid)
-        where model_id = %s
+        where model_id = :model_id
     """
-    return db_engine.execute(get_train_matrix_query, model_id).first()
+    with db_engine.connect() as conn:
+        return conn.execute(text(get_train_matrix_query), {"model_id": model_id}).first()
 
 
 def test_matrix_info_from_model_id(db_engine, model_id):
-    """Get original test matrix information from model_id 
+    """Get original test matrix information from model_id
 
     Note: because a model may have been tested on multiple matrices, this
           chooses the matrix associated with the most recently run experiment
           (then randomly if multiple test matrices are associated with the model_id
           in that experiment). Generally, this will be an edge case, but may be
           worth considering providing more control over which to choose here.
-    
+
     Args:
             db_engine (sqlalchemy.db.engine)
             model_id (int) The id of a given model in the database
@@ -97,11 +104,12 @@ def test_matrix_info_from_model_id(db_engine, model_id):
         join test_results.prediction_metadata pm on (pm.matrix_uuid = mat.matrix_uuid)
         join triage_metadata.triage_runs tr
             on (mat.built_by_experiment = tr.run_hash AND tr.run_type='experiment')
-        where pm.model_id = %s
+        where pm.model_id = :model_id
         order by start_time DESC, RANDOM()
         limit 1
     """
-    return db_engine.execute(get_test_matrix_query, model_id).first()
+    with db_engine.connect() as conn:
+        return conn.execute(text(get_test_matrix_query), {"model_id": model_id}).first()
 
 
 
@@ -165,25 +173,26 @@ def get_feature_needs_imputation_in_production(aggregation, db_engine):
         db_engine (sqlalchemy.db.engine)
     """
     with db_engine.begin() as conn:
-        nulls_results = conn.execute(aggregation.find_nulls())
-    
-    null_counts = nulls_results.first().items()
+        nulls_results = conn.execute(text(aggregation.find_nulls()))
+
+    null_counts = nulls_results.first()._asdict().items()
     features_imputed_in_production = [col for (col, val) in null_counts if val is not None and val > 0]
-    
+
     return features_imputed_in_production
 
 
 def get_retrain_config_from_model_id(db_engine, model_id):
     query = """
     SELECT re.config FROM triage_metadata.models m
-    LEFT JOIN triage_metadata.triage_runs r 
-        ON m.built_in_triage_run = r.id 
-    LEFT JOIN triage_metadata.retrain re 
+    LEFT JOIN triage_metadata.triage_runs r
+        ON m.built_in_triage_run = r.id
+    LEFT JOIN triage_metadata.retrain re
         ON (re.retrain_hash = r.run_hash and r.run_type='retrain')
-    WHERE m.model_id = %s;
+    WHERE m.model_id = :model_id;
     """
-
-    (config,) = db_engine.execute(query, model_id).first()
+    with db_engine.connect() as conn:
+        result = conn.execute(text(query), {"model_id": model_id}).first()
+    (config,) = result
     return config
 
 

@@ -10,6 +10,7 @@ import numpy as np
 import polars as pl
 import time
 
+from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
 from triage.component.results_schema import Matrix
@@ -236,7 +237,9 @@ class BuilderBase:
             f"Creating matrix-specific entity-date table for matrix {matrix_uuid} ",
         )
         logger.debug(f"with query {query}")
-        self.db_engine.execute(query)
+        with self.db_engine.connect() as conn:
+            conn.execute(text(query))
+            conn.commit()
 
         return table_name
 
@@ -397,7 +400,7 @@ class MatrixBuilder(BuilderBase):
             matrix_uuid=matrix_uuid,
             matrix_type=matrix_type,
             labeling_window=matrix_metadata["label_timespan"],
-            num_observations=row_count[0], #row count is a tuple
+            num_observations=row_count,  # table_row_count returns an int directly
             lookback_duration=lookback,
             feature_start_time=matrix_metadata["feature_start_time"],
             feature_dictionary=feature_dictionary,
@@ -529,7 +532,7 @@ class MatrixBuilder(BuilderBase):
         cursor = connection.cursor()
         header = "HEADER"
 
-        # starting with features 
+        # starting with features
         path_ = str(matrix_store.get_storage_directory())
         logger.debug(f"path to store csvs {path_}")
 
@@ -537,12 +540,15 @@ class MatrixBuilder(BuilderBase):
         for i, query_string in enumerate(features_queries):
             copy_sql = f"COPY ({query_string}) TO STDOUT WITH CSV {header}"
             bio = io.BytesIO()
-            cursor.copy_expert(copy_sql, bio)
+            # psycopg3 uses cursor.copy() instead of cursor.copy_expert()
+            with cursor.copy(copy_sql) as copy:
+                for data in copy:
+                    bio.write(data)
             bio.seek(0)
             output_ = bio.read()
-            
+
             filenames.append(path_ + "/" + matrix_uuid + "_" + str(i) + ".csv")
-            
+
             matrix_store.save_tmp_csv(output_, path_, matrix_uuid, f"_{str(i)}.csv")
 
         logger.debug(f"number of feature files to paste for matrix {matrix_uuid}: {len(filenames)}")
@@ -550,7 +556,10 @@ class MatrixBuilder(BuilderBase):
         # label
         copy_sql = f"COPY ({label_query}) TO STDOUT WITH CSV {header}"
         bio = io.BytesIO()
-        cursor.copy_expert(copy_sql, bio)
+        # psycopg3 uses cursor.copy() instead of cursor.copy_expert()
+        with cursor.copy(copy_sql) as copy:
+            for data in copy:
+                bio.write(data)
         bio.seek(0)
         output_ = bio.read()
 

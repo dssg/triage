@@ -1,3 +1,5 @@
+from sqlalchemy import text
+
 from triage.component.audition.distance_from_best import DistanceFromBestTable
 from triage.component.catwalk.db import ensure_db
 
@@ -184,9 +186,12 @@ def create_sample_distance_table(engine):
             0.0,
         ),
     ]
-    for dist_row in distance_rows:
-        engine.execute(
-            "insert into dist_table values (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-            dist_row,
-        )
+    with engine.connect() as conn:
+        for dist_row in distance_rows:
+            conn.execute(
+                text("insert into dist_table values (:p1, :p2, :p3, :p4, :p5, :p6, :p7, :p8, :p9)"),
+                {"p1": dist_row[0], "p2": dist_row[1], "p3": dist_row[2], "p4": dist_row[3],
+                 "p5": dist_row[4], "p6": dist_row[5], "p7": dist_row[6], "p8": dist_row[7], "p9": dist_row[8]}
+            )
+        conn.commit()
     return distance_table, model_groups

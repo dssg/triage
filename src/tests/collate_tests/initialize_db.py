@@ -1,23 +1,25 @@
 import pathlib
 import subprocess
-from sqlalchemy import create_engine
+from sqlalchemy import text
 
 
 DATA_NAME = "food_inspections_subset.csv"
 DATA_PATH = pathlib.Path(__file__).with_name(DATA_NAME)
 
 
-def handler(database):
-    engine = create_engine(database.url())
-    connection = engine.connect()
-    try:
-        load_data(connection)
-    finally:
-        connection.close()
+def load_data(engine):
+    """Load food inspections test data into the database.
 
+    This function is designed to work with pytest-postgresql fixtures.
+    It creates the food_inspections table and related state tables.
+    """
+    with engine.connect() as conn:
+        conn.execute(text("DROP TABLE IF EXISTS food_inspections"))
+        conn.commit()
 
-def load_data(connection):
-    connection.execute("DROP TABLE IF EXISTS food_inspections")
+    # Use csvsql to load the CSV data - it needs the engine URL
+    # render_as_string with hide_password=False ensures the password is included
+    db_url = str(engine.url.render_as_string(hide_password=False))
     subprocess.run(
         [
             "csvsql",
@@ -27,47 +29,63 @@ def load_data(connection):
             "food_inspections",
             "--insert",
             "--db",
-            str(connection.engine.url),
+            db_url,
             str(DATA_PATH),
         ],
         check=True,
     )
-    connection.execute("CREATE INDEX ON food_inspections(license_no, inspection_date)")
 
-    # create a state table for license/date
-    connection.execute("DROP TABLE IF EXISTS inspection_states")
-    connection.execute(
-        """\
-        CREATE TABLE inspection_states AS (
-            SELECT license_no, date
-            FROM (SELECT DISTINCT license_no FROM food_inspections) a
-            CROSS JOIN (SELECT DISTINCT inspection_date as date FROM food_inspections) b
-        )"""
-    )
-    connection.execute("CREATE INDEX ON inspection_states(license_no, date)")
+    with engine.connect() as conn:
+        conn.execute(text("CREATE INDEX ON food_inspections(license_no, inspection_date)"))
 
-    # create an alternate state table with a different date column
-    connection.execute("DROP TABLE IF EXISTS inspection_states_diff_colname")
-    connection.execute(
-        """\
-        CREATE TABLE inspection_states_diff_colname
-        AS select license_no, date as aggregation_date
-        FROM inspection_states
-        """
-    )
-    connection.execute(
-        """\
-        CREATE INDEX ON
-        inspection_states_diff_colname(license_no, aggregation_date)
-        """
-    )
+        # create a state table for license/date
+        conn.execute(text("DROP TABLE IF EXISTS inspection_states"))
+        conn.execute(
+            text("""\
+            CREATE TABLE inspection_states AS (
+                SELECT license_no, date
+                FROM (SELECT DISTINCT license_no FROM food_inspections) a
+                CROSS JOIN (SELECT DISTINCT inspection_date as date FROM food_inspections) b
+            )""")
+        )
+        conn.execute(text("CREATE INDEX ON inspection_states(license_no, date)"))
 
-    # create a state table for licenseo only
-    connection.execute("DROP TABLE IF EXISTS all_licenses")
-    connection.execute(
-        """\
-        CREATE TABLE all_licenses AS (
-            SELECT DISTINCT license_no FROM food_inspections
-        )"""
-    )
-    connection.execute("CREATE INDEX ON all_licenses(license_no)")
+        # create an alternate state table with a different date column
+        conn.execute(text("DROP TABLE IF EXISTS inspection_states_diff_colname"))
+        conn.execute(
+            text("""\
+            CREATE TABLE inspection_states_diff_colname
+            AS select license_no, date as aggregation_date
+            FROM inspection_states
+            """)
+        )
+        conn.execute(
+            text("""\
+            CREATE INDEX ON
+            inspection_states_diff_colname(license_no, aggregation_date)
+            """)
+        )
+
+        # create a state table for license only
+        conn.execute(text("DROP TABLE IF EXISTS all_licenses"))
+        conn.execute(
+            text("""\
+            CREATE TABLE all_licenses AS (
+                SELECT DISTINCT license_no FROM food_inspections
+            )""")
+        )
+        conn.execute(text("CREATE INDEX ON all_licenses(license_no)"))
+        conn.commit()
+
+
+# Legacy handler for testing.postgresql compatibility (deprecated)
+def handler(database):
+    """Legacy handler for testing.postgresql.PostgresqlFactory.
+
+    This is kept for backwards compatibility but the preferred method
+    is to use load_data() with a pytest-postgresql fixture.
+    """
+    from sqlalchemy import create_engine as legacy_create_engine
+    engine = legacy_create_engine(database.url())
+    load_data(engine)
+    engine.dispose()

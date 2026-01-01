@@ -1,5 +1,5 @@
 """Functions to retrieve basic information about tables in a Postgres database"""
-from sqlalchemy import MetaData, Table, inspect
+from sqlalchemy import MetaData, Table, inspect, text
 
 
 def split_table(table_name):
@@ -79,9 +79,8 @@ def table_has_data(table_name, db_engine):
     """
     if not table_exists(table_name, db_engine):
         return False
-    results = [
-        row for row in db_engine.execute("select * from {} limit 1".format(table_name))
-    ]
+    with db_engine.connect() as conn:
+        results = list(conn.execute(text("select * from {} limit 1".format(table_name))))
 
     return len(results) > 0
 

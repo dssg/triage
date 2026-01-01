@@ -11,7 +11,7 @@ from IPython.display import display
 import itertools
 
 from descriptors import cachedproperty
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sklearn.calibration import calibration_curve
 from sklearn import metrics
 from scipy.stats import spearmanr
@@ -426,7 +426,8 @@ class SingleModelAnalyzer:
                 if replace:
                     logging.warning('Deleting the existing crosstabs!')
                     with self.engine.connect() as conn:
-                        conn.execute(f"delete from test_results.{table_name} where model_id={self.model_id} and matrix_uuid='{matrix_uuid}';")
+                        conn.execute(text(f"delete from test_results.{table_name} where model_id={self.model_id} and matrix_uuid='{matrix_uuid}';"))
+                        conn.commit()
                 else:
                     logging.info(f"Replace set to False. Not calculating crosstabs for model {self.model_id} and matrix_uuid='{matrix_uuid}';")
                     if return_df: return df 

@@ -6,6 +6,7 @@ from triage.logging import get_logger
 logger = get_logger(__name__)
 
 from scipy import stats
+from sqlalchemy import text
 import yaml
 from io import StringIO
 
@@ -326,7 +327,7 @@ def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type,
                 ''', db_engine)
             
             if not df.empty:
-                if replace: 
+                if replace:
                     logging.info(f'Exsiting crosstabs found for model {model_id} and matrix {matrix_uuid}. Replace is True. Deleting.')
                     q = f'''
                         delete from {table_schema}.{table_name}
@@ -335,8 +336,10 @@ def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type,
                         and threshold_type = '{threshold_type}'
                         and threshold = {threshold}
                     '''
-                    
-                    db_engine.execute(q)
+
+                    with db_engine.connect() as conn:
+                        conn.execute(text(q))
+                        conn.commit()
                                         
                 else:
                     logging.info(f'Existing crosstabs found for model {model_id} and matrix {matrix_uuid}. Replace flag is not set. Skipping')
@@ -432,18 +435,22 @@ def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type,
             
             '''
             # q = _generate_create_table_sql_statement_from_df(results, f'{table_schema}.{table_name}')
-            db_engine.execute(q)
+            with db_engine.connect() as conn:
+                conn.execute(text(q))
+                conn.commit()
         
         conn = db_engine.raw_connection()
         cursor = conn.cursor()
-        
+
         buffer = StringIO()
         results.to_csv(buffer, index=False, header=False)
         buffer.seek(0)
-        
+
         columns = ', '.join(results.columns)
         logger.info(columns)
-        cursor.copy_expert(f"COPY {table_schema}.{table_name} ({columns}) FROM STDIN WITH CSV", buffer)
+        # psycopg3 uses cursor.copy() instead of cursor.copy_expert()
+        with cursor.copy(f"COPY {table_schema}.{table_name} ({columns}) FROM STDIN WITH CSV") as copy:
+            copy.write(buffer.getvalue().encode())
         # results.to_sql(con=db_engine, schema=table_schema, name=table_name, if_exists='append')
         conn.commit()
         cursor.close()

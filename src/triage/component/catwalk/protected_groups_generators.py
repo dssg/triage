@@ -110,7 +110,7 @@ class ProtectedGroupsGenerator:
             logger.spam(f"Protected groups table has {nrows} rows")
 
     def generate(self, start_date, cohort_table_name, cohort_hash):
-        full_insert_query = text(textwrap.dedent(
+        full_insert_query = textwrap.dedent(
             """
             insert into {protected_groups_table}
             select distinct on (cohort.entity_id, cohort.as_of_date)
@@ -134,11 +134,11 @@ class ProtectedGroupsGenerator:
             from_obj=self.from_obj,
             knowledge_date_column=self.knowledge_date_column,
             entity_id_column=self.entity_id_column
-        ))
+        )
         logger.debug("Running protected_groups creation query")
         logger.spam(full_insert_query)
         with self.db_engine.connect() as conn:
-            conn.execute(full_insert_query)
+            conn.execute(text(full_insert_query))
             conn.commit()
 
     def as_dataframe(self, as_of_dates, cohort_hash):
@@ -161,9 +161,10 @@ class ProtectedGroupsGenerator:
             join dates using(as_of_date)
             where cohort_hash = '{cohort_hash}'
         """
-        protected_df = pd.DataFrame.pg_copy_from(
+        # Use standard pd.read_sql instead of Ohio's pg_copy_from (psycopg3 compatible)
+        protected_df = pd.read_sql(
             query_string,
-            connectable=self.db_engine,
+            con=self.db_engine,
             parse_dates=["as_of_date"],
             index_col=MatrixStore.indices,
         )

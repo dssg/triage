@@ -6,9 +6,9 @@ from tempfile import TemporaryDirectory
 from unittest import mock, TestCase
 
 import pytest
-import testing.postgresql
 from triage import create_engine
 import sqlalchemy
+from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
 from tests.utils import sample_config, populate_source_data, open_side_effect
@@ -25,17 +25,19 @@ from triage.experiments import (
 
 
 def num_linked_evaluations(db_engine):
-    ((result,),) = db_engine.execute(
+    with db_engine.connect() as conn:
+        result = conn.execute(text(
+            """
+            select count(*) from test_results.evaluations e
+            join triage_metadata.models using (model_id)
+            join test_results.predictions p on (
+                e.model_id = p.model_id and
+                e.evaluation_start_time <= p.as_of_date and
+                e.evaluation_end_time >= p.as_of_date)
         """
-        select count(*) from test_results.evaluations e
-        join triage_metadata.models using (model_id)
-        join test_results.predictions p on (
-            e.model_id = p.model_id and
-            e.evaluation_start_time <= p.as_of_date and
-            e.evaluation_end_time >= p.as_of_date)
-    """
-    )
-    return result
+        ))
+        ((count,),) = result
+        return count
 
 
 parametrize_experiment_classes = pytest.mark.parametrize(
@@ -48,11 +50,10 @@ parametrize_experiment_classes = pytest.mark.parametrize(
 
 
 @parametrize_experiment_classes
-def test_filepaths_and_queries_give_same_hashes(experiment_class):
-    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+def test_filepaths_and_queries_give_same_hashes(experiment_class, db_engine):
+    with TemporaryDirectory() as temp_dir, mock.patch(
         "triage.util.conf.open", side_effect=open_side_effect
     ) as mock_file:
-        db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
         query_config = sample_config(query_source="query")
         file_config = sample_config(query_source="filepath")
@@ -84,11 +85,10 @@ def test_filepaths_and_queries_give_same_hashes(experiment_class):
 
 
 @parametrize_experiment_classes
-def test_simple_experiment(experiment_class):
-    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+def test_simple_experiment(experiment_class, db_engine):
+    with TemporaryDirectory() as temp_dir, mock.patch(
         "triage.util.conf.open", side_effect=open_side_effect
     ) as mock_file:
-        db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
         experiment_class(
             config=sample_config(),
@@ -97,181 +97,131 @@ def test_simple_experiment(experiment_class):
             cleanup=True,
         ).run()
 
-        # assert
-        # 1. that model groups entries are present
-        num_mgs = len(
-            [
-                row
-                for row in db_engine.execute(
-                    "select * from triage_metadata.model_groups"
-                )
-            ]
-        )
-        ic(f"========================Model groups {num_mgs}")
-        assert num_mgs > 0
+        with db_engine.connect() as conn:
+            # assert
+            # 1. that model groups entries are present
+            num_mgs = len(list(conn.execute(text(
+                "select * from triage_metadata.model_groups"
+            ))))
+            ic(f"========================Model groups {num_mgs}")
+            assert num_mgs > 0
 
-        # 2. that model entries are present, and linked to model groups
-        num_models = len(
-            [
-                row
-                for row in db_engine.execute(
-                    """
+            # 2. that model entries are present, and linked to model groups
+            num_models = len(list(conn.execute(text(
+                """
                 select * from triage_metadata.model_groups
                 join triage_metadata.models using (model_group_id)
                 where model_comment = 'test2-final-final'
             """
-                )
-            ]
-        )
-        ic(f"========================Model {num_models}")
-        assert num_models > 0
+            ))))
+            ic(f"========================Model {num_models}")
+            assert num_models > 0
 
-        # 3. predictions, linked to models for both training and testing predictions
-        for set_type in ("train", "test"):
-            num_predictions = len(
-                [
-                    row
-                    for row in db_engine.execute(
-                        """
-                    select * from {}_results.predictions
-                    join triage_metadata.models using (model_id)""".format(
-                            set_type, set_type
-                        )
-                    )
-                ]
-            )
-            ic(f"========================Predictions {num_predictions}")
-            assert num_predictions > 0
+            # 3. predictions, linked to models for both training and testing predictions
+            for set_type in ("train", "test"):
+                num_predictions = len(list(conn.execute(text(
+                    f"""
+                    select * from {set_type}_results.predictions
+                    join triage_metadata.models using (model_id)"""
+                ))))
+                ic(f"========================Predictions {num_predictions}")
+                assert num_predictions > 0
 
-        # 4. evaluations linked to predictions linked to models, for training and testing
-
-        for set_type in ("train", "test"):
-            num_evaluations = len(
-                [
-                    row
-                    for row in db_engine.execute(
-                        """
-                    select * from {}_results.evaluations e
+            # 4. evaluations linked to predictions linked to models, for training and testing
+            for set_type in ("train", "test"):
+                num_evaluations = len(list(conn.execute(text(
+                    f"""
+                    select * from {set_type}_results.evaluations e
                     join triage_metadata.models using (model_id)
-                    join {}_results.predictions p on (
+                    join {set_type}_results.predictions p on (
                         e.model_id = p.model_id and
                         e.evaluation_start_time <= p.as_of_date and
                         e.evaluation_end_time >= p.as_of_date)
-                """.format(
-                            set_type, set_type, set_type
-                        )
-                    )
-                ]
-            )
-            ic(f"========================Evaluations {num_evaluations}")
-            assert num_evaluations > 0
+                """
+                ))))
+                ic(f"========================Evaluations {num_evaluations}")
+                assert num_evaluations > 0
 
-        # 5. subset evaluations linked to subsets and predictions linked to
-        #    models, for training and testing
-        for set_type in ("train", "test"):
-            num_evaluations = len(
-                [
-                    row
-                    for row in db_engine.execute(
-                        """
-                        select e.model_id, e.subset_hash from {}_results.evaluations e
-                        join triage_metadata.models using (model_id)
-                        join triage_metadata.subsets using (subset_hash)
-                        join {}_results.predictions p on (
-                            e.model_id = p.model_id and
-                            e.evaluation_start_time <= p.as_of_date and
-                            e.evaluation_end_time >= p.as_of_date)
-                        group by e.model_id, e.subset_hash
-                        """.format(
-                            set_type, set_type
-                        )
-                    )
-                ]
-            )
-            # 4 model groups trained/tested on 2 splits, with 1 metric + parameter
-            assert num_evaluations == 8
-
-        # 6. experiment
-        num_experiments = len(
-            [
-                row
-                for row in db_engine.execute(
-                    "select * from triage_metadata.experiments"
-                )
-            ]
-        )
-        assert num_experiments == 1
-
-        # 7. that models are linked to experiments
-        num_models_with_experiment = len(
-            [
-                row
-                for row in db_engine.execute(
+            # 5. subset evaluations linked to subsets and predictions linked to
+            #    models, for training and testing
+            for set_type in ("train", "test"):
+                num_evaluations = len(list(conn.execute(text(
+                    f"""
+                    select e.model_id, e.subset_hash from {set_type}_results.evaluations e
+                    join triage_metadata.models using (model_id)
+                    join triage_metadata.subsets using (subset_hash)
+                    join {set_type}_results.predictions p on (
+                        e.model_id = p.model_id and
+                        e.evaluation_start_time <= p.as_of_date and
+                        e.evaluation_end_time >= p.as_of_date)
+                    group by e.model_id, e.subset_hash
                     """
+                ))))
+                # 4 model groups trained/tested on 2 splits, with 1 metric + parameter
+                assert num_evaluations == 8
+
+            # 6. experiment
+            num_experiments = len(list(conn.execute(text(
+                "select * from triage_metadata.experiments"
+            ))))
+            assert num_experiments == 1
+
+            # 7. that models are linked to experiments
+            num_models_with_experiment = len(list(conn.execute(text(
+                """
                 select * from triage_metadata.experiments
                 join triage_metadata.experiment_models using (experiment_hash)
                 join triage_metadata.models using (model_hash)
             """
-                )
+            ))))
+            assert num_models == num_models_with_experiment
+
+            # 8. that models have the train end date and label timespan
+            results = [
+                (row[4], row[6])  # train_end_time, training_label_timespan
+                for row in conn.execute(text("select * from triage_metadata.models"))
             ]
-        )
-        assert num_models == num_models_with_experiment
+            assert sorted(set(results)) == [
+                (datetime(2012, 6, 1), timedelta(180)),
+                (datetime(2013, 6, 1), timedelta(180)),
+            ]
 
-        # 8. that models have the train end date and label timespan
-        results = [
-            (model["train_end_time"], model["training_label_timespan"])
-            for model in db_engine.execute("select * from triage_metadata.models")
-        ]
-        assert sorted(set(results)) == [
-            (datetime(2012, 6, 1), timedelta(180)),
-            (datetime(2013, 6, 1), timedelta(180)),
-        ]
-
-        # 9. that the right number of individual importances are present
-        individual_importances = [
-            row
-            for row in db_engine.execute(
+            # 9. that the right number of individual importances are present
+            individual_importances = list(conn.execute(text(
                 """
             select * from test_results.individual_importances
             join triage_metadata.models using (model_id)
         """
-            )
-        ]
-        assert len(individual_importances) == num_predictions * 2  # only 2 features
+            )))
+            assert len(individual_importances) == num_predictions * 2  # only 2 features
 
-        # 10. Checking the proper matrices created and stored
-        matrices = [
-            row
-            for row in db_engine.execute(
+            # 10. Checking the proper matrices created and stored
+            matrices = list(conn.execute(text(
                 """
             select matrix_type, num_observations from triage_metadata.matrices"""
-            )
-        ]
-        types = [i[0] for i in matrices]
-        counts = [i[1] for i in matrices]
-        assert types.count("train") == 2
-        assert types.count("test") == 2
-        for i in counts:
-            assert i > 0
-        assert len(matrices) == 4
+            )))
+            types = [i[0] for i in matrices]
+            counts = [i[1] for i in matrices]
+            assert types.count("train") == 2
+            assert types.count("test") == 2
+            for i in counts:
+                assert i > 0
+            assert len(matrices) == 4
 
-        # 11. Checking that all matrices are associated with the experiment
-        linked_matrices = list(
-            db_engine.execute(
+            # 11. Checking that all matrices are associated with the experiment
+            linked_matrices = list(conn.execute(text(
                 """select * from triage_metadata.matrices
             join triage_metadata.experiment_matrices using (matrix_uuid)
             join triage_metadata.experiments using (experiment_hash)"""
-            )
-        )
-        assert len(linked_matrices) == len(matrices)
+            )))
+            assert len(linked_matrices) == len(matrices)
 
 
 @parametrize_experiment_classes
-def test_validate_default(experiment_class):
-    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+def test_validate_default(experiment_class, db_engine):
+    with TemporaryDirectory() as temp_dir, mock.patch(
         "triage.util.conf.open", side_effect=open_side_effect
     ) as mock_file:
-        db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
         experiment = experiment_class(
             config=sample_config(),
@@ -285,11 +235,10 @@ def test_validate_default(experiment_class):
 
 
 @parametrize_experiment_classes
-def test_skip_validation(experiment_class):
-    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+def test_skip_validation(experiment_class, db_engine):
+    with TemporaryDirectory() as temp_dir, mock.patch(
         "triage.util.conf.open", side_effect=open_side_effect
     ) as mock_file:
-        db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
         experiment = experiment_class(
             config=sample_config(),
@@ -304,11 +253,10 @@ def test_skip_validation(experiment_class):
 
 
 @parametrize_experiment_classes
-def test_restart_experiment(experiment_class):
-    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+def test_restart_experiment(experiment_class, db_engine):
+    with TemporaryDirectory() as temp_dir, mock.patch(
         "triage.util.conf.open", side_effect=open_side_effect
     ) as mock_file:
-        db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
         experiment = experiment_class(
             config=sample_config(),
@@ -333,14 +281,13 @@ def test_restart_experiment(experiment_class):
         assert not experiment.make_entity_date_table.called
 
 
-class TestConfigVersion(TestCase):
-    def test_load_if_right_version(self):
+class TestConfigVersion:
+    def test_load_if_right_version(self, db_engine):
         experiment_config = sample_config()
         experiment_config["config_version"] = CONFIG_VERSION
-        with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+        with TemporaryDirectory() as temp_dir, mock.patch(
             "triage.util.conf.open", side_effect=open_side_effect
         ) as mock_file:
-            db_engine = create_engine(postgresql.url())
             experiment = SingleThreadedExperiment(
                 config=experiment_config,
                 db_engine=db_engine,
@@ -355,7 +302,7 @@ class TestConfigVersion(TestCase):
         with TemporaryDirectory() as temp_dir, mock.patch(
             "triage.util.conf.open", side_effect=open_side_effect
         ) as mock_file:
-            with self.assertRaises(ValueError):
+            with pytest.raises(ValueError):
                 SingleThreadedExperiment(
                     config=experiment_config,
                     db_engine=None,
@@ -369,11 +316,10 @@ class TestConfigVersion(TestCase):
     "EntityDateTableGenerator.clean_up",
     side_effect=lambda: time.sleep(1),
 )
-def test_cleanup_timeout(_clean_up_mock, experiment_class):
-    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+def test_cleanup_timeout(_clean_up_mock, experiment_class, db_engine):
+    with TemporaryDirectory() as temp_dir, mock.patch(
         "triage.util.conf.open", side_effect=open_side_effect
     ) as mock_file:
-        db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
         experiment = experiment_class(
             config=sample_config(),
@@ -387,11 +333,10 @@ def test_cleanup_timeout(_clean_up_mock, experiment_class):
 
 
 @parametrize_experiment_classes
-def test_build_error(experiment_class):
-    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+def test_build_error(experiment_class, db_engine):
+    with TemporaryDirectory() as temp_dir, mock.patch(
         "triage.util.conf.open", side_effect=open_side_effect
     ) as mock_file:
-        db_engine = create_engine(postgresql.url())
         experiment = experiment_class(
             config=sample_config(),
             db_engine=db_engine,
@@ -413,11 +358,10 @@ def test_build_error(experiment_class):
     "EntityDateTableGenerator.clean_up",
     side_effect=lambda: time.sleep(1),
 )
-def test_build_error_cleanup_timeout(_clean_up_mock, experiment_class):
-    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+def test_build_error_cleanup_timeout(_clean_up_mock, experiment_class, db_engine):
+    with TemporaryDirectory() as temp_dir, mock.patch(
         "triage.util.conf.open", side_effect=open_side_effect
     ) as mock_file:
-        db_engine = create_engine(postgresql.url())
         experiment = experiment_class(
             config=sample_config(),
             db_engine=db_engine,
@@ -439,11 +383,10 @@ def test_build_error_cleanup_timeout(_clean_up_mock, experiment_class):
 
 
 @parametrize_experiment_classes
-def test_custom_label_name(experiment_class):
-    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+def test_custom_label_name(experiment_class, db_engine):
+    with TemporaryDirectory() as temp_dir, mock.patch(
         "triage.util.conf.open", side_effect=open_side_effect
     ) as mock_file:
-        db_engine = create_engine(postgresql.url())
         config = sample_config()
         config["label_config"]["name"] = "custom_label_name"
         experiment = experiment_class(
@@ -471,11 +414,10 @@ def test_profiling(db_engine):
 
 
 @parametrize_experiment_classes
-def test_baselines_with_missing_features(experiment_class):
-    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+def test_baselines_with_missing_features(experiment_class, db_engine):
+    with TemporaryDirectory() as temp_dir, mock.patch(
         "triage.util.conf.open", side_effect=open_side_effect
     ) as mock_file:
-        db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
 
         # set up the config with the baseline model and feature group mixing
@@ -498,52 +440,35 @@ def test_baselines_with_missing_features(experiment_class):
             project_path=os.path.join(temp_dir, "inspections"),
         ).run()
 
-        # assert
-        # 1. that model groups entries are present
-        num_mgs = len(
-            [
-                row
-                for row in db_engine.execute(
-                    "select * from triage_metadata.model_groups"
-                )
-            ]
-        )
-        assert num_mgs > 0
+        with db_engine.connect() as conn:
+            # assert
+            # 1. that model groups entries are present
+            num_mgs = len(list(conn.execute(text(
+                "select * from triage_metadata.model_groups"
+            ))))
+            assert num_mgs > 0
 
-        # 2. that model entries are present, and linked to model groups
-        num_models = len(
-            [
-                row
-                for row in db_engine.execute(
-                    """
+            # 2. that model entries are present, and linked to model groups
+            num_models = len(list(conn.execute(text(
+                """
                 select * from triage_metadata.model_groups
                 join triage_metadata.models using (model_group_id)
                 where model_comment = 'test2-final-final'
             """
-                )
-            ]
-        )
-        assert num_models > 0
+            ))))
+            assert num_models > 0
 
-        # 3. predictions, linked to models
-        num_predictions = len(
-            [
-                row
-                for row in db_engine.execute(
-                    """
+            # 3. predictions, linked to models
+            num_predictions = len(list(conn.execute(text(
+                """
                 select * from test_results.predictions
                 join triage_metadata.models using (model_id)"""
-                )
-            ]
-        )
-        assert num_predictions > 0
+            ))))
+            assert num_predictions > 0
 
-        # 4. evaluations linked to predictions linked to models
-        num_evaluations = len(
-            [
-                row
-                for row in db_engine.execute(
-                    """
+            # 4. evaluations linked to predictions linked to models
+            num_evaluations = len(list(conn.execute(text(
+                """
                 select * from test_results.evaluations e
                 join triage_metadata.models using (model_id)
                 join test_results.predictions p on (
@@ -551,70 +476,56 @@ def test_baselines_with_missing_features(experiment_class):
                     e.evaluation_start_time <= p.as_of_date and
                     e.evaluation_end_time >= p.as_of_date)
             """
-                )
-            ]
-        )
-        assert num_evaluations > 0
+            ))))
+            assert num_evaluations > 0
 
-        # 5. experiment
-        num_experiments = len(
-            [
-                row
-                for row in db_engine.execute(
-                    "select * from triage_metadata.experiments"
-                )
-            ]
-        )
-        assert num_experiments == 1
+            # 5. experiment
+            num_experiments = len(list(conn.execute(text(
+                "select * from triage_metadata.experiments"
+            ))))
+            assert num_experiments == 1
 
-        # 6. that models are linked to experiments
-        num_models_with_experiment = len(
-            [
-                row
-                for row in db_engine.execute(
-                    """
+            # 6. that models are linked to experiments
+            num_models_with_experiment = len(list(conn.execute(text(
+                """
                 select * from triage_metadata.experiments
                 join triage_metadata.experiment_models using (experiment_hash)
                 join triage_metadata.models using (model_hash)
             """
-                )
+            ))))
+            assert num_models == num_models_with_experiment
+
+            # 7. that models have the train end date and label timespan
+            results = [
+                (row[4], row[6])  # train_end_time, training_label_timespan
+                for row in conn.execute(text("select * from triage_metadata.models"))
             ]
-        )
-        assert num_models == num_models_with_experiment
+            assert sorted(set(results)) == [
+                (datetime(2012, 6, 1), timedelta(180)),
+                (datetime(2013, 6, 1), timedelta(180)),
+            ]
 
-        # 7. that models have the train end date and label timespan
-        results = [
-            (model["train_end_time"], model["training_label_timespan"])
-            for model in db_engine.execute("select * from triage_metadata.models")
-        ]
-        assert sorted(set(results)) == [
-            (datetime(2012, 6, 1), timedelta(180)),
-            (datetime(2013, 6, 1), timedelta(180)),
-        ]
-
-        # 8. that the right number of individual importances are present
-        individual_importances = [
-            row
-            for row in db_engine.execute(
+            # 8. that the right number of individual importances are present
+            individual_importances = list(conn.execute(text(
                 """
             select * from test_results.individual_importances
             join triage_metadata.models using (model_id)
         """
-            )
-        ]
-        assert len(individual_importances) == num_predictions * 2  # only 2 features
+            )))
+            assert len(individual_importances) == num_predictions * 2  # only 2 features
 
 
-def test_serializable_engine_check_sqlalchemy_fail():
+def test_serializable_engine_check_sqlalchemy_fail(db_engine):
     """If we pass a vanilla sqlalchemy engine to the experiment we should blow up"""
-    with testing.postgresql.Postgresql() as postgresql, TemporaryDirectory() as temp_dir, mock.patch(
+    with TemporaryDirectory() as temp_dir, mock.patch(
         "triage.util.conf.open", side_effect=open_side_effect
     ) as mock_file:
-        db_engine = sqlalchemy.create_engine(postgresql.url())
+        # Create a vanilla sqlalchemy engine (not triage's serializable one)
+        vanilla_engine = sqlalchemy.create_engine(db_engine.url)
         with pytest.raises(TypeError):
             MultiCoreExperiment(
                 config=sample_config(),
-                db_engine=db_engine,
+                db_engine=vanilla_engine,
                 project_path=os.path.join(temp_dir, "inspections"),
             )
 

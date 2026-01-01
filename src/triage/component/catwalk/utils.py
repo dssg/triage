@@ -359,5 +359,8 @@ def save_db_objects(db_engine, db_objects):
 
         with closing(db_engine.raw_connection()) as connection:
             with connection.cursor() as cursor:
-                cursor.copy_expert(copy_sql, pipe)
+                # psycopg3 uses cursor.copy() instead of cursor.copy_expert()
+                with cursor.copy(copy_sql) as copy:
+                    while data := pipe.read(8192):
+                        copy.write(data)
             connection.commit()

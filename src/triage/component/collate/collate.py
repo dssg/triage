@@ -4,6 +4,7 @@ logger = get_logger(__name__)
 from numbers import Number
 from itertools import product, chain
 import sqlalchemy.sql.expression as ex
+from sqlalchemy import text
 import re
 from descriptors import cachedproperty
 
@@ -551,7 +552,7 @@ class Aggregation:
             columns += self._get_aggregates_sql(group)
 
             gb_clause = make_sql_clause(groupby, ex.literal_column)
-            query = ex.select(columns=columns, from_obj=make_sql_clause(self.from_obj, ex.text)).group_by(
+            query = ex.select(*columns).select_from(make_sql_clause(self.from_obj, ex.text)).group_by(
                 gb_clause
             )
 
@@ -654,10 +655,8 @@ class Aggregation:
         """
         Generate a query for a join table
         """
-        return ex.Select(
-            columns=[make_sql_clause(group, ex.column) for group in self.groups.values()],
-            from_obj=self.from_obj
-        ).group_by(
+        columns = [make_sql_clause(group, ex.column) for group in self.groups.values()]
+        return ex.select(*columns).select_from(self.from_obj).group_by(
             *self.groups.values()
         )
 
@@ -822,26 +821,28 @@ class Aggregation:
         drop = self.get_drop()
         create = self.get_create(join_table=join_table)
 
-        trans = conn.begin()
+        # SQLAlchemy 2.0: connections use autobegin, so don't call begin() explicitly
+        # Just commit at the end to finalize all operations
 
         if create_schema is not None:
-            conn.execute(create_schema)
+            conn.execute(text(create_schema))
 
         for group in self.groups:
-            conn.execute(drops[group])
-            conn.execute(creates[group])
+            conn.execute(text(str(drops[group])))
+            conn.execute(text(str(creates[group])))
             for insert in inserts[group]:
-                conn.execute(insert)
-            conn.execute(indexes[group])
+                conn.execute(text(str(insert)))
+            conn.execute(text(str(indexes[group])))
 
         # create the aggregation table
-        conn.execute(drop)
-        conn.execute(create)
+        conn.execute(text(str(drop)))
+        conn.execute(text(str(create)))
 
         # excute query to find columns with null values and create lists of columns
         # that do and do not need imputation when creating the imputation table
-        res = conn.execute(self.find_nulls())
-        null_counts = list(zip(res.keys(), res.fetchone()))
+        res = conn.execute(text(self.find_nulls()))
+        first_row = res.fetchone()
+        null_counts = list(zip(res.keys(), first_row))
         impute_cols = [col for col, val in null_counts if val > 0]
         nonimpute_cols = [col for col, val in null_counts if val == 0]
         res.close()
@@ -853,10 +854,10 @@ class Aggregation:
         )
 
         # create the imputation table
-        conn.execute(drop_imp)
-        conn.execute(create_imp)
+        conn.execute(text(str(drop_imp)))
+        conn.execute(text(str(create_imp)))
 
-        trans.commit()
+        conn.commit()
 
     def validate(self, conn):
         """

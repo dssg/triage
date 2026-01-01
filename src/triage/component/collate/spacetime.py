@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from itertools import chain
 import sqlalchemy.sql.expression as ex
+from sqlalchemy import text
 from descriptors import cachedproperty
 
 from .sql import make_sql_clause
@@ -190,7 +191,7 @@ class SpacetimeAggregation(Aggregation):
                         ")) cohorted_from_obj")
                 else:
                     from_obj = self.from_obj
-                query = ex.select(columns=columns, from_obj=make_sql_clause(from_obj, ex.text)).group_by(
+                query = ex.select(*columns).select_from(make_sql_clause(from_obj, ex.text)).group_by(
                     gb_clause
                 )
                 query = query.where(self.where(date, intervals))
@@ -274,7 +275,7 @@ class SpacetimeAggregation(Aggregation):
                 ex.literal_column("'%s'::date" % date).label(self.output_date_column)
             ]
             queries.append(
-                ex.select(columns, from_obj=make_sql_clause(self.from_obj, ex.text))
+                ex.select(*columns).select_from(make_sql_clause(self.from_obj, ex.text))
                 .where(self.where(date, intervals))
                 .group_by(*groups)
             )
@@ -313,8 +314,8 @@ class SpacetimeAggregation(Aggregation):
                     # This could be done more efficiently all at once, but doing
                     # it this way allows for nicer error messages.
                     r = conn.execute(
-                        "select ('%s'::date - '%s'::interval) < '%s'::date"
-                        % (date, interval, self.input_min_date)
+                        text("select ('%s'::date - '%s'::interval) < '%s'::date"
+                        % (date, interval, self.input_min_date))
                     )
                     if r.fetchone()[0]:
                         raise ValueError(
@@ -324,8 +325,8 @@ class SpacetimeAggregation(Aggregation):
                     r.close()
         for date in self.dates:
             r = conn.execute(
-                "select count(*) from %s where %s = '%s'::date"
-                % (self.state_table, self.output_date_column, date)
+                text("select count(*) from %s where %s = '%s'::date"
+                % (self.state_table, self.output_date_column, date))
             )
             if r.fetchone()[0] == 0:
                 raise ValueError(

@@ -17,7 +17,8 @@ class CreateTableAs(ex.Executable, ex.ClauseElement):
 
 @compiles(CreateTableAs)
 def _create_table_as(element, compiler, **kw):
-    return "CREATE TABLE %s AS %s" % (element.name, compiler.process(element.query))
+    # Use literal_binds=True to render bind parameters as literal values
+    return "CREATE TABLE %s AS %s" % (element.name, compiler.process(element.query, literal_binds=True))
 
 
 class InsertFromSelect(ex.Executable, ex.ClauseElement):
@@ -28,7 +29,8 @@ class InsertFromSelect(ex.Executable, ex.ClauseElement):
 
 @compiles(InsertFromSelect)
 def _insert_from_select(element, compiler, **kw):
-    return "INSERT INTO %s (%s)" % (element.name, compiler.process(element.query))
+    # Use literal_binds=True to render bind parameters as literal values
+    return "INSERT INTO %s (%s)" % (element.name, compiler.process(element.query, literal_binds=True))
 
 
 def to_sql_name(name):

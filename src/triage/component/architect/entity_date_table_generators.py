@@ -1,4 +1,5 @@
 from triage.logging import get_logger
+from sqlalchemy import text
 
 from triage.database_reflection import table_has_data, table_row_count, table_exists, table_has_duplicates
 
@@ -69,20 +70,22 @@ class EntityDateTableGenerator:
     def _maybe_create_entity_date_table(self):
         if self.replace or not table_exists(self.entity_date_table_name, self.db_engine):
             logger.spam(f"Creating entity_date table {self.entity_date_table_name}")
-            self.db_engine.execute(f"drop table if exists {self.entity_date_table_name}")
-            self.db_engine.execute(
-                f"""create table {self.entity_date_table_name} (
-                    entity_id integer,
-                    as_of_date timestamp,
-                    {DEFAULT_ACTIVE_STATE} boolean
+            with self.db_engine.connect() as conn:
+                conn.execute(text(f"drop table if exists {self.entity_date_table_name}"))
+                conn.execute(
+                    text(f"""create table {self.entity_date_table_name} (
+                        entity_id integer,
+                        as_of_date timestamp,
+                        {DEFAULT_ACTIVE_STATE} boolean
+                    )
+                    """)
                 )
-                """
-            )
 
-            logger.spam(f"Creating indices on entity_id and as_of_date for entity_date table {self.entity_date_table_name}")
-            self.db_engine.execute(
-                f"create index on {self.entity_date_table_name} (entity_id, as_of_date)"
-            )
+                logger.spam(f"Creating indices on entity_id and as_of_date for entity_date table {self.entity_date_table_name}")
+                conn.execute(
+                    text(f"create index on {self.entity_date_table_name} (entity_id, as_of_date)")
+                )
+                conn.commit()
         else:
             logger.notice(
                 f"Not dropping and recreating entity_date {self.entity_date_table_name} table because "
@@ -96,29 +99,31 @@ class EntityDateTableGenerator:
         Args:
         as_of_dates (list of datetime.date): Dates to calculate entity states as of
         """
-        
+
         self._maybe_create_entity_date_table()
         logger.spam(f"Inserting rows into entity_date table {self.entity_date_table_name}")
-        for as_of_date in as_of_dates:
-            formatted_date = f"{as_of_date.isoformat()}"
-            logger.spam(f"Looking for existing entity_date rows for as of date {as_of_date}")
-            any_existing = list(self.db_engine.execute(
-                f"""select 1 from {self.entity_date_table_name}
-                where as_of_date = '{formatted_date}'
-                limit 1
+        with self.db_engine.connect() as conn:
+            for as_of_date in as_of_dates:
+                formatted_date = f"{as_of_date.isoformat()}"
+                logger.spam(f"Looking for existing entity_date rows for as of date {as_of_date}")
+                any_existing = list(conn.execute(
+                    text(f"""select 1 from {self.entity_date_table_name}
+                    where as_of_date = '{formatted_date}'
+                    limit 1
+                    """)
+                ))
+                if len(any_existing) == 1:
+                    logger.notice(f"Since >0 entity_date rows found for date {as_of_date}, skipping")
+                    continue
+                dated_query = self.query.format(as_of_date=formatted_date)
+                full_query = f"""insert into {self.entity_date_table_name}
+                    select q.entity_id, '{formatted_date}'::timestamp, true
+                    from ({dated_query}) q
+                    group by 1, 2, 3
                 """
-            ))
-            if len(any_existing) == 1:
-                logger.notice(f"Since >0 entity_date rows found for date {as_of_date}, skipping")
-                continue
-            dated_query = self.query.format(as_of_date=formatted_date)
-            full_query = f"""insert into {self.entity_date_table_name}
-                select q.entity_id, '{formatted_date}'::timestamp, true
-                from ({dated_query}) q
-                group by 1, 2, 3
-            """
-            logger.spam(f"Running entity_date query for date: {as_of_date}, {full_query}")
-            self.db_engine.execute(full_query)
+                logger.spam(f"Running entity_date query for date: {as_of_date}, {full_query}")
+                conn.execute(text(full_query))
+            conn.commit()
 
     def _create_and_populate_entity_date_table_from_labels(self):
         """Create an entity_date table by storing all distinct entity-id/as-of-date pairs
@@ -134,37 +139,39 @@ class EntityDateTableGenerator:
         # already in the table. This replicates the logic used above by
         # _create_and_populate_entity_date_table_from_query
         logger.spam(f"Looking for existing entity_date rows for label as of dates")
-        existing_dates = list(self.db_engine.execute(
-            f"""
-            with label_dates as (
-                select distinct as_of_date::DATE AS as_of_date FROM {self.labels_table_name}
-            )
-            , cohort_dates as (
-                select distinct as_of_date::DATE AS as_of_date FROM {self.entity_date_table_name}
-            )
-            select distinct l.as_of_date
-            from label_dates l
-            join cohort_dates c using(as_of_date)
-            """
-        ))
-        if len(existing_dates) > 0:
-            existing_dates = ', '.join([rec[0].isoformat() for rec in existing_dates])
-            logger.notice(f'Existing entity_dates records found for the following dates, '
-                f'so new records will not be inserted for these dates {existing_dates}')
+        with self.db_engine.connect() as conn:
+            existing_dates = list(conn.execute(
+                text(f"""
+                with label_dates as (
+                    select distinct as_of_date::DATE AS as_of_date FROM {self.labels_table_name}
+                )
+                , cohort_dates as (
+                    select distinct as_of_date::DATE AS as_of_date FROM {self.entity_date_table_name}
+                )
+                select distinct l.as_of_date
+                from label_dates l
+                join cohort_dates c using(as_of_date)
+                """)
+            ))
+            if len(existing_dates) > 0:
+                existing_dates_str = ', '.join([rec[0].isoformat() for rec in existing_dates])
+                logger.notice(f'Existing entity_dates records found for the following dates, '
+                    f'so new records will not be inserted for these dates {existing_dates_str}')
 
-        insert_query = f"""
-            insert into {self.entity_date_table_name}
-            select distinct entity_id, as_of_date, true
-            from (
-                select distinct l.entity_id, l.as_of_date
-                from {self.labels_table_name} as l
-                left join (select distinct as_of_date from {self.entity_date_table_name}) as c
-                    on l.as_of_date::DATE = c.as_of_date::DATE
-                where c.as_of_date IS NULL
-            ) as sub
-        """
-        logger.spam(f"Running entity_date query from labels table: {insert_query}")
-        self.db_engine.execute(insert_query)
+            insert_query = f"""
+                insert into {self.entity_date_table_name}
+                select distinct entity_id, as_of_date, true
+                from (
+                    select distinct l.entity_id, l.as_of_date
+                    from {self.labels_table_name} as l
+                    left join (select distinct as_of_date from {self.entity_date_table_name}) as c
+                        on l.as_of_date::DATE = c.as_of_date::DATE
+                    where c.as_of_date IS NULL
+                ) as sub
+            """
+            logger.spam(f"Running entity_date query from labels table: {insert_query}")
+            conn.execute(text(insert_query))
+            conn.commit()
 
     def _empty_table_message(self, as_of_dates):
         return """Query does not return any rows for the given as_of_dates:
@@ -180,7 +187,9 @@ class EntityDateTableGenerator:
         )
 
     def clean_up(self):
-        self.db_engine.execute(f"drop table if exists {self.entity_date_table_name}")
+        with self.db_engine.connect() as conn:
+            conn.execute(text(f"drop table if exists {self.entity_date_table_name}"))
+            conn.commit()
 
 
 class CohortTableGeneratorNoOp(EntityDateTableGenerator):
@@ -215,37 +224,39 @@ class SubsetEntityDateTableGenerator(EntityDateTableGenerator):
         Args:
             as_of_dates (list of datetime.date): Dates to calculate entity states as of
         """
-        
+
         self._maybe_create_entity_date_table()
         logger.spam(f"Inserting rows into entity_date table {self.entity_date_table_name}")
-        
-        for as_of_date in as_of_dates:
-            formatted_date = f"{as_of_date.isoformat()}"
-            logger.spam(f"Looking for existing entity_date rows for as of date {as_of_date}")
-            any_existing = list(self.db_engine.execute(
-                f"""select 1 from {self.entity_date_table_name}
-                where as_of_date = '{formatted_date}'
-                limit 1
+
+        with self.db_engine.connect() as conn:
+            for as_of_date in as_of_dates:
+                formatted_date = f"{as_of_date.isoformat()}"
+                logger.spam(f"Looking for existing entity_date rows for as of date {as_of_date}")
+                any_existing = list(conn.execute(
+                    text(f"""select 1 from {self.entity_date_table_name}
+                    where as_of_date = '{formatted_date}'
+                    limit 1
+                    """)
+                ))
+                if len(any_existing) == 1:
+                    logger.notice(f"Since >0 entity_date rows found for date {as_of_date}, skipping")
+                    continue
+                dated_query = self.query.format(as_of_date=formatted_date)
+                full_query = f"""insert into {self.entity_date_table_name}
+                    select q.entity_id, '{formatted_date}'::timestamp, true
+                    from (
+                        with subset as ({dated_query})
+                        select
+                            c. entity_id
+                        from subset s inner join {self.cohort_table} c
+                        on s.entity_id = c.entity_id
+                        and c.as_of_date = '{formatted_date}'::date
+                    ) q
+                    group by 1, 2, 3
                 """
-            ))
-            if len(any_existing) == 1:
-                logger.notice(f"Since >0 entity_date rows found for date {as_of_date}, skipping")
-                continue
-            dated_query = self.query.format(as_of_date=formatted_date)
-            full_query = f"""insert into {self.entity_date_table_name}
-                select q.entity_id, '{formatted_date}'::timestamp, true
-                from (
-                    with subset as ({dated_query})
-                    select 
-                        c. entity_id
-                    from subset s inner join {self.cohort_table} c
-                    on s.entity_id = c.entity_id
-                    and c.as_of_date = '{formatted_date}'::date
-                ) q 
-                group by 1, 2, 3
-            """
-            logger.spam(f"Running entity_date query for date: {as_of_date}, {full_query}")
-            self.db_engine.execute(full_query)
+                logger.spam(f"Running entity_date query for date: {as_of_date}, {full_query}")
+                conn.execute(text(full_query))
+            conn.commit()
             
             
     def generate_entity_date_table(self, as_of_dates):

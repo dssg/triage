@@ -7,12 +7,12 @@ logger = get_logger(__name__)
 import math
 
 import numpy as np
-import ohio.ext.pandas
 import pandas as pd
 import statistics
 import typing
 from collections import defaultdict
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import cast, Interval
 
 from aequitas.bias import Bias
 from aequitas.fairness import Fairness
@@ -99,9 +99,10 @@ def query_subset_table(db_engine, as_of_dates, subset_table_name):
         from {subset_table_name}
         join dates using(as_of_date)
     """
-    df = pd.DataFrame.pg_copy_from(
+    # Use standard pd.read_sql instead of Ohio's pg_copy_from (psycopg3 compatible)
+    df = pd.read_sql(
         query_string,
-        connectable=db_engine,
+        con=db_engine,
         parse_dates=["as_of_date"],
         index_col=MatrixStore.indices,
     )
@@ -901,12 +902,14 @@ class ModelEvaluator:
                 specifies to which table to add the evaluations
         """
         with scoped_session(self.db_engine) as session:
-            session.query(evaluation_table_obj).filter_by(
-                model_id=model_id,
-                evaluation_start_time=evaluation_start_time,
-                evaluation_end_time=evaluation_end_time,
-                as_of_date_frequency=as_of_date_frequency,
-                subset_hash=subset_hash,
+            # Use filter() with explicit cast for as_of_date_frequency (Interval type)
+            # to ensure psycopg3 compatibility
+            session.query(evaluation_table_obj).filter(
+                evaluation_table_obj.model_id == model_id,
+                evaluation_table_obj.evaluation_start_time == evaluation_start_time,
+                evaluation_table_obj.evaluation_end_time == evaluation_end_time,
+                evaluation_table_obj.as_of_date_frequency == cast(as_of_date_frequency, Interval),
+                evaluation_table_obj.subset_hash == subset_hash,
             ).delete()
 
             for evaluation in evaluations:
