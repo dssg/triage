@@ -98,6 +98,7 @@ def query_subset_table(db_engine, as_of_dates, subset_table_name):
         from {subset_table_name}
         join dates using(as_of_date)
     """
+    logger.spam(f"Subset table query to execute: {query_string}")
     df = pd.DataFrame.pg_copy_from(
         query_string,
         connectable=db_engine,
