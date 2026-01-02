@@ -17,7 +17,7 @@ from functools import partial
 from sqlalchemy import text, select
 
 from retrying import retry
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
 from ohio import PipeTextIO
 
 from triage.component.results_schema import (
@@ -67,34 +67,32 @@ db_retry = retry(**DEFAULT_RETRY_KWARGS)
 @db_retry
 def save_experiment_and_get_hash(config, db_engine):
     experiment_hash = filename_friendly_hash(config)
-    session = sessionmaker(db_engine, future=True)()
-    session.merge(Experiment(experiment_hash=experiment_hash, config=config))
-    session.commit()
-    session.close()
+    with Session(db_engine) as session:
+        session.merge(Experiment(experiment_hash=experiment_hash, config=config))
+        session.commit()
+
     return experiment_hash
 
 
 @db_retry
 def associate_matrices_with_experiment(experiment_hash, matrix_uuids, db_engine):
-    session = sessionmaker(db_engine, future=True)()
-    for matrix_uuid in matrix_uuids:
-        session.merge(
-            ExperimentMatrix(experiment_hash=experiment_hash, matrix_uuid=matrix_uuid)
-        )
-    session.commit()
-    session.close()
+    with Session(db_engine) as session:
+        for matrix_uuid in matrix_uuids:
+            session.merge(
+                ExperimentMatrix(experiment_hash=experiment_hash, matrix_uuid=matrix_uuid)
+            )
+        session.commit()
     logger.spam("Associated matrices with experiment in database")
 
 
 @db_retry
 def associate_models_with_experiment(experiment_hash, model_hashes, db_engine):
-    session = sessionmaker(db_engine, future=True)()
-    for model_hash in model_hashes:
-        session.merge(
-            ExperimentModel(experiment_hash=experiment_hash, model_hash=model_hash)
-        )
-    session.commit()
-    session.close()
+    with Session(db_engine) as session:
+        for model_hash in model_hashes:
+            session.merge(
+                ExperimentModel(experiment_hash=experiment_hash, model_hash=model_hash)
+            )
+        session.commit()
     logger.spam("Associated models with experiment in database")
 
 
@@ -227,15 +225,12 @@ def retrieve_model_id_from_hash(db_engine, model_hash):
 
     Returns: (int) The model id (if found in DB), None (if not)
     """
-    session = sessionmaker(db_engine, future=True)()
-    try:
+    with Session(db_engine) as session:
         stmt = select(Model).where(Model.model_hash == model_hash)
         saved = session.execute(stmt).scalar_one_or_none()
         #saved = session.query(Model).filter_by(model_hash=model_hash).one_or_none()
         return saved.model_id if saved else None
-    finally:
-        session.close()
-
+    
 
 @db_retry
 def retrieve_model_hash_from_id(db_engine, model_id):
@@ -246,13 +241,9 @@ def retrieve_model_hash_from_id(db_engine, model_id):
 
     Returns: (str) the stored hash of the model
     """
-    session = sessionmaker(db_engine, future=True)()
-    try:
+    with Session(db_engine) as session:
         return session.get(Model, model_id).model_hash
-        return session.query(Model).get(model_id).model_hash
-    finally:
-        session.close()
-
+        
 
 @db_retry
 def retrieve_existing_model_random_seeds(
@@ -307,13 +298,9 @@ def retrieve_experiment_seed_from_run_id(db_engine, run_id):
 
     Returns: (int) the stored random seed from the experiment
     """
-    session = sessionmaker(db_engine, future=True)()
-    try:
+    with Session(db_engine) as session:
         return session.get(TriageRun, run_id).random_seed
-        #return session.query(TriageRun).get(run_id).random_seed
-    finally:
-        session.close()
-
+    
 
 def _write_csv(file_like, db_objects, type_of_object):
     writer = csv.writer(file_like, quoting=csv.QUOTE_MINIMAL, lineterminator="\n")
