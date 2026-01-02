@@ -28,19 +28,20 @@ def test_evaluation_factories_no_subset():
                 model_rel=model, metric=metric, parameter="100_abs", stochastic_value=value
             )
         session.commit()
-        results = engine.execute(
-            """\
-            select
-                model_group_id,
-                m.model_id,
-                e.metric,
-                e.stochastic_value,
-                e.subset_hash
-            from
-                test_results.evaluations e
-                join triage_metadata.models m using (model_id)
-            """
-        )
+        with engine.connect() as conn:
+            results = conn.execute(
+                """\
+                select
+                    model_group_id,
+                    m.model_id,
+                    e.metric,
+                    e.stochastic_value,
+                    e.subset_hash
+                from
+                    test_results.evaluations e
+                    join triage_metadata.models m using (model_id)
+                """
+            )
         for model_group_id, model_id, metric, value, subset_hash in results:
             # if the evaluations are created with the model group and model,
             # as opposed to an autoprovisioned one,
