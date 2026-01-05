@@ -39,3 +39,18 @@ TODO.org
 TRIAGE_ICON.md
 channels-lock.scm
 manifest.scm
+
+# Session handoff files (local-only)
+docs/triage-session-summary.org
+docs/triage-session-summary.md
+working-outline.md
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+GIT_REMOTE
+.project
+handoff-trace.log
+README.org
+COMPACT.md
+COMPACT-archive-*.md
+.claude

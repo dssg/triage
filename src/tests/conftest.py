@@ -34,9 +34,13 @@ def fixture_db_engine(postgresql):
 
 @pytest.fixture(scope="function")
 def db_engine_with_results_schema(db_engine):
+    from tests.results_tests.factories import session as factory_session
+
     ensure_db(db_engine)
     init_engine(db_engine)
     yield db_engine
+    # Clean up the factory session to prevent stale connections
+    factory_session.remove()
 
 
 @pytest.fixture(scope="function")
