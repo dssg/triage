@@ -208,7 +208,7 @@ class BuilderBase:
         :return: table name
         :rtype: str
         """
-
+        logger.debug(f"Matrix type passed: {matrix_type}")
         as_of_time_strings = [str(as_of_time) for as_of_time in as_of_times]
         if matrix_type == "test" or matrix_type == "production" or self.include_missing_labels_in_train_as is not None:
             indices_query = self._all_valid_entity_dates_query(
