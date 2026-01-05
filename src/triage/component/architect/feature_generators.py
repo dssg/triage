@@ -461,7 +461,9 @@ class FeatureGenerator:
         with self.db_engine.begin() as conn:
             for agg in aggs:
                 results = conn.execute(text(agg.find_nulls(imputed=True)))
-                null_counts = results.first().items()
+                # in sqlalchemy 2 first().items() is no longer valid 
+                # we require a mappings to access the Row as a dictionary 2026-01-05
+                null_counts = results.mappings().first().items()
                 nullcols += [col for (col, val) in null_counts if val > 0]
 
         if len(nullcols) > 0:
