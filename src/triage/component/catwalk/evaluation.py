@@ -543,6 +543,7 @@ class ModelEvaluator:
         """
         # If we are evaluating on a subset, we want to get just the labels and
         # predictions for the included entity-date pairs
+        logger.debug(f"Is it a subset? {subset}")
         if subset:
             logger.verbose(
                 f"Subsetting labels and predictions of model {model_id} on matrix {matrix_store.uuid}"
