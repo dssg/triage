@@ -2,7 +2,7 @@ import verboselogs, logging
 logger = verboselogs.VerboseLogger(__name__)
 
 import textwrap
-from sqlalchemy import text, quoted_name
+from sqlalchemy import text
 from triage.database_reflection import table_row_count, table_exists, table_has_duplicates
 
 DEFAULT_LABEL_NAME = "outcome"
@@ -92,7 +92,7 @@ class LabelGenerator:
         with self.db_engine.begin() as conn:
             conn.execute(
                 text(
-                    f"create index on {quoted_name(labels_table, quote=True)} (entity_id, as_of_date)"
+                    f"create index on {labels_table} (entity_id, as_of_date)"
                 )
             )
         logger.spam("Added index to labels table")
@@ -157,4 +157,4 @@ class LabelGenerator:
 
     def clean_up(self, labels_table_name):
         with self.db_engine.begin() as conn:
-            conn.execute(text(f"drop table if exists {quoted_name(labels_table_name, quote=True)}"))
+            conn.execute(text(f"drop table if exists {labels_table_name}"))
