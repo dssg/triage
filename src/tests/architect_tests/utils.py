@@ -9,6 +9,8 @@ import pandas as pd
 import yaml
 import numpy as np
 
+from sqlalchemy.sql.expression import text
+
 
 def convert_string_column_to_date(column):
     return [datetime.datetime.strptime(date, "%Y-%m-%d").date() for date in column]
@@ -22,64 +24,93 @@ def create_schemas(engine, features_tables, labels, states):
     :type engine: sqlalchemy.engine
     """
     # create features schema and associated tables
-    engine.execute("drop schema if exists features cascade; create schema features;")
+    with engine.begin() as conn:
+        conn.execute(text("drop schema if exists features cascade; create schema features;"))
     for table_number, table in enumerate(features_tables):
         create_features_table(table_number, table, engine)
     # create labels schema and table
     create_labels(engine, labels)
 
     # create cohort table
-    engine.execute("drop schema if exists staging cascade; create schema staging;")
-    engine.execute(
-        """
-            create table cohort (
-                entity_id int,
-                as_of_date date,
-                active bool
+    with engine.begin() as conn:
+        conn.execute(text("drop schema if exists staging cascade; create schema staging;"))
+        conn.execute(
+            text(
+                """
+                    create table cohort (
+                        entity_id int,
+                        as_of_date date,
+                        active bool
+                    )
+                """
             )
-        """
-    )
-    for row in states:
-        engine.execute("insert into cohort values (%s, %s, %s)", row)
+        )
+    
+    with engine.begin() as conn:
+        for row in states:
+            conn.execute(text(f"insert into cohort values ({row[0]}, '{row[1]}', {row[2]})"))
 
 
 def create_labels(engine, labels):
-    engine.execute("drop schema if exists labels cascade; create schema labels;")
-    engine.execute(
-        """
-            create table labels.labels (
-                entity_id int,
-                as_of_date date,
-                label_timespan interval,
-                label_name char(30),
-                label_type char(30),
-                label int
+    with engine.begin() as conn:
+        conn.execute(text("drop schema if exists labels cascade; create schema labels;"))
+        conn.execute(
+            text(
+                f"""
+                    create table labels.labels (
+                        entity_id int,
+                        as_of_date date,
+                        label_timespan interval,
+                        label_name char(30),
+                        label_type char(30),
+                        label int
+                    )
+                """
             )
-        """
-    )
-    for row in labels:
-        engine.execute("insert into labels.labels values (%s, %s, %s, %s, %s, %s)", row)
-    return 'labels.labels'
+        )
+    with engine.begin() as conn:
+        for row in labels:
+            conn.execute(
+                text(
+                    f""" insert into labels.labels values (
+                        {row[0]}, 
+                        '{row[1]}', 
+                        '{row[2]}', 
+                        '{row[3]}', 
+                        '{row[4]}', 
+                        {row[5]})
+                    """
+                )
+            )
+        return 'labels.labels'
 
 def create_features_table(table_number, table, engine):
-    engine.execute(
-        """
-            create table features.features{} (
-                entity_id int, as_of_date date, f{} int, f{} int
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                f"""
+                    create table features.features{table_number} (
+                        entity_id int, 
+                        as_of_date date, 
+                        f{(table_number * 2) + 1} int, 
+                        f{(table_number * 2) + 2} int
+                    )
+                """
             )
-        """.format(
-            table_number, (table_number * 2) + 1, (table_number * 2) + 2
         )
-    )
-    for row in table:
-        engine.execute(
-            """
-                insert into features.features{} values (%s, %s, %s, %s)
-            """.format(
-                table_number
-            ),
-            row,
-        )
+    with engine.begin() as conn:
+        for row in table:
+            conn.execute(
+                text(
+                    f"""
+                        insert into features.features{table_number} values (
+                        {row[0]}, 
+                        '{row[1]}', 
+                        {row[2]}, 
+                        {row[3]})
+                    """
+                )
+            )
 
 
 def create_entity_date_df(
@@ -157,7 +188,7 @@ def assert_index(engine, table, column):
         table (string) the name of a table
         column (string) the name of a column
     """
-    query = """
+    query = f"""
         SELECT 1
         FROM pg_class t
              JOIN pg_index ix ON t.oid = ix.indrelid
@@ -166,20 +197,20 @@ def assert_index(engine, table, column):
         WHERE
              a.attnum = ANY(ix.indkey) AND
              t.relkind = 'r' AND
-             t.relname = '{table_name}' AND
-             a.attname = '{column_name}'
-    """.format(
-        table_name=table, column_name=column
-    )
-    num_results = len([row for row in engine.execute(query)])
-    assert num_results >= 1
+             t.relname = '{table}' AND
+             a.attname = '{column}'
+    """
+    with engine.connect() as conn:
+        num_results = len([row for row in conn.execute(text(query))])
+        assert num_results >= 1
 
 
 def create_binary_outcome_events(db_engine, table_name, events_data):
-    db_engine.execute(
-        "create table events (entity_id int, outcome_date date, outcome bool)"
-    )
-    for event in events_data:
-        db_engine.execute(
-            "insert into {} values (%s, %s, %s::bool)".format(table_name), event
+    with db_engine.begin() as conn:
+        conn.execute(
+           text("create table events (entity_id int, outcome_date date, outcome bool)")
         )
+        for event in events_data:
+            conn.execute(
+                text(f"insert into {table_name} values ({event[0]}, '{event[1]}', {event[2]}::bool)")
+            )
