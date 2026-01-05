@@ -8,6 +8,10 @@ import seaborn as sns
 import logging
 from matplotlib.lines import Line2D
 
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
+
 import warnings
 
 from triage.component.timechop.plotting import visualize_chops_plotly
@@ -100,7 +104,7 @@ def get_most_recent_experiment_hash(engine):
         order by start_time desc       
     '''
     experiment_hash = pd.read_sql(q, engine)['experiment_hash'].iloc[0]
-    logging.info(f'Using the experiment hash: {experiment_hash}')
+    logger.info(f'Using the experiment hash: {experiment_hash}')
     
     return experiment_hash
 
@@ -111,8 +115,8 @@ def get_most_recent_experiment_hash(engine):
 
 
 class ExperimentReport:
-    
-    def __init__(self, engine, experiment_hashes, performance_priority_metric, threshold, bias_priority_metric, bias_priority_groups):
+
+    def __init__(self, engine, experiment_hashes, performance_priority_metric=None, threshold=None, bias_priority_metric=None, bias_priority_groups=None):
         self.engine = engine
         self.experiment_hashes = experiment_hashes
         
@@ -362,7 +366,7 @@ class ExperimentReport:
 
         feature_tables = pd.read_sql(q, self.engine)['table_name'].tolist()
         
-        logging.info(f'Printing only features with missing values')
+        logger.info(f'Printing only features with missing values')
         
         column_names = dict()
         for table in feature_tables:

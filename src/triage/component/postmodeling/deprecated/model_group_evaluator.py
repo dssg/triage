@@ -16,6 +16,7 @@ from matplotlib import pyplot as plt
 from itertools import combinations
 from scipy.spatial.distance import squareform, pdist
 from scipy.stats import spearmanr
+from sqlalchemy import text
 
 # Get indivual model information/metadata from Audition output
 
@@ -40,27 +41,28 @@ class ModelGroupEvaluator:
 
     @cachedproperty
     def metadata(self):
-        query_execute = list(self.engine.execute(
-            f'''
-            SELECT m.model_id,
-                   m.model_group_id,
-                   m.hyperparameters,
-                   m.model_hash,
-                   m.train_end_time,
-                   m.train_matrix_uuid,
-                   m.training_label_timespan,
-                   m.model_type,
-                   mg.model_config
-                FROM triage_metadata.models m
-                JOIN triage_metadata.model_groups mg
-                USING (model_group_id)
-                WHERE model_group_id IN {self.model_group_id}
-            ''')
-        )
+        with self.engine.connect() as conn:
+            query_execute = list(conn.execute(text(
+                f'''
+                SELECT m.model_id,
+                       m.model_group_id,
+                       m.hyperparameters,
+                       m.model_hash,
+                       m.train_end_time,
+                       m.train_matrix_uuid,
+                       m.training_label_timespan,
+                       m.model_type,
+                       mg.model_config
+                    FROM triage_metadata.models m
+                    JOIN triage_metadata.model_groups mg
+                    USING (model_group_id)
+                    WHERE model_group_id IN {self.model_group_id}
+                '''))
+            )
 
         row_dict, list_dict = {}, []
         for row in query_execute:
-            for tup in row.items():
+            for tup in row._mapping.items():
                 row_dict = {**row_dict, **{tup[0]: tup[1]}}
             list_dict.append(row_dict)
 

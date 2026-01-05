@@ -926,8 +926,11 @@ class ExperimentBase(ABC):
 
     def _summary_report(self):
         logger.debug(f"experiment hash to send to experiment report for summary: {self.experiment_hash}")
-        er = ExperimentReport(self.db_engine, [self.experiment_hash])
-        er.generate_summary()
+        try:
+            er = ExperimentReport(self.db_engine, [self.experiment_hash])
+            er.generate_summary()
+        except Exception as e:
+            logger.warning(f"Could not generate experiment summary report: {e}")
 
     def _log_end_of_run_report(self):
         missing_matrices = missing_matrix_uuids(self.experiment_hash, self.db_engine)

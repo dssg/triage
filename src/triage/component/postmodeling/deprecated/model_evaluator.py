@@ -25,6 +25,7 @@ from matplotlib import pyplot as plt
 from descriptors import cachedproperty
 from sklearn import metrics
 from sklearn import tree
+from sqlalchemy import text
 from triage.component.catwalk.storage import ProjectStorage, ModelStorageEngine, MatrixStorageEngine
 
 
@@ -45,40 +46,42 @@ class ModelEvaluator:
 
     @cachedproperty
     def metadata(self):
-        return next(self.engine.execute(
-                    f'''WITH
-                    individual_model_ids_metadata AS(
-                    SELECT m.model_id,
-                           m.model_group_id,
-                           m.hyperparameters,
-                           m.model_hash,
-                           m.train_end_time,
-                           m.train_matrix_uuid,
-                           m.training_label_timespan,
-                           m.model_type,
-                           mg.model_config
-                        FROM triage_metadata.models m
-                        JOIN triage_metadata.model_groups mg
-                        USING (model_group_id)
-                        WHERE model_group_id = {self.model_group_id}
-                        AND model_id = {self.model_id}
-                    ),
-                    individual_model_id_matrices AS(
-                    SELECT DISTINCT ON (matrix_uuid)
-                           model_id,
-                           matrix_uuid,
-                           evaluation_start_time as as_of_date
-                        FROM test_results.evaluations
-                        WHERE model_id = ANY(
-                            SELECT model_id
-                            FROM individual_model_ids_metadata
+        with self.engine.connect() as conn:
+            row = next(conn.execute(text(
+                        f'''WITH
+                        individual_model_ids_metadata AS(
+                        SELECT m.model_id,
+                               m.model_group_id,
+                               m.hyperparameters,
+                               m.model_hash,
+                               m.train_end_time,
+                               m.train_matrix_uuid,
+                               m.training_label_timespan,
+                               m.model_type,
+                               mg.model_config
+                            FROM triage_metadata.models m
+                            JOIN triage_metadata.model_groups mg
+                            USING (model_group_id)
+                            WHERE model_group_id = {self.model_group_id}
+                            AND model_id = {self.model_id}
+                        ),
+                        individual_model_id_matrices AS(
+                        SELECT DISTINCT ON (matrix_uuid)
+                               model_id,
+                               matrix_uuid,
+                               evaluation_start_time as as_of_date
+                            FROM test_results.evaluations
+                            WHERE model_id = ANY(
+                                SELECT model_id
+                                FROM individual_model_ids_metadata
+                            )
                         )
-                    )
-                    SELECT metadata.*, test.*
-                    FROM individual_model_ids_metadata AS metadata
-                    LEFT JOIN individual_model_id_matrices AS test
-                    USING(model_id);''')
-        )
+                        SELECT metadata.*, test.*
+                        FROM individual_model_ids_metadata AS metadata
+                        LEFT JOIN individual_model_id_matrices AS test
+                        USING(model_id);'''))
+            )
+            return row._mapping
 
     @property
     def model_type(self):

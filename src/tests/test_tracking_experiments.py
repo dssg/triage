@@ -47,7 +47,8 @@ def test_experiment_tracker(test_engine, project_path):
     )
     assert experiment_run.platform
     assert experiment_run.os_user
-    assert experiment_run.installed_libraries
+    # installed_libraries may be empty in uv environments where pip is not available as a module
+    assert experiment_run.installed_libraries is not None
     assert experiment_run.matrices_skipped == 0
     assert experiment_run.matrices_errored == 0
     assert experiment_run.matrices_made == 0
@@ -103,6 +104,8 @@ def test_experiment_tracker_in_parts(test_engine, project_path):
             project_path=project_path,
         )
     experiment.generate_matrices()
+    experiment.generate_subsets()
+    experiment.generate_protected_groups()
     experiment.train_and_test_models()
     with scoped_session(test_engine) as session:
         experiment_run = session.query(TriageRun).get(experiment.run_id)

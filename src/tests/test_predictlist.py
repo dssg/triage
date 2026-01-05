@@ -1,9 +1,10 @@
+from sqlalchemy import text
 from triage.predictlist import Retrainer, predict_forward_with_existed_model, train_matrix_info_from_model_id, experiment_config_from_model_id
 from triage.validation_primitives import table_should_have_data
 
 
 def test_predict_forward_with_existed_model_should_write_predictions(finished_experiment):
-    # given a model id and as-of-date <= today 
+    # given a model id and as-of-date <= today
     # and the model id is trained and is linked to an experiment with feature and cohort config
     # generate records in triage_production.predictions
     # the # of records should equal the size of the cohort for that date
@@ -30,16 +31,17 @@ def test_predict_forward_with_existed_model_should_be_same_shape_as_cohort(finis
             model_id=model_id,
             as_of_date=as_of_date)
 
-    num_records_matching_cohort = finished_experiment.db_engine.execute(
-        f'''select count(*)
-        from triage_production.predictions
-        join triage_production.cohort_{finished_experiment.config['cohort_config']['name']} using (entity_id, as_of_date)
-        '''
-    ).first()[0]
+    with finished_experiment.db_engine.connect() as conn:
+        num_records_matching_cohort = conn.execute(text(
+            f'''select count(*)
+            from triage_production.predictions
+            join triage_production.cohort_{finished_experiment.config['cohort_config']['name']} using (entity_id, as_of_date)
+            '''
+        )).first()[0]
 
-    num_records = finished_experiment.db_engine.execute(
-        'select count(*) from triage_production.predictions'
-    ).first()[0]
+        num_records = conn.execute(text(
+            'select count(*) from triage_production.predictions'
+        )).first()[0]
     assert num_records_matching_cohort == num_records
 
 
@@ -52,9 +54,10 @@ def test_predict_forward_with_existed_model_matrix_record_is_populated(finished_
             model_id=model_id,
             as_of_date=as_of_date)
 
-    matrix_records = list(finished_experiment.db_engine.execute(
-        "select * from triage_metadata.matrices where matrix_type = 'production'"
-    ))
+    with finished_experiment.db_engine.connect() as conn:
+        matrix_records = list(conn.execute(text(
+            "select * from triage_metadata.matrices where matrix_type = 'production'"
+        )))
     assert len(matrix_records) == 1
 
 
@@ -72,7 +75,7 @@ def test_train_matrix_info_from_model_id(finished_experiment):
 
 
 def test_retrain_should_write_model(finished_experiment):
-    # given a model id and prediction_date 
+    # given a model id and prediction_date
     # and the model id is trained and is linked to an experiment with feature and cohort config
     # create matrix for retraining a model
     # generate records in production models
@@ -88,23 +91,22 @@ def test_retrain_should_write_model(finished_experiment):
     retrain_info = retrainer.retrain(prediction_date)
     model_comment = retrain_info['retrain_model_comment']
 
-    records = [
-        row
-        for row in finished_experiment.db_engine.execute(
+    with finished_experiment.db_engine.connect() as conn:
+        records = list(conn.execute(text(
             f"select model_hash from triage_metadata.models where model_comment = '{model_comment}'"
-        )
-    ]
+        )))
     assert len(records) == 1
     assert retrainer.retrain_model_hash == records[0][0]
 
     retrainer.predict(prediction_date)
-    
+
     table_should_have_data(
         db_engine=finished_experiment.db_engine,
         table_name="triage_production.predictions",
     )
-    
-    matrix_records = list(finished_experiment.db_engine.execute(
-        f"select * from triage_metadata.matrices where matrix_uuid = '{retrainer.predict_matrix_uuid}'"
-    ))
+
+    with finished_experiment.db_engine.connect() as conn:
+        matrix_records = list(conn.execute(text(
+            f"select * from triage_metadata.matrices where matrix_uuid = '{retrainer.predict_matrix_uuid}'"
+        )))
     assert len(matrix_records) == 1

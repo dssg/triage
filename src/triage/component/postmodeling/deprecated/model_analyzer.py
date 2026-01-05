@@ -1,4 +1,3 @@
-import ohio.ext.pandas
 import pandas as pd
 import numpy as np
 import logging
@@ -8,7 +7,7 @@ import matplotlib.pyplot as plt
 from tabulate import tabulate
 
 from descriptors import cachedproperty
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sklearn.calibration import calibration_curve
 from sklearn import metrics
 
@@ -27,40 +26,42 @@ class ModelAnalyzer:
 
     @cachedproperty
     def metadata(self):
-        return next(self.engine.execute(
-                    f'''
-                    WITH individual_model_ids_metadata AS(
-                        SELECT m.model_id,
-                           m.model_group_id,
-                           m.hyperparameters,
-                           m.model_hash,
-                           m.train_end_time::date,
-                           m.train_matrix_uuid,
-                           m.training_label_timespan,
-                           m.model_type,
-                           mg.model_config
-                        FROM triage_metadata.models m
-                        JOIN triage_metadata.model_groups mg
-                        USING (model_group_id)
-                        WHERE model_id = {self.model_id}
-                    ),
-                    individual_model_id_matrices AS(
-                        SELECT DISTINCT ON (matrix_uuid)
-                           model_id,
-                           matrix_uuid,
-                           evaluation_start_time as as_of_date
-                        FROM test_results.evaluations
-                        WHERE model_id = ANY(
-                            SELECT model_id
-                            FROM individual_model_ids_metadata
+        with self.engine.connect() as conn:
+            row = next(conn.execute(text(
+                        f'''
+                        WITH individual_model_ids_metadata AS(
+                            SELECT m.model_id,
+                               m.model_group_id,
+                               m.hyperparameters,
+                               m.model_hash,
+                               m.train_end_time::date,
+                               m.train_matrix_uuid,
+                               m.training_label_timespan,
+                               m.model_type,
+                               mg.model_config
+                            FROM triage_metadata.models m
+                            JOIN triage_metadata.model_groups mg
+                            USING (model_group_id)
+                            WHERE model_id = {self.model_id}
+                        ),
+                        individual_model_id_matrices AS(
+                            SELECT DISTINCT ON (matrix_uuid)
+                               model_id,
+                               matrix_uuid,
+                               evaluation_start_time as as_of_date
+                            FROM test_results.evaluations
+                            WHERE model_id = ANY(
+                                SELECT model_id
+                                FROM individual_model_ids_metadata
+                            )
                         )
-                    )
-                    SELECT metadata.*, test.*
-                    FROM individual_model_ids_metadata AS metadata
-                    LEFT JOIN individual_model_id_matrices AS test
-                    USING(model_id);'''
+                        SELECT metadata.*, test.*
+                        FROM individual_model_ids_metadata AS metadata
+                        LEFT JOIN individual_model_id_matrices AS test
+                        USING(model_id);'''
+                ))
             )
-        )
+            return row._mapping
     
     @property
     def model_group_id(self):
@@ -421,7 +422,8 @@ class ModelAnalyzer:
                 if replace:
                     logging.warning('Deleting the existing crosstabs!')
                     with self.engine.connect() as conn:
-                        conn.execute(f"delete from test_results.{table_name} where model_id={self.model_id} and matrix_uuid='{matrix_uuid}';")
+                        conn.execute(text(f"delete from test_results.{table_name} where model_id={self.model_id} and matrix_uuid='{matrix_uuid}';"))
+                        conn.commit()
                 else:
                     logging.info(f"Replace set to False. Not calculating crosstabs for model {self.model_id} and matrix_uuid='{matrix_uuid}';")
                     if return_df: return df 
@@ -478,7 +480,7 @@ class ModelAnalyzer:
             )
 
             # TODO: Figure out to change the owner of the table
-            crosstabs_df.pg_copy_to(schema='test_results', name=table_name, con=self.engine, if_exists='append')
+            crosstabs_df.to_sql(name=table_name, schema='test_results', con=self.engine, if_exists='append')
 
         if return_df:
             return crosstabs_df

@@ -40,30 +40,34 @@ def fixture_test_engine(db_engine):
     database tables.
 
     """
-    db_engine.execute(
-        """\
-        create table data (
-            entity_id int,
-            knowledge_date date,
-            zip_code text,
-            cat_one varchar,
-            quantity_one float
-        )
-        """
-    )
-    for row in INPUT_DATA:
-        db_engine.execute("insert into data values (%s, %s, %s, %s, %s)", row)
+    with db_engine.connect() as conn:
+        conn.execute(t(
+            """\
+            create table data (
+                entity_id int,
+                knowledge_date date,
+                zip_code text,
+                cat_one varchar,
+                quantity_one float
+            )
+            """
+        ))
+        for row in INPUT_DATA:
+            conn.execute(t("insert into data values (:entity_id, :knowledge_date, :zip_code, :cat_one, :quantity_one)"),
+                         {"entity_id": row[0], "knowledge_date": row[1], "zip_code": row[2], "cat_one": row[3], "quantity_one": row[4]})
 
-    db_engine.execute(
-        """\
-        create table states (
-            entity_id int,
-            as_of_date date
-        )
-        """
-    )
-    for row in INPUT_STATES:
-        db_engine.execute("insert into states values (%s, %s)", row)
+        conn.execute(t(
+            """\
+            create table states (
+                entity_id int,
+                as_of_date date
+            )
+            """
+        ))
+        for row in INPUT_STATES:
+            conn.execute(t("insert into states values (:entity_id, :as_of_date)"),
+                         {"entity_id": row[0], "as_of_date": row[1]})
+        conn.commit()
 
     return db_engine
 
