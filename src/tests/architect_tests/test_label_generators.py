@@ -1,11 +1,10 @@
-from datetime import date, timedelta
-
 import testing.postgresql
 import pytest
-from sqlalchemy import create_engine
 
+from sqlalchemy.sql.expression import text 
+from datetime import date, timedelta
+from triage import create_engine
 from triage.component.architect.label_generators import LabelGenerator
-
 from .utils import create_binary_outcome_events
 
 
@@ -61,11 +60,14 @@ def test_label_generation():
             (3, date(2014, 9, 30), timedelta(180), "outcome", "binary", True),
             (4, date(2014, 9, 30), timedelta(180), "outcome", "binary", False),
         ]
-        result = engine.execute(
-            "select * from {} order by entity_id, as_of_date".format(LABELS_TABLE_NAME)
-        )
-        records = [row for row in result]
-        assert records == expected
+        with engine.connect() as conn:
+            result = conn.execute(
+                text(
+                        f"select * from {LABELS_TABLE_NAME} order by entity_id, as_of_date"
+                    )
+            )
+            records = [row for row in result]
+            assert records == expected
 
 
 def test_generate_all_labels_replace():
@@ -82,15 +84,16 @@ def test_generate_all_labels_replace():
             label_timespans=["6month", "3month"],
         )
 
-        result = engine.execute(
-            """
-            select * from {}
-            order by entity_id, as_of_date, label_timespan desc
-        """.format(
-                LABELS_TABLE_NAME
+        with engine.connect() as conn:
+            result = conn.execute(
+                text(
+                    f"""
+                        select * from {LABELS_TABLE_NAME}
+                        order by entity_id, as_of_date, label_timespan desc
+                    """
+                )
             )
-        )
-        records = [row for row in result]
+            records = [row for row in result]
 
         expected = [
             # entity_id, as_of_date, label_timespan, name, type, label
@@ -123,15 +126,16 @@ def test_generate_all_labels_noreplace():
             label_timespans=["6month"],
         )
 
-        result = engine.execute(
-            """
-            select * from {}
-            order by entity_id, as_of_date, label_timespan desc
-        """.format(
-                LABELS_TABLE_NAME
+        with engine.connect() as conn:
+            result = conn.execute(
+                text(
+                    f"""
+                        select * from {LABELS_TABLE_NAME}
+                        order by entity_id, as_of_date, label_timespan desc
+                    """
+                )
             )
-        )
-        records = [row for row in result]
+            records = [row for row in result]
 
         expected = [
             # entity_id, as_of_date, label_timespan, name, type, label
@@ -148,15 +152,16 @@ def test_generate_all_labels_noreplace():
             label_timespans=["6month", "3month"],
         )
 
-        result = engine.execute(
-            """
-            select * from {}
-            order by entity_id, as_of_date, label_timespan desc
-        """.format(
-                LABELS_TABLE_NAME
+        with engine.connect() as conn:
+            result = conn.execute(
+                text(
+                    f"""
+                        select * from {LABELS_TABLE_NAME}
+                        order by entity_id, as_of_date, label_timespan desc
+                    """
+                )
             )
-        )
-        records = [row for row in result]
+            records = [row for row in result]
 
         expected = [
             # entity_id, as_of_date, label_timespan, name, type, label
@@ -184,7 +189,7 @@ def test_generate_all_labels_errors_on_duplicates():
         '{as_of_date}' <= outcome_date
         and outcome_date < '{as_of_date}'::timestamp + interval '{label_timespan}'
     """
-
+    
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
         create_binary_outcome_events(engine, "events", events_data)

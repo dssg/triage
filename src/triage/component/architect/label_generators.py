@@ -35,11 +35,11 @@ class LabelGenerator:
     def _create_labels_table(self, labels_table_name):
         if self.replace or not table_exists(labels_table_name, self.db_engine):
             with self.db_engine.begin() as conn:
-                conn.execute(text(f"drop table if exists {quoted_name(labels_table_name, quote=True)}"))
+                conn.execute(text(f"drop table if exists {labels_table_name}"))
                 conn.execute(
                     text(
                         f"""
-                            create table {quoted_name(labels_table_name, quote=True)} (
+                            create table {labels_table_name} (
                             entity_id int,
                             as_of_date date,
                             label_timespan interval,
@@ -63,20 +63,20 @@ class LabelGenerator:
                     with self.db_engine.connect() as conn:    
                         any_existing_labels = conn.execute(
                                 text(
-                                    f"""select 1 from {quoted_name(labels_table, quote=True)}
+                                    f"""select 1 from {labels_table}
                                     where as_of_date = :as_of_date
-                                    and label_timespan = :label_timespan::interval
-                                    and label_name = :label_name
+                                    and label_timespan = CAST(:label_timespan as interval)
+                                    and label_name = :label_name 
                                     limit 1
                                     """
                                 ),
-                                {
-                                   "as_of_date": as_of_date,
-                                   "label_timespan": label_timespan,
-                                   "label_name": self.label_name, 
-                                },
-                            ).first() is not None
-                    if len(any_existing_labels) == 1:
+                                { 
+                                    "as_of_date": as_of_date, 
+                                    "label_timespan": label_timespan,
+                                    "label_name": self.label_name,
+                                }
+                            ).scalar() is not None
+                    if any_existing_labels:
                         logger.spam("Since nonzero existing labels found, skipping")
                         continue
 
@@ -131,25 +131,28 @@ class LabelGenerator:
             as_of_date=start_date, label_timespan=label_timespan
         )
 
-        full_insert_query = textwrap.dedent(
-            f"""
+        full_insert_query = f"""
             insert into {labels_table}
             select
                 entities_and_outcomes.entity_id,
-                '{start_date}' as as_of_date,
-                '{label_timespan}'::interval as label_timespan,
-                '{self.label_name}' as label_name,
+                :start_date as as_of_date,
+                CAST(:label_timespan as interval) as label_timespan,
+                :label_name as label_name,
                 'binary' as label_type,
                 entities_and_outcomes.outcome as label
             from ({query_with_db_variables}) entities_and_outcomes
             """
-        )
 
         logger.spam("Running label insertion query")
         logger.spam(full_insert_query)
         with self.db_engine.begin() as conn:
             conn.execute(
                 text(full_insert_query),
+                {
+                    "start_date": start_date, 
+                    "label_timespan": label_timespan, 
+                    "label_name": self.label_name,
+                }
             )
 
     def clean_up(self, labels_table_name):
