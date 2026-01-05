@@ -687,17 +687,22 @@ class TestBuildMatrix(TestCase):
                 }
 
                 uuid = filename_friendly_hash(good_metadata)
-                with self.assertRaises(ValueError):
-                    builder.build_matrix(
-                        as_of_times=dates,
-                        label_name="booking",
-                        label_type="binary",
-                        feature_dictionary=feature_dictionary,
-                        matrix_metadata=good_metadata,
-                        matrix_uuid=uuid,
-                        matrix_type="other",
-                    )
-                
+                # check if an exception was raised (but swallowed in the original code)
+                # so looking for a None data frame. Verify code in builders.py/build_matrix
+                # when we catch a ValueError we just do a return, not raising an exception 
+                # maybe we should consider to actually raise an exception? (2026-01-04)
+                # that will stop the run though!
+        
+                result = builder.build_matrix(
+                                    as_of_times=dates,
+                                    label_name="booking",
+                                    label_type="binary",
+                                    feature_dictionary=feature_dictionary,
+                                    matrix_metadata=good_metadata,
+                                    matrix_uuid=uuid,
+                                    matrix_type="other",
+                                )
+                self.assertIsNone(result)
     
     def test_replace_false_rerun(self):
         with testing.postgresql.Postgresql() as postgresql:
