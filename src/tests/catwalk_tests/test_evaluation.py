@@ -480,17 +480,18 @@ def test_model_scoring_inspections(db_engine_with_results_schema):
                 f"""select * from test_results.evaluations
                 where model_id = {model_id} 
                 and evaluation_start_time = '{fake_test_matrix_store.as_of_dates[0]}'
-                order by 1""",
+                order by 1"""
             )
         ):
-            assert record["num_labeled_examples"] == 4
-            assert record["num_positive_labels"] == 2
-            if record["parameter"] == "":
-                assert record["num_labeled_above_threshold"] == 4
-            elif "pct" in record["parameter"]:
-                assert record["num_labeled_above_threshold"] == 1
+            # in sqlalchemy 2 the output of execute is a Row object 
+            assert record.num_labeled_examples == 4
+            assert record.num_positive_labels == 2
+            if record.parameter == "":
+                assert record.num_labeled_above_threshold == 4
+            elif "pct" in record.parameter:
+                assert record.num_labeled_above_threshold == 1
             else:
-                assert record["num_labeled_above_threshold"] == 2
+                assert record.num_labeled_above_threshold == 2
 
     # Evaluate the training matrix and test the results
     model_evaluator.evaluate(
@@ -502,17 +503,17 @@ def test_model_scoring_inspections(db_engine_with_results_schema):
                 f"""select * from train_results.evaluations
                 where model_id = {model_id} 
                 and evaluation_start_time = '{fake_train_matrix_store.as_of_dates[0]}'
-                order by 1""",
+                order by 1"""
             )
         ):
-            assert record["num_labeled_examples"] == 8
-            assert record["num_positive_labels"] == 5
-            assert record["worst_value"] == 0.625
-            assert record["best_value"] == 0.625
-            assert record["stochastic_value"] == 0.625
+            assert record.num_labeled_examples == 8
+            assert record.num_positive_labels == 5
+            assert record.worst_value == 0.625
+            assert record.best_value == 0.625
+            assert record.stochastic_value == 0.625
             # best/worst are same, should shortcut trials
-            assert record["num_sort_trials"] == 0
-            assert record["standard_deviation"] == 0
+            assert record.num_sort_trials == 0
+            assert record.standard_deviation == 0
 
 
 def test_evaluation_with_sort_ties(db_engine_with_results_schema):
@@ -546,17 +547,18 @@ def test_evaluation_with_sort_ties(db_engine_with_results_schema):
                 f"""select * from test_results.evaluations
                 where model_id = {model_id} 
                 and evaluation_start_time = '{fake_test_matrix_store.as_of_dates[0]}'
-                order by 1""",
+                order by 1"""
             )
         ):
-            assert record["num_labeled_examples"] == 5
-            assert record["num_positive_labels"] == 2
-            assert_almost_equal(float(record["worst_value"]), 0.33333, 5)
-            assert_almost_equal(float(record["best_value"]), 0.66666, 5)
-            assert record["num_sort_trials"] == SORT_TRIALS
-            assert record["stochastic_value"] > record["worst_value"]
-            assert record["stochastic_value"] < record["best_value"]
-            assert record["standard_deviation"]
+            # sqlalchemy 2 returns a Row object 
+            assert record.num_labeled_examples == 5
+            assert record.num_positive_labels == 2
+            assert_almost_equal(float(record.worst_value), 0.33333, 5)
+            assert_almost_equal(float(record.best_value), 0.66666, 5)
+            assert record.num_sort_trials == SORT_TRIALS
+            assert record.stochastic_value > record.worst_value
+            assert record.stochastic_value < record.best_value
+            assert record.standard_deviation
 
 
 def test_ModelEvaluator_needs_evaluation_no_bias_audit(db_engine_with_results_schema):
@@ -798,10 +800,10 @@ def test_evaluation_with_protected_df(db_engine_with_results_schema):
                 order by 1"""
             )
         ):
-            assert record["model_id"] == model_id
-            assert record["parameter"] == "2_abs"
-            assert record["attribute_name"] == "protectedattribute1"
-            assert record["attribute_value"] == "value1"
+            assert record.model_id == model_id
+            assert record.parameter == "2_abs"
+            assert record.attribute_name == "protectedattribute1"
+            assert record.attribute_value == "value1"
 
 
 def test_error_evaluation_with_mismatch_protected_df(db_engine_with_results_schema):
@@ -929,11 +931,18 @@ def test_evaluation_sorting_with_protected_df(db_engine_with_results_schema):
                 order by 1"""
             )
         ):
-            assert record["model_id"] == model_id
-            assert record["parameter"] == "2_abs"
-            assert record["attribute_name"] == "protectedattribute1"
-            for col, value in expected[record["attribute_value"]].items():
-                assert record[col] == value
+            assert record.model_id == model_id
+            assert record.parameter == "2_abs"
+            assert record.attribute_name == "protectedattribute1"
+            for col, value in expected[record.attribute_value].items():
+                if col == 'group_size':
+                    assert record.attribute_value.group_size == value
+                elif col == 'group_label_neg':
+                    assert record.attribute_value.group_label_neg == value
+                elif col == 'group_label_pos': 
+                    assert record.attribute_value.group_label_pos == value
+                else: 
+                    assert 1 == 0
 
 
 def test_generate_binary_at_x():
