@@ -22,7 +22,7 @@ from triage.component.results_schema import Model, Matrix
 from triage.experiments import CONFIG_VERSION
 from triage.util.structs import FeatureNameList
 
-from tests.results_tests.factories import init_engine, sessionmaker, MatrixFactory
+from tests.results_tests.factories import init_engine, session, MatrixFactory
 
 matplotlib.use("Agg")
 
