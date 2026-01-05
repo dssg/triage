@@ -159,14 +159,18 @@ class IndividualImportanceCalculator:
         with self.db_engine.connect() as conn:
             conn.execute(
                 text(
-                    """delete from test_results.individual_importances
-                    where model_id = %s
-                    and as_of_date = %s
-                    and method = %s""",
-                    model_id,
-                    as_of_date,
-                    method_name,
-                )
+                    f"""
+                        delete from test_results.individual_importances
+                        where model_id = :model_id
+                        and as_of_date = :as_of_date
+                        and method = :method_name
+                    """
+                ),
+                {
+                    "model_id": model_id,
+                    "as_of_date": as_of_date, 
+                    "method_name": method_name,
+                }
             )
         record_stream = (
             IndividualImportance(
