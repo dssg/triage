@@ -569,7 +569,7 @@ class ModelEvaluator:
         if (protected_df is not None) and (not protected_df.empty):
             # Checking whether there are indexes (entity-date pairs) that appear in either the matrix or the protected df, but not in both
             symmetric_diff = protected_df.index.symmetric_difference(labels.index)
-            
+            logger.spam(f"Evaluation with protected_df, bias configuration in yaml. Symmetric difference: {symmetric_diff}")
             if (protected_df.index.shape != labels.index.shape) or (
                 not symmetric_diff.empty
             ):
