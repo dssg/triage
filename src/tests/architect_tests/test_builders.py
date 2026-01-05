@@ -4,7 +4,7 @@ import pandas as pd
 import testing.postgresql
 
 from contextlib import contextmanager
-
+from sqlalchemy.sql.expression import text
 from triage import create_engine
 from triage.component.catwalk.utils import filename_friendly_hash
 from triage.component.architect.feature_group_creator import FeatureGroup
@@ -280,7 +280,9 @@ def test_make_entity_date_table():
                 experiment_hash=experiment_hash,
                 engine=engine,
             )
-            engine.execute("CREATE TABLE features.tmp_entity_date (a int, b date);")
+            with engine.begin() as conn:
+                conn.execute(text("CREATE TABLE features.tmp_entity_date (a int, b date);"))
+
             # call the function to test the creation of the table
             entity_date_table_name = builder.make_entity_date_table(
                 as_of_times=dates,
@@ -293,12 +295,11 @@ def test_make_entity_date_table():
             )
 
             # read in the table
-            result = pd.read_sql(
-                "select * from features.{} order by entity_id, as_of_date".format(
-                    entity_date_table_name
-                ),
-                engine,
-            )
+            with engine.connect() as conn:
+                result = pd.read_sql(
+                    f"select * from features.{entity_date_table_name} order by entity_id, as_of_date",
+                    conn.connection,
+                )
             # compare the table to the test dataframe
             test = result == ids_dates
             assert test.all().all()
@@ -347,7 +348,8 @@ def test_make_entity_date_table_include_missing_labels():
                 include_missing_labels_in_train_as=False,
                 engine=engine,
             )
-            engine.execute("CREATE TABLE features.tmp_entity_date (a int, b date);")
+            with engine.begin() as conn:
+                conn.execute(text("CREATE TABLE features.tmp_entity_date (a int, b date);"))
             # call the function to test the creation of the table
             entity_date_table_name = builder.make_entity_date_table(
                 as_of_times=dates,
@@ -360,12 +362,11 @@ def test_make_entity_date_table_include_missing_labels():
             )
 
             # read in the table
-            result = pd.read_sql(
-                "select * from features.{} order by entity_id, as_of_date".format(
-                    entity_date_table_name
-                ),
-                engine,
-            )
+            with engine.connect() as conn:
+                result = pd.read_sql(
+                    f"select * from features.{entity_date_table_name} order by entity_id, as_of_date",
+                    conn.connection,
+                )
 
             # compare the table to the test dataframe
             assert sorted(result.values.tolist()) == sorted(ids_dates.values.tolist())
@@ -484,33 +485,31 @@ class TestMergeFeatureCSVs(TestCase):
 
                 matrix_store = matrix_storage_engine.get_store("1234")
                 
-                result = builder.stitch_csvs(
+                result, labels_ = builder.stitch_csvs(
                     features_queries=feature_queries,
                     label_query=label_query,
                     matrix_store=matrix_store,
                     matrix_uuid="1234"
                 )
 
-                # chekc if entity_id and as_of_date are as index 
+                # check if entity_id and as_of_date are as index 
                 should_be = ['entity_id', 'as_of_date']
                 actual_indices = result.index.names
-
                 TestCase().assertListEqual(should_be, actual_indices)
 
-                # last element in the DF should be the label
+                # check that last element is not the label
                 last_col = 'booking'
                 output = result.columns.values[-1] # label name
+                TestCase().assertNotEqual(last_col, output)
 
-                TestCase().assertEqual(last_col, output)
-
-                # number of columns must be the sum of all the columns on each feature table + 1 for the label 
-                TestCase().assertEqual(result.shape[1], 4+1, 
-                                       "Number of features and label doesn't match")
+                # number of columns must be the sum of all the columns on each feature table 
+                TestCase().assertEqual(result.shape[1], 4, 
+                                       "Number of features don't match")
 
                 # number of rows 
                 assert result.shape[0] ==  5
                 TestCase().assertEqual(result.shape[0], 5, 
-                                       "Number of rows doesn't match")
+                                       "Number of rows don't match")
 
                 # types of the final df should be float32
                 types = set(result.apply(lambda x: x.dtype == 'float32').values)
