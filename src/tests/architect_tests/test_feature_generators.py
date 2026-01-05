@@ -4,7 +4,6 @@ import pytest
 import sqlalchemy
 
 from datetime import date
-from sqlalchemy import text as t
 from sqlalchemy.sql.expression import text 
 from unittest.mock import patch
 from triage.component.architect.feature_generators import FeatureGenerator
