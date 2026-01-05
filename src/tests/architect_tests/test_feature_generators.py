@@ -1,16 +1,14 @@
 import copy
-from datetime import date
-
 import pandas as pd
 import pytest
 import sqlalchemy
-from sqlalchemy import text as t
 
+from datetime import date
+from sqlalchemy import text as t
+from sqlalchemy.sql.expression import text 
+from unittest.mock import patch
 from triage.component.architect.feature_generators import FeatureGenerator
 from triage.component.collate import Aggregate, Categorical, SpacetimeAggregation
-
-from unittest.mock import patch
-
 
 INPUT_DATA = [
     # entity_id, knowledge_date, zip_code, cat_one, quantity_one
@@ -40,30 +38,51 @@ def fixture_test_engine(db_engine):
     database tables.
 
     """
-    db_engine.execute(
-        """\
-        create table data (
-            entity_id int,
-            knowledge_date date,
-            zip_code text,
-            cat_one varchar,
-            quantity_one float
+    with db_engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                create table data (
+                    entity_id int,
+                    knowledge_date date,
+                    zip_code text,
+                    cat_one varchar,
+                    quantity_one float
+                )
+                """
+            )
         )
-        """
-    )
-    for row in INPUT_DATA:
-        db_engine.execute("insert into data values (%s, %s, %s, %s, %s)", row)
+        
+        insert_stmt = """
+            insert into data
+            (entity_id, knowledge_date, zip_code, cat_one, quantity_one)
+            values (:entity_id, :knowledge_date, :zip_code, :cat_one, :quantity_one)
+            """
 
-    db_engine.execute(
-        """\
-        create table states (
-            entity_id int,
-            as_of_date date
+        for row in INPUT_DATA:
+            conn.execute(
+                text(insert_stmt), 
+                {
+                    "entity_id": row[0], 
+                    "knowledge_date": row[1],
+                    "zip_code": row[2],
+                    "cat_one": row[3],
+                    "quantity_one": row[4],
+                }
+            )
+                
+        conn.execute(
+            text(
+                """
+                create table states (
+                    entity_id int,
+                    as_of_date date
+                )
+                """
+            )
         )
-        """
-    )
-    for row in INPUT_STATES:
-        db_engine.execute("insert into states values (%s, %s)", row)
+        for row in INPUT_STATES:
+            conn.execute(text(f"insert into states values ({row[0]}, '{row[1]}')"))
 
     return db_engine
 
@@ -158,17 +177,15 @@ def test_feature_generation(test_engine):
         state_table="states",
     )
 
-    for output_table in output_tables:
-        records = pd.read_sql(
-            "select * from {}.{} order by entity_id, as_of_date".format(
-                features_schema_name,
-                output_table,
-            ),
-            test_engine,
-        ).to_dict("records")
+    with test_engine.connect() as conn:
+        for output_table in output_tables:
+            records = pd.read_sql(
+                f"select * from {features_schema_name}.{output_table} order by entity_id, as_of_date",
+                conn.connection,
+            ).to_dict("records")
 
-        for record, expected_record in zip(records, expected_output[output_table]):
-            assert record == expected_record
+            for record, expected_record in zip(records, expected_output[output_table]):
+                assert record == expected_record
 
 
 def test_index_column_lookup(test_engine):
@@ -269,16 +286,17 @@ def test_feature_generation_feature_start_time(test_engine):
         state_table="states",
     )
 
-    for output_table in output_tables:
-        records = pd.read_sql(
-            "select * from {}.{} order by as_of_date, entity_id".format(
-                features_schema_name,
-                output_table,
-            ),
-            test_engine,
-        ).to_dict("records")
+    with test_engine.connect() as conn:
+        for output_table in output_tables:
+            records = pd.read_sql(
+                "select * from {}.{} order by as_of_date, entity_id".format(
+                    features_schema_name,
+                    output_table,
+                ),
+                conn.connection,
+            ).to_dict("records")
 
-        assert records == expected_output[output_table]
+            assert records == expected_output[output_table]
 
 
 def test_dynamic_categoricals(test_engine):
@@ -354,15 +372,16 @@ def test_dynamic_categoricals(test_engine):
         state_table="states",
     )
 
-    for output_table in output_tables:
-        records = pd.read_sql(
-            "select * from {}.{} order by as_of_date, entity_id".format(
-                features_schema_name, output_table
-            ),
-            test_engine,
-        ).to_dict("records")
+    with test_engine.connect() as conn:
+        for output_table in output_tables:
+            records = pd.read_sql(
+                "select * from {}.{} order by as_of_date, entity_id".format(
+                    features_schema_name, output_table
+                ),
+                conn.connection,
+            ).to_dict("records")
 
-        assert records == expected_output[output_table]
+            assert records == expected_output[output_table]
 
 
 def test_array_categoricals(db_engine):
@@ -436,29 +455,58 @@ def test_array_categoricals(db_engine):
         (4, date(2014, 4, 4), ["bad"], 1236),
     ]
 
-    db_engine.execute(
-        """\
-        create table data (
-            entity_id int,
-            knowledge_date date,
-            cat_one varchar[],
-            quantity_one float
+    with db_engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                create table data (
+                    entity_id int,
+                    knowledge_date date,
+                    cat_one varchar[],
+                    quantity_one float
+                )
+                """
+            )
         )
-        """
-    )
-    for row in input_data:
-        db_engine.execute("insert into data values (%s, %s, %s, %s)", row)
+        for row in input_data:
+            conn.execute(
+                text("""
+                     insert into data 
+                     (entity_id, knowledge_date, cat_one, quantity_one)
+                     values (:entity_id, :knowledge_date, :cat_one, :quantity_one)
+                     """
+                    ),
+                {
+                    "entity_id": row[0],
+                    "knowledge_date": row[1],
+                    "cat_one": row[2],
+                    "quantity_one": row[3],
+                }
+            )
 
-    db_engine.execute(
-        """\
-        create table states (
-            entity_id int,
-            as_of_date date
+        conn.execute(
+            text(
+                """
+                create table states (
+                    entity_id int,
+                    as_of_date date
+                )
+                """
+            )
         )
-        """
-    )
-    for row in INPUT_STATES:
-        db_engine.execute("insert into states values (%s, %s)", row)
+        for row in INPUT_STATES:
+            conn.execute(
+                text(
+                    """insert into states
+                    (entity_id, as_of_date) 
+                    values (:entity_id, :as_of_date)
+                    """
+                ),
+                {
+                    "entity_id": row[0],
+                    "as_of_date": row[1],
+                }
+            )
 
     features_schema_name = "features"
 
@@ -471,19 +519,20 @@ def test_array_categoricals(db_engine):
         state_table="states",
     )
 
-    for output_table in output_tables:
-        records = pd.read_sql(
-            "select * from {}.{} order by as_of_date, entity_id".format(
-                features_schema_name, output_table
-            ),
-            db_engine,
-        ).to_dict("records")
+    with db_engine.connect() as conn:
+        for output_table in output_tables:
+            records = pd.read_sql(
+                f"select * from {features_schema_name}.{output_table} order by as_of_date, entity_id",
+                conn.connection,
+            ).to_dict("records")
 
-        assert records == expected_output[output_table]
+            assert records == expected_output[output_table]
 
 
 def test_generate_table_tasks(test_engine):
-    test_engine.execute('create schema features')
+    with test_engine.begin() as conn:
+        conn.execute(text('create schema features'))
+
     aggregations = [
         SpacetimeAggregation(
             prefix="prefix1",
@@ -532,9 +581,9 @@ def test_generate_table_tasks(test_engine):
         features_schema_name=features_schema_name,
     ).generate_all_table_tasks(aggregations, task_type="aggregation")
     for table_name, task in table_tasks.items():
-        assert "DROP TABLE" in task["prepare"][0]
+        assert "DROP TABLE" in str(task["prepare"][0])
         assert "CREATE TABLE" in str(task["prepare"][1])
-        assert "CREATE INDEX" in task["finalize"][0]
+        assert "CREATE INDEX" in str(task["finalize"][0])
         assert isinstance(task["inserts"], list)
 
     # build the aggregation tables to check the imputation tasks
@@ -549,9 +598,9 @@ def test_generate_table_tasks(test_engine):
     ).generate_all_table_tasks(aggregations, task_type="imputation")
 
     for table_name, task in table_tasks.items():
-        assert "DROP TABLE" in task["prepare"][0]
+        assert "DROP TABLE" in str(task["prepare"][0])
         assert "CREATE TABLE" in str(task["prepare"][1])
-        assert "CREATE INDEX" in task["finalize"][0]
+        assert "CREATE INDEX" in str(task["finalize"][0])
         assert isinstance(task["inserts"], list)
 
 
@@ -658,7 +707,22 @@ def test_replace(test_engine):
     assert len(imp_tasks["aprefix_aggregation_imputed"]) == 0
 
     # add a new member of the cohort. now we should need to rebuild everything
-    test_engine.execute("insert into states values (%s, %s)", 999, "2015-01-01")
+    with test_engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                 insert into states 
+                 (entity_id, as_of_date)
+                 values (:entity_id, :as_of_date)
+                 """
+            ), 
+            {
+                "entity_id": 999, 
+                "as_of_date": "2015-01-01"
+            }
+        )
+
+
     table_tasks = feature_generator.generate_all_table_tasks(
         aggregations,
         task_type="aggregation",
@@ -765,15 +829,16 @@ def test_transaction_error(test_engine):
             feature_aggregation_config=aggregate_config,
             state_table="statez",  # WRONG!
         )
-
-    ((query_count,),) = test_engine.execute(
-        t("""\
-            select count(1) from pg_stat_activity
-            where datname = :datname and
-                  query not ilike '%%pg_stat_activity%%'
-        """),
-        datname=test_engine.url.database,
-    )
+    
+    with test_engine.connect() as conn: 
+        ((query_count,),) = conn.execute(
+            text("""
+                select count(1) from pg_stat_activity
+                where datname = :datname and
+                    query not ilike '%%pg_stat_activity%%'
+            """),
+            {"datname": test_engine.url.database}
+        )
 
     assert query_count == 0
 
