@@ -2,7 +2,7 @@ import pytest
 import testing.postgresql
 
 from datetime import datetime, timedelta
-from sqlalchemy.sql.expression import text 
+from sqlalchemy import text 
 from triage import create_engine
 from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator, SubsetEntityDateTableGenerator
 

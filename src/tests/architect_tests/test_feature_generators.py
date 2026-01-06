@@ -4,7 +4,7 @@ import pytest
 import sqlalchemy
 
 from datetime import date
-from sqlalchemy.sql.expression import text 
+from sqlalchemy import text 
 from unittest.mock import patch
 from triage.component.architect.feature_generators import FeatureGenerator
 from triage.component.collate import Aggregate, Categorical, SpacetimeAggregation

@@ -1,6 +1,6 @@
 import testing.postgresql
 
-from sqlalchemy.sql.expression import text 
+from sqlalchemy import text 
 from triage import create_engine
 from triage.component.architect.features import FeatureDictionaryCreator
 
