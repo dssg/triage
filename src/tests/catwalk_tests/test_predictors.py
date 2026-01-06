@@ -1,10 +1,13 @@
+import pandas as pd
+import datetime
+import pytest
+
 from contextlib import contextmanager
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import make_transient
-import datetime
 from unittest.mock import Mock
+from sqlalchemy import text
 from numpy.testing import assert_array_almost_equal
-import pandas as pd
 
 from triage.component.results_schema import TestPrediction, Matrix, Model
 from triage.component.catwalk.storage import TestMatrixType
@@ -17,7 +20,6 @@ from tests.results_tests.factories import (
     session as factory_session
 )
 from triage.database_reflection import table_has_data
-
 from triage.component.catwalk.predictors import Predictor
 from tests.utils import (
     MockTrainedModel,
@@ -26,7 +28,6 @@ from tests.utils import (
     get_matrix_store,
     rig_engines,
 )
-import pytest
 
 
 with_matrix_types = pytest.mark.parametrize(
@@ -112,20 +113,19 @@ def test_predictor(predict_proba):
 @with_matrix_types
 def test_predictions_table(predictor, predict_proba, matrix_type):
     """assert that the predictions table entries are present, linked to the original models"""
-    records = [
-        row
-        for row in predictor.db_engine.execute(
-            """select entity_id, as_of_date
-        from {}_results.predictions
-        join triage_metadata.models using (model_id)""".format(
-                matrix_type, matrix_type
+    with predictor.db_engine.connect() as conn:
+        records = [
+            row
+            for row in conn.execute(
+                text(f"""
+                        select entity_id, as_of_date
+                        from {matrix_type}_results.predictions
+                        join triage_metadata.models using (model_id)
+                     """
+                )
             )
-        )
-    ]
+        ]
     assert len(records) == 6
-
-
-
 
 
 @with_matrix_types
@@ -217,17 +217,19 @@ def test_predictor_get_train_columns(predict_setup_args):
 
         # 2. that the predictions table entries are present and
         # can be linked to the original models
-        records = [
-            row
-            for row in db_engine.execute(
-                """select entity_id, as_of_date
-            from {}_results.predictions
-            join triage_metadata.models using (model_id)""".format(
-                    mat_type, mat_type
+        with db_engine.connect() as conn: 
+            records = [
+                row
+                for row in conn.execute(
+                    text(f"""
+                            select entity_id, as_of_date
+                            from {mat_type}_results.predictions
+                            join triage_metadata.models using (model_id)
+                        """
+                    )
                 )
-            )
-        ]
-        assert len(records) > 0
+            ]
+            assert len(records) > 0
 
 
 def test_predictor_retrieve(predict_setup_args):
