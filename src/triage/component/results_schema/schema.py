@@ -301,7 +301,7 @@ class FeatureImportance(Base):
     rank_abs = Column(Integer)
     rank_pct = Column(Float)
 
-    #model_rel = relationship("Model")
+    model_rel = relationship("Model")
 
 
 class TestPrediction(Base):
