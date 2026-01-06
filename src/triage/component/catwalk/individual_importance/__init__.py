@@ -156,7 +156,7 @@ class IndividualImportanceCalculator:
             method_name (string) The name of the method that produced the importance records
 
         """
-        with self.db_engine.connect() as conn:
+        with self.db_engine.begin() as conn:
             conn.execute(
                 text(
                     f"""
