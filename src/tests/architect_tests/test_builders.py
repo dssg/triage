@@ -4,7 +4,7 @@ import pandas as pd
 import testing.postgresql
 
 from contextlib import contextmanager
-from sqlalchemy.sql.expression import text
+from sqlalchemy import text
 from triage import create_engine
 from triage.component.catwalk.utils import filename_friendly_hash
 from triage.component.architect.feature_group_creator import FeatureGroup

@@ -4,7 +4,7 @@ import testing.postgresql
 
 from datetime import datetime
 from tempfile import TemporaryDirectory
-from sqlalchemy.sql.expression import text 
+from sqlalchemy import text 
 from tests.utils import sample_config
 from triage import create_engine
 from triage.component.results_schema import Base

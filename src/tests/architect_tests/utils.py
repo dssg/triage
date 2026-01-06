@@ -9,7 +9,7 @@ import pandas as pd
 import yaml
 import numpy as np
 
-from sqlalchemy.sql.expression import text
+from sqlalchemy import text
 
 
 def convert_string_column_to_date(column):
