@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import testing.postgresql
 from functools import cached_property
-from sqlalchemy import create_engine
+from triage import create_engine
 from sqlalchemy.orm import Session
 
 from triage.component.catwalk.db import ensure_db
