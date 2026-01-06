@@ -1,32 +1,49 @@
-from datetime import datetime, date
-
 import testing.postgresql
-from sqlalchemy.engine import create_engine
-from unittest.mock import MagicMock
 
+from datetime import datetime, date
+from triage import create_engine
+from sqlalchemy import text
+from unittest.mock import MagicMock
 from triage.component.catwalk.protected_groups_generators import ProtectedGroupsGenerator
 
 
 def create_demographics_table(db_engine, data):
-    db_engine.execute(
-        """drop table if exists demographics;
-        create table demographics (person_id int, event_date date, race text, sex text, age_bucket int)
-        """
-    )
-    for event in data:
-        db_engine.execute(
-            "insert into demographics values (%s, %s, %s, %s, %s)", event
+    with db_engine.begin() as conn:
+        conn.execute(
+            text(
+                """drop table if exists demographics;
+                create table demographics (person_id int, event_date date, race text, sex text, age_bucket int)
+                """
+            )
         )
+        for event in data:
+            conn.execute(
+                text(
+                    "insert into demographics values (:person_id, :event_date, :race, :sex, :age_bucket)"
+                ),
+                {
+                    "person_id": event[0],
+                    "event_date": event[1],
+                    "race": event[2],
+                    "sex": event[3],
+                    "age_bucket": event[4]
+                }
+            )
 
 
 def create_cohort_table(db_engine, data):
-    db_engine.execute(
-        "create table cohort_abcdef (entity_id int, as_of_date timestamp)"
-    )
-    for event in data:
-        db_engine.execute(
-            "insert into cohort_abcdef values (%s, %s)", event
+    with db_engine.begin() as conn:
+        conn.execute(
+            text("create table cohort_abcdef (entity_id int, as_of_date timestamp)")
         )
+        for event in data:
+            conn.execute(
+                text("insert into cohort_abcdef values (:entity_id, :as_of_date)"),
+                {
+                    "entity_id": event[0],
+                    "as_of_date": event[1],
+                }
+            )
 
 
 def default_demographics():
@@ -81,16 +98,19 @@ def assert_data(table_generator):
         (5, date(2016, 3, 1), 'wh', 'female', '2', 'abcdef'),
         (5, date(2016, 4, 1), 'wh', 'female', '2', 'abcdef'),
     ]
-    results = list(
-        table_generator.db_engine.execute(
-            f"""
-            select entity_id, as_of_date, race, sex, age_bucket, cohort_hash
-            from {table_generator.protected_groups_table_name}
-            order by entity_id, as_of_date
-        """
+    with table_generator.db_engine.connect() as conn:
+        results = list(
+            conn.execute(
+                text(
+                    f"""
+                        select entity_id, as_of_date, race, sex, age_bucket, cohort_hash
+                        from {table_generator.protected_groups_table_name}
+                        order by entity_id, as_of_date
+                    """
+                )
+            )
         )
-    )
-    assert results == expected_output
+        assert results == expected_output
 
 
 def test_protected_groups_generator_replace():
