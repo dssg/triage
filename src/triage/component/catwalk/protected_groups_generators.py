@@ -60,7 +60,7 @@ class ProtectedGroupsGenerator:
             logger.debug(f"Protected groups table {self.protected_groups_table_name} exist")
 
         if self.replace:
-            with self.db_engine.connect() as conn:
+            with self.db_engine.begin() as conn:
                 conn.execute(
                     text(
                         f"delete from {self.protected_groups_table_name} where cohort_hash = '{cohort_hash}'"
@@ -92,7 +92,7 @@ class ProtectedGroupsGenerator:
                     continue
 
             logger.debug(
-                "Generating protected groups for as of date {as_of_date} "
+                f"Generating protected groups for as of date {as_of_date} "
             )
             self.generate(
                 start_date=as_of_date,
@@ -100,50 +100,48 @@ class ProtectedGroupsGenerator:
                 cohort_hash=cohort_hash
             )
         if table_is_new:
-            with self.db_engine.connect() as conn:
+            logger.debug(f"Is table new? {table_is_new}")
+            with self.db_engine.begin() as conn:
                 conn.execute(text(f"create index on {self.protected_groups_table_name} (cohort_hash, as_of_date)"))
-            nrows = conn.execute(
-                text(
-                    f"select count(*) from {self.protected_groups_table_name}"
-                )
-            ).scalar()
-            if nrows == 0:
-                logger.warning("Done creating protected_groups, but no rows in protected_groups table!")
-            else:
-                logger.success(f"Protected groups stored in the table "
-                            f"{self.protected_groups_table_name} successfully")
-                logger.spam(f"Protected groups table has {nrows} rows")
+                nrows = conn.execute(
+                    text(
+                        f"select count(*) from {self.protected_groups_table_name}"
+                    )
+                ).scalar()
+                if nrows == 0:
+                    logger.warning("Done creating protected_groups, but no rows in protected_groups table!")
+                else:
+                    logger.success(f"Protected groups stored in the table "
+                                f"{self.protected_groups_table_name} successfully")
+                    logger.spam(f"Protected groups table has {nrows} rows")
 
     def generate(self, start_date, cohort_table_name, cohort_hash):
-        full_insert_query = text(textwrap.dedent(
+        attribute_columns = ", ".join([str(col) for col in self.attribute_columns])
+        full_insert_query = f"""
+                insert into {self.protected_groups_table_name}
+                select distinct on (cohort.entity_id, cohort.as_of_date)
+                    cohort.entity_id,
+                    CAST(:start_date as date) as as_of_date,
+                    {attribute_columns},
+                    :cohort_hash as cohort_hash
+                from {cohort_table_name} cohort
+                left join (select * from {self.from_obj}) from_obj  on
+                    cohort.entity_id = from_obj.{self.entity_id_column} and
+                    cohort.as_of_date > from_obj.{self.knowledge_date_column}
+                where cohort.as_of_date = CAST(:start_date as date)
+                order by cohort.entity_id, cohort.as_of_date, {self.knowledge_date_column} desc
             """
-            insert into {protected_groups_table}
-            select distinct on (cohort.entity_id, cohort.as_of_date)
-                cohort.entity_id,
-                '{as_of_date}'::date as as_of_date,
-                {attribute_columns},
-                \'{cohort_hash}\' as cohort_hash
-            from {cohort_table_name} cohort
-            left join (select * from {from_obj}) from_obj  on
-                cohort.entity_id = from_obj.{entity_id_column} and
-                cohort.as_of_date > from_obj.{knowledge_date_column}
-            where cohort.as_of_date = '{as_of_date}'::date
-            order by cohort.entity_id, cohort.as_of_date, {knowledge_date_column} desc
-        """
-        ).format(
-            protected_groups_table=self.protected_groups_table_name,
-            as_of_date=start_date,
-            attribute_columns=", ".join([str(col) for col in self.attribute_columns]),
-            cohort_hash=cohort_hash,
-            cohort_table_name=cohort_table_name,
-            from_obj=self.from_obj,
-            knowledge_date_column=self.knowledge_date_column,
-            entity_id_column=self.entity_id_column
-        ))
+            
         logger.debug("Running protected_groups creation query")
-        logger.spam(full_insert_query)
+        logger.spam(f"Query to insert protected_df: {full_insert_query}")
         with self.db_engine.begin() as conn:
-            conn.execute(full_insert_query)
+            conn.execute(
+                text(full_insert_query),
+                {
+                    "start_date": start_date,
+                    "cohort_hash": cohort_hash,
+                }
+            )
 
     def as_dataframe(self, as_of_dates, cohort_hash):
         """Queries the protected groups table to retrieve the protected attributes for each date
