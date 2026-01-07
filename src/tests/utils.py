@@ -14,6 +14,7 @@ import testing.postgresql
 from functools import cached_property
 from triage import create_engine
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.storage import MatrixStore, ProjectStorage
@@ -321,60 +322,105 @@ def populate_source_data(db_engine):
         (3, 1, "2014-01-01"),
         (3, 0, "2015-01-01"),
     ]
-
-    db_engine.execute(
-        """create table cat_complaints (
-        entity_id int,
-        as_of_date date,
-        cat_sightings int
-        )"""
-    )
-
-    db_engine.execute(
-        """create table entity_zip_codes (
-        entity_id int,
-        zip_code text
-        )"""
-    )
-
-    db_engine.execute(
-        "create table zip_code_demographics (zip_code text, ethnicity text, as_of_date date)"
-    )
-    for demographic_row in zip_code_demographics:
-        db_engine.execute(
-            "insert into zip_code_demographics values (%s, %s, %s)", demographic_row
+    
+    with db_engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                create table cat_complaints (
+                entity_id int,
+                as_of_date date,
+                cat_sightings int
+                )
+                """
+            )
         )
 
-    for entity_zip_code in entity_zip_codes:
-        db_engine.execute(
-            "insert into entity_zip_codes values (%s, %s)", entity_zip_code
+        conn.execute(
+            text(
+                """
+                create table entity_zip_codes (
+                entity_id int,
+                zip_code text
+                )
+                """
+            )
         )
 
-    db_engine.execute(
-        """create table zip_code_events (
-        zip_code text,
-        as_of_date date,
-        num_events int
-    )"""
-    )
-    for zip_code_event in zip_code_events:
-        db_engine.execute(
-            "insert into zip_code_events values (%s, %s, %s)", zip_code_event
+        conn.execute(
+            text("create table zip_code_demographics (zip_code text, ethnicity text, as_of_date date)")
+        )
+        for demographic_row in zip_code_demographics:
+            conn.execute(
+                text("insert into zip_code_demographics values (:zip_code, :ethnicity, :as_of_date)"), 
+                {
+                    "zip_code": demographic_row[0],
+                    "ethnicity": demographic_row[1],
+                    "as_of_date": demographic_row[2],
+                }
+            )
+
+        for entity_zip_code in entity_zip_codes:
+            conn.execute(
+                text("insert into entity_zip_codes values (:entity_id, :zip_code)"), 
+                {
+                    "entity_id": entity_zip_code[0],
+                    "zip_code": entity_zip_code[1],
+                }
+            )
+
+        conn.execute(
+            text(
+                """
+                create table zip_code_events (
+                zip_code text,
+                as_of_date date,
+                num_events int
+                )
+                """
+            )
+        )
+        for zip_code_event in zip_code_events:
+            conn.execute(
+                text("insert into zip_code_events values (:zip_code, :as_of_date, :num_events)"), 
+                { 
+                    "zip_code": zip_code_event[0],
+                    "as_of_date": zip_code_event[1],
+                    "num_events": zip_code_event[2],
+                }
+            )
+
+        for complaint in complaints:
+            conn.execute(
+                text("insert into cat_complaints values (:entity_id, :as_of_date, :cat_sightings)"), 
+                {
+                    "entity_id": complaint[0],
+                    "as_of_date": complaint[1],
+                    "cat_sightings": complaint[2],
+                }
+            )
+
+        conn.execute(
+            text(
+                """
+                create table events (
+                entity_id int,
+                outcome int,
+                outcome_date date
+                )
+                """
+            )
         )
 
-    for complaint in complaints:
-        db_engine.execute("insert into cat_complaints values (%s, %s, %s)", complaint)
-
-    db_engine.execute(
-        """create table events (
-        entity_id int,
-        outcome int,
-        outcome_date date
-    )"""
-    )
-
-    for event in events:
-        db_engine.execute("insert into events values (%s, %s, %s)", event)
+        for event in events:
+            conn.execute(
+                text("insert into events values (:entity_id, :outcome, :outcome_date)"), 
+                { 
+                    "entity_id": event[0],
+                    "outcome": event[1],
+                    "outcome_date": event[2],
+                }
+            )
 
 
 def sample_cohort_config(query_source="filepath"):
