@@ -1,5 +1,5 @@
 import testing.postgresql
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 from triage.component.results_schema import Base
 
@@ -30,17 +30,19 @@ def test_evaluation_factories_no_subset():
         session.commit()
         with engine.connect() as conn:
             results = conn.execute(
-                """\
-                select
-                    model_group_id,
-                    m.model_id,
-                    e.metric,
-                    e.stochastic_value,
-                    e.subset_hash
-                from
-                    test_results.evaluations e
-                    join triage_metadata.models m using (model_id)
-                """
+                text(
+                    """
+                    select
+                        model_group_id,
+                        m.model_id,
+                        e.metric,
+                        e.stochastic_value,
+                        e.subset_hash
+                    from
+                        test_results.evaluations e
+                        join triage_metadata.models m using (model_id)
+                    """
+                )
             )
         for model_group_id, model_id, metric, value, subset_hash in results:
             # if the evaluations are created with the model group and model,
@@ -63,28 +65,31 @@ def test_evaluation_factories_with_subset(db_engine):
             model_rel=model, metric=metric, parameter="100_abs", stochastic_value=value
         )
     session.commit()
-    results = db_engine.execute(
-        """\
-        select
-            model_group_id,
-            m.model_id,
-            s.subset_hash as s_subset_hash,
-            e.subset_hash as e_subset_hash,
-            e.metric,
-            e.stochastic_value
-        from
-            test_results.evaluations e
-            join triage_metadata.models m using (model_id)
-            join triage_metadata.subsets s using (subset_hash)
-        """
-    )
-    for model_group_id, model_id, s_subset_hash, e_subset_hash, metric, value in results:
-        # if the evaluations are created with the model group and model,
-        # as opposed to an autoprovisioned one,
-        # the ids in a fresh DB should be 1
-        assert model_group_id == 1
-        assert model_id == 1
-        assert s_subset_hash == e_subset_hash
+    with db_engine.connect() as conn:
+        results = conn.execute(
+            text(
+            """
+            select
+                model_group_id,
+                m.model_id,
+                s.subset_hash as s_subset_hash,
+                e.subset_hash as e_subset_hash,
+                e.metric,
+                e.stochastic_value
+            from
+                test_results.evaluations e
+                join triage_metadata.models m using (model_id)
+                join triage_metadata.subsets s using (subset_hash)
+            """
+            )
+        )
+        for model_group_id, model_id, s_subset_hash, e_subset_hash, metric, value in results:
+            # if the evaluations are created with the model group and model,
+            # as opposed to an autoprovisioned one,
+            # the ids in a fresh DB should be 1
+            assert model_group_id == 1
+            assert model_id == 1
+            assert s_subset_hash == e_subset_hash
 
 
 def test_prediction_factories():
@@ -119,15 +124,17 @@ def test_prediction_factories():
             )
         session.commit()
 
-        results = engine.execute(
-            f"""
-            select m.*, p.*
-            from
-                test_results.predictions p
-                join triage_metadata.models m using (model_id)
-                join test_results.individual_importances i using (model_id, entity_id, as_of_date)
-            """
-        )
-        assert len([row for row in results]) == 6
-        # if the predictions are created with the model,
-        # the join should work and we should have the original six results
+        with engine.connect() as conn:
+            results = conn.execute(
+                text("""
+                    select m.*, p.*
+                    from
+                        test_results.predictions p
+                        join triage_metadata.models m using (model_id)
+                        join test_results.individual_importances i using (model_id, entity_id, as_of_date)
+                    """
+                )
+            )
+            assert len([row for row in results]) == 6
+            # if the predictions are created with the model,
+            # the join should work and we should have the original six results
