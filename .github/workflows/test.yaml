@@ -2,34 +2,55 @@ name: Python package
 
 on:
   push:
-    tags:
-     - '*'
-
+    branches:
+      - master
+      - 'tooling-migration'
+  pull_request:
+    branches:
+      - master
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.9', '3.10']
+        python-version: ['3.12']
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+    - uses: actions/checkout@v4
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        version: "latest"
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install libblas-dev liblapack-dev libatlas-base-dev gfortran
+        sudo apt-get install -y libblas-dev liblapack-dev libatlas-base-dev gfortran
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-        uv pip install --system 'tox>=4.14,<5'
-        uv pip install --system flake8 pytest
-    - name: Test with tox
+        uv sync --extra dev
+    - name: Run linter
       run: |
-        tox
+        uv run ruff check src/
+    - name: Run tests
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+      run: |
+        uv run pytest src/tests/ -v --tb=short -x

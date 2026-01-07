@@ -6,7 +6,7 @@ on:
       - master
     paths:
       - 'docs/**'
-  
+
 jobs:
   docs:
     name: Build Docs and Serve to Github Pages
@@ -16,20 +16,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
-          python-version: 3.9
-      
+          version: "latest"
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          uv pip install --system .[docs]
-          uv pip install --system git+https://github.com/dssg/triage.git@master
+          uv sync --extra docs
           git config user.name 'github-actions[bot]' && git config user.email 'github-actions[bot]@users.noreply.github.com'
-      
+
       - name: Publish docs
-        run: mkdocs gh-deploy -f "$(pwd)/docs/mkdocs.yml"
+        run: uv run mkdocs gh-deploy -f "$(pwd)/docs/mkdocs.yml"
