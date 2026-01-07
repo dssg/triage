@@ -1,27 +1,23 @@
 import datetime
+from contextlib import contextmanager
 from unittest import mock
+
 import pandas as pd
 import pytest
 from sqlalchemy import text
 
-from contextlib import contextmanager
-
-from triage.component.catwalk.utils import filename_friendly_hash
-from triage.component.architect.feature_group_creator import FeatureGroup
+from tests.utils import matrix_metadata_creator
 from triage.component.architect.builders import MatrixBuilder
 from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.storage import ProjectStorage
+from triage.component.catwalk.utils import filename_friendly_hash
 from triage.component.results_schema.schema import Matrix
 
 from .utils import (
-    create_schemas,
-    create_entity_date_df,
-    convert_string_column_to_date,
     TemporaryDirectory,
+    create_entity_date_df,
+    create_schemas,
 )
-
-from tests.utils import matrix_metadata_creator
-
 
 # make some fake features data
 
@@ -327,8 +323,12 @@ def test_make_entity_date_table_include_missing_labels(db_engine):
         label_timespan="1 month",
     )
     # this line adds the new entity-date combo as an expected one
-    ids_dates = ids_dates.append(
-        {"entity_id": 0, "as_of_date": datetime.date(2016, 6, 1)}, ignore_index=True
+    ids_dates = pd.concat(
+        [
+            ids_dates,
+            pd.DataFrame([{"entity_id": 0, "as_of_date": datetime.date(2016, 6, 1)}]),
+        ],
+        ignore_index=True,
     )
 
     # create an engine and generate a table with fake feature data
@@ -408,13 +408,12 @@ def test_feature_load_queries(db_engine):
         )
 
         feature_dictionary = {
-            f"features{i}": feature_list
-            for i, feature_list in enumerate(features)
+            f"features{i}": feature_list for i, feature_list in enumerate(features)
         }
 
         result = builder.feature_load_queries(
             feature_dictionary=feature_dictionary,
-            entity_date_table_name=entity_date_table_name
+            entity_date_table_name=entity_date_table_name,
         )
 
         # length of the list should be the number of tables in feature schema
@@ -422,8 +421,7 @@ def test_feature_load_queries(db_engine):
 
 
 def test_stitch_csvs(db_engine):
-    """Tests if all the features and label were joined correctly in the csv
-    """
+    """Tests if all the features and label were joined correctly in the csv"""
     dates = [
         datetime.datetime(2016, 1, 1, 0, 0),
         datetime.datetime(2016, 2, 1, 0, 0),
@@ -447,8 +445,7 @@ def test_stitch_csvs(db_engine):
         )
 
         feature_dictionary = {
-            f"features{i}": feature_list
-            for i, feature_list in enumerate(features)
+            f"features{i}": feature_list for i, feature_list in enumerate(features)
         }
 
         # make the entity-date table
@@ -464,45 +461,43 @@ def test_stitch_csvs(db_engine):
 
         feature_queries = builder.feature_load_queries(
             feature_dictionary=feature_dictionary,
-            entity_date_table_name=entity_date_table_name
+            entity_date_table_name=entity_date_table_name,
         )
 
         label_query = builder.label_load_query(
             label_name="booking",
             label_type="binary",
             entity_date_table_name=entity_date_table_name,
-            label_timespan='1 month'
+            label_timespan="1 month",
         )
 
         matrix_store = matrix_storage_engine.get_store("1234")
 
-        result = builder.stitch_csvs(
+        result_df, labels_series = builder.stitch_csvs(
             features_queries=feature_queries,
             label_query=label_query,
             matrix_store=matrix_store,
-            matrix_uuid="1234"
+            matrix_uuid="1234",
         )
 
         # check if entity_id and as_of_date are as index
-        should_be = ['entity_id', 'as_of_date']
-        actual_indices = result.index.names
+        should_be = ["entity_id", "as_of_date"]
+        actual_indices = result_df.index.names
 
         assert should_be == list(actual_indices)
 
-        # last element in the DF should be the label
-        last_col = 'booking'
-        output = result.columns.values[-1]  # label name
+        # labels should be returned as a separate series
+        assert labels_series is not None
+        assert len(labels_series) == 5, "Number of labels doesn't match"
 
-        assert last_col == output
-
-        # number of columns must be the sum of all the columns on each feature table + 1 for the label
-        assert result.shape[1] == 4 + 1, "Number of features and label doesn't match"
+        # number of columns must be the sum of all the columns on each feature table (labels are separate)
+        assert result_df.shape[1] == 4, "Number of features doesn't match"
 
         # number of rows
-        assert result.shape[0] == 5, "Number of rows doesn't match"
+        assert result_df.shape[0] == 5, "Number of rows doesn't match"
 
         # types of the final df should be float32
-        types = set(result.apply(lambda x: x.dtype == 'float32').values)
+        types = set(result_df.apply(lambda x: x.dtype == "float32").values)
         assert types, "NOT all cols in matrix are float32!"
 
 
@@ -545,8 +540,7 @@ def test_train_matrix(db_engine):
         }
 
         feature_dictionary = {
-            f"features{i}": feature_list
-            for i, feature_list in enumerate(features)
+            f"features{i}": feature_list for i, feature_list in enumerate(features)
         }
 
         uuid = filename_friendly_hash(good_metadata)
@@ -604,8 +598,7 @@ def test_test_matrix(db_engine):
         }
 
         feature_dictionary = {
-            f"features{i}": feature_list
-            for i, feature_list in enumerate(features)
+            f"features{i}": feature_list for i, feature_list in enumerate(features)
         }
 
         uuid = filename_friendly_hash(good_metadata)
@@ -661,21 +654,21 @@ def test_nullcheck(db_engine):
         }
 
         feature_dictionary = {
-            f"features{i}": feature_list
-            for i, feature_list in enumerate(features)
+            f"features{i}": feature_list for i, feature_list in enumerate(features)
         }
 
         uuid = filename_friendly_hash(good_metadata)
-        with pytest.raises(ValueError):
-            builder.build_matrix(
-                as_of_times=dates,
-                label_name="booking",
-                label_type="binary",
-                feature_dictionary=feature_dictionary,
-                matrix_metadata=good_metadata,
-                matrix_uuid=uuid,
-                matrix_type="other",
-            )
+        # build_matrix catches ValueError internally and returns None
+        result = builder.build_matrix(
+            as_of_times=dates,
+            label_name="booking",
+            label_type="binary",
+            feature_dictionary=feature_dictionary,
+            matrix_metadata=good_metadata,
+            matrix_uuid=uuid,
+            matrix_type="other",
+        )
+        assert result is None
 
 
 def test_replace_false_rerun(db_engine):

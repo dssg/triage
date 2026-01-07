@@ -1,22 +1,23 @@
 from triage.logging import get_logger
+
 logger = get_logger(__name__)
 
 from collections import OrderedDict
 
 import sqlalchemy
-from sqlalchemy import text
 import sqlparse
-
-from triage.util.conf import convert_str_to_relativedelta
-from triage.database_reflection import table_exists
+from sqlalchemy import text
 
 from triage.component.collate import (
     Aggregate,
     Categorical,
     Compare,
+    FromObj,
     SpacetimeAggregation,
-    FromObj
 )
+from triage.database_reflection import table_exists
+from triage.util.conf import convert_str_to_relativedelta
+
 
 class FeatureGenerator:
     def __init__(
@@ -69,13 +70,15 @@ class FeatureGenerator:
             if aggregation_config["groups"] != [self.entity_id_column]:
                 raise ValueError(
                     "Specifying groupings for feature aggregation is not supported. "
-                    "Features can only be grouped at the {} level.".format(self.entity_id_column)
+                    "Features can only be grouped at the {} level.".format(
+                        self.entity_id_column
                     )
+                )
             else:
                 logger.warning(
                     "Specifying groupings for feature aggregation is not supported. "
                     "In the future, please exclude this key from your feature configuration."
-                    )
+                )
 
     def _validate_aggregates(self, aggregation_config):
         if (
@@ -95,7 +98,9 @@ class FeatureGenerator:
 
                 try:
                     with self.db_engine.begin() as conn:
-                        conn.execute(text("explain {}".format(categorical["choice_query"])))
+                        conn.execute(
+                            text("explain {}".format(categorical["choice_query"]))
+                        )
                 except Exception as exc:
                     raise ValueError(
                         f"choice query does not run. \n"
@@ -109,8 +114,7 @@ class FeatureGenerator:
                 conn.execute(text("explain select * from {}".format(from_obj)))
         except Exception as exc:
             raise ValueError(
-                "from_obj query does not run. \n"
-                'from_obj: "{from_obj}"\n'
+                "from_obj query does not run. \n" 'from_obj: "{from_obj}"\n'
             )
 
     def _validate_time_intervals(self, intervals):
@@ -155,9 +159,7 @@ class FeatureGenerator:
         required_params = valid_types[impute_rule["type"]]
         for param in required_params:
             if param not in impute_rule.keys():
-                raise ValueError(
-                    "Missing param {param} for {imput_rule['type']}"
-                )
+                raise ValueError("Missing param {param} for {imput_rule['type']}")
 
     def _validate_imputations(self, aggregation_config):
         """Validate the imputation rules in an aggregation config, looping
@@ -244,10 +246,10 @@ class FeatureGenerator:
                 impute_rules=dict(
                     impute_rules,
                     coltype="categorical",
-                    **categorical.get("imputation", {})
+                    **categorical.get("imputation", {}),
                 ),
                 include_null=True,
-                coltype=categorical.get('coltype', None),
+                coltype=categorical.get("coltype", None),
             )
             for categorical in categorical_config
         ]
@@ -266,12 +268,12 @@ class FeatureGenerator:
                 impute_rules=dict(
                     impute_rules,
                     coltype="array_categorical",
-                    **categorical.get("imputation", {})
+                    **categorical.get("imputation", {}),
                 ),
                 op_in_name=False,
                 quote_choices=False,
                 include_null=True,
-                coltype=categorical.get('coltype', None)
+                coltype=categorical.get("coltype", None),
             )
             for categorical in categorical_config
         ]
@@ -293,7 +295,7 @@ class FeatureGenerator:
                 aggregate["quantity"],
                 aggregate["metrics"],
                 dict(agimp, coltype="aggregate", **aggregate.get("imputation", {})),
-                coltype=aggregate.get('coltype', None)
+                coltype=aggregate.get("coltype", None),
             )
             for aggregate in aggregation_config.get("aggregates", [])
         ]
@@ -319,7 +321,7 @@ class FeatureGenerator:
             input_min_date=self.feature_start_time,
             schema=self.features_schema_name,
             prefix=aggregation_config["prefix"],
-            join_with_cohort_table=not self.features_ignore_cohort
+            join_with_cohort_table=not self.features_ignore_cohort,
         )
 
     def aggregations(self, feature_aggregation_config, feature_dates, state_table):
@@ -352,7 +354,7 @@ class FeatureGenerator:
             from_obj = FromObj(
                 from_obj=aggregation.from_obj.text,
                 name=f"{aggregation.schema}.{aggregation.prefix}",
-                knowledge_date_column=aggregation.date_column
+                knowledge_date_column=aggregation.date_column,
             )
             from_obj.maybe_materialize(self.db_engine)
             aggregation.from_obj = from_obj.table
@@ -380,7 +382,9 @@ class FeatureGenerator:
             task_generator = self._generate_imp_table_tasks_for
             logger.verbose("Starting Feature imputation")
         else:
-            raise ValueError(f"Table task type must be aggregation or imputation, was: {table_task}")
+            raise ValueError(
+                f"Table task type must be aggregation or imputation, was: {task_type}"
+            )
 
         table_tasks = OrderedDict()
         for aggregation in aggregations:
@@ -448,7 +452,9 @@ class FeatureGenerator:
         aggs = self.aggregations(feature_aggregation_config, feature_dates, state_table)
 
         # first, generate and run table tasks for aggregations
-        table_tasks_aggregate = self.generate_all_table_tasks(aggs, task_type="aggregation")
+        table_tasks_aggregate = self.generate_all_table_tasks(
+            aggs, task_type="aggregation"
+        )
         self.process_table_tasks(table_tasks_aggregate)
 
         # second, perform the imputations (this will query the tables
@@ -500,9 +506,11 @@ class FeatureGenerator:
         try:
             with self.db_engine.begin() as conn:
                 conn.execute(
-                    text("select 1 from {}.{} limit 1".format(
-                        self.features_schema_name, table_name
-                    ))
+                    text(
+                        "select 1 from {}.{} limit 1".format(
+                            self.features_schema_name, table_name
+                        )
+                    )
                 ).first()
         except sqlalchemy.exc.ProgrammingError:
             return False
@@ -534,9 +542,7 @@ class FeatureGenerator:
         )
 
     def _needs_features(self, aggregation):
-        imputed_table = self._clean_table_name(
-            aggregation.get_table_name(imputed=True)
-        )
+        imputed_table = self._clean_table_name(aggregation.get_table_name(imputed=True))
 
         if self._table_exists(imputed_table):
             check_query = (
@@ -559,8 +565,10 @@ class FeatureGenerator:
                 f"need to build features"
             )
             return True
-        logger.notice(f"Imputed feature table {imputed_table} looks good, "
-                      f"skipping feature building!")
+        logger.notice(
+            f"Imputed feature table {imputed_table} looks good, "
+            f"skipping feature building!"
+        )
         return False
 
     def _generate_agg_table_tasks_for(self, aggregation):
@@ -604,14 +612,20 @@ class FeatureGenerator:
                 "inserts": [],
                 "finalize": [self._aggregation_index_query(aggregation)],
             }
-            logger.debug(f"Created tasks for aggregation {self._clean_table_name(aggregation.get_table_name())}" )
+            logger.debug(
+                f"Created tasks for aggregation {self._clean_table_name(aggregation.get_table_name())}"
+            )
         else:
-            logger.debug(f"Skipping feature creation for table {self._clean_table_name(aggregation.get_table_name())}")
+            logger.debug(
+                f"Skipping feature creation for table {self._clean_table_name(aggregation.get_table_name())}"
+            )
             table_tasks[self._clean_table_name(aggregation.get_table_name())] = {}
 
         return table_tasks
 
-    def _generate_imp_table_tasks_for(self, aggregation, impute_cols=None, nonimpute_cols=None, drop_preagg=True):
+    def _generate_imp_table_tasks_for(
+        self, aggregation, impute_cols=None, nonimpute_cols=None, drop_preagg=True
+    ):
         """Generate SQL statements for preparing, populating, and
         finalizing imputations, for each feature group table in the
         given aggregation.

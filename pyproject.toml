@@ -148,3 +148,16 @@ BOTO_CONFIG = "/dev/null"
 
 [tool.pytest.ini_options]
 testpaths = ["src/tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+# Start with minimal rules to get CI passing, tighten incrementally
+select = [
+    "F821",  # undefined-name (critical - code won't run)
+    "F822",  # undefined-export
+    "F823",  # undefined-local
+]
+ignore = []
