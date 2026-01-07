@@ -1,34 +1,35 @@
 import functools
 import itertools
 import logging
+
 from triage.logging import get_logger
 
 logger = get_logger(__name__)
 import math
-
-import numpy as np
-import pandas as pd
 import statistics
 import typing
 from collections import defaultdict
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import cast, Interval
 
+import numpy as np
+import pandas as pd
 from aequitas.bias import Bias
 from aequitas.fairness import Fairness
 from aequitas.group import Group
 from aequitas.preprocessing import preprocess_input_df
+from sqlalchemy import Interval, cast
+from sqlalchemy.orm import sessionmaker
+
+from triage.component.catwalk.storage import MatrixStore
+from triage.util.db import scoped_session
+from triage.util.random import generate_python_random_seed
 
 from . import metrics
 from .utils import (
     db_retry,
-    sort_predictions_and_labels,
-    get_subset_table_name,
     filename_friendly_hash,
+    get_subset_table_name,
+    sort_predictions_and_labels,
 )
-from triage.util.db import scoped_session
-from triage.util.random import generate_python_random_seed
-from triage.component.catwalk.storage import MatrixStore
 
 RELATIVE_TOLERANCE = 0.01
 SORT_TRIALS = 30
@@ -427,14 +428,17 @@ class ModelEvaluator:
         # by querying the unique metrics and parameters relevant to the passed-in matrix
         session = self.sessionmaker()
 
+        # Use filter() with explicit cast for as_of_date_frequency (Interval type)
+        # to ensure psycopg3 compatibility
         evaluation_objects_in_db = (
             session.query(eval_obj)
-            .filter_by(
-                model_id=model_id,
-                evaluation_start_time=matrix_store.as_of_dates[0],
-                evaluation_end_time=matrix_store.as_of_dates[-1],
-                as_of_date_frequency=matrix_store.metadata["as_of_date_frequency"],
-                subset_hash=subset_hash,
+            .filter(
+                eval_obj.model_id == model_id,
+                eval_obj.evaluation_start_time == matrix_store.as_of_dates[0],
+                eval_obj.evaluation_end_time == matrix_store.as_of_dates[-1],
+                eval_obj.as_of_date_frequency
+                == cast(matrix_store.metadata["as_of_date_frequency"], Interval),
+                eval_obj.subset_hash == subset_hash,
             )
             .distinct(eval_obj.metric, eval_obj.parameter)
             .all()
@@ -509,6 +513,20 @@ class ModelEvaluator:
                             present_labels,
                             metric_def.parameter_combination,
                         )
+                        # Convert NaN values to None for database storage
+                        # sklearn metrics may return NaN without raising ValueError
+                        # (e.g., roc_auc_score when all labels are the same)
+                        if value is not None and (
+                            (isinstance(value, float) and math.isnan(value))
+                            or (
+                                hasattr(value, "__float__") and math.isnan(float(value))
+                            )
+                        ):
+                            logger.warning(
+                                f"{metric_def.metric} returned NaN for parameter {metric_def.parameter_combination}. "
+                                "Inserting NULL for value."
+                            )
+                            value = None
 
                     except ValueError:
                         logger.warning(
@@ -565,25 +583,25 @@ class ModelEvaluator:
             )
             labels = matrix_store.labels
             subset_hash = ""
-        
+
         # confirm protected_df and labels have same set and count of values
         if (protected_df is not None) and (not protected_df.empty):
             # Checking whether there are indexes (entity-date pairs) that appear in either the matrix or the protected df, but not in both
             symmetric_diff = protected_df.index.symmetric_difference(labels.index)
-            
+
             if (protected_df.index.shape != labels.index.shape) or (
                 not symmetric_diff.empty
             ):
                 only_in_protected_groups = protected_df.index.difference(labels.index)
                 only_in_matrix = labels.index.difference(protected_df.index)
-                
+
                 logging.error(
-                f'''The protected groups and the cohort (matrix) tables have diverged! 
+                    f"""The protected groups and the cohort (matrix) tables have diverged! 
                     {len(only_in_protected_groups)} entity-date pairs appear only in the protected groups
                     {len(only_in_matrix)} entity-date pairs appear only in the matrix. 
-                    Try rerunning the experiment with replace flag set to True'''
+                    Try rerunning the experiment with replace flag set to True"""
                 )
-                                
+
                 raise ValueError("Mismatch between protected_df and labels indices")
 
         df_index = labels.index
@@ -651,9 +669,9 @@ class ModelEvaluator:
                     worst_eval.value, best_eval.value, rel_tol=RELATIVE_TOLERANCE
                 )
             ):
-                evals_without_trials[
-                    (worst_eval.metric, worst_eval.parameter)
-                ] = worst_eval.value
+                evals_without_trials[(worst_eval.metric, worst_eval.parameter)] = (
+                    worst_eval.value
+                )
             else:
                 metric_defs_to_trial.append(metric_def)
 
@@ -697,15 +715,47 @@ class ModelEvaluator:
                 standard_deviation = 0
                 num_sort_trials = 0
             else:
+                # Filter out None and NaN values, converting to Python floats
+                # for compatibility with Python 3.12's statistics module
                 trial_results = [
-                    value
+                    float(value)
                     for value in random_eval_accumulator[metric_key]
                     if value is not None
+                    and not (isinstance(value, float) and math.isnan(value))
+                    and not (hasattr(value, "__float__") and math.isnan(float(value)))
                 ]
+                if not trial_results:
+                    stochastic_value = None
+                    standard_deviation = None
+                    num_sort_trials = 0
+                    logger.warning(
+                        f"{metric_def.metric} not defined for parameter {metric_def.parameter_combination} because all values "
+                        "are None or NaN. Inserting NULL for value."
+                    )
+                    evaluation = matrix_type.evaluation_obj(
+                        metric=metric_def.metric,
+                        parameter=metric_def.parameter_string,
+                        num_labeled_examples=worst_lookup[
+                            metric_key
+                        ].num_labeled_examples,
+                        num_labeled_above_threshold=worst_lookup[
+                            metric_key
+                        ].num_labeled_above_threshold,
+                        num_positive_labels=worst_lookup[
+                            metric_key
+                        ].num_positive_labels,
+                        worst_value=worst_lookup[metric_key].value,
+                        best_value=best_lookup[metric_key].value,
+                        stochastic_value=stochastic_value,
+                        num_sort_trials=num_sort_trials,
+                        standard_deviation=standard_deviation,
+                    )
+                    evaluations.append(evaluation)
+                    continue
                 stochastic_value = statistics.mean(trial_results)
                 try:
                     standard_deviation = statistics.stdev(trial_results)
-                except ValueError:
+                except (ValueError, statistics.StatisticsError):
                     logger.warning(
                         f"{metric_def.metric} not defined for parameter {metric_def.parameter_combination} because all values "
                         "are NaN. Inserting NULL for value."
@@ -908,7 +958,8 @@ class ModelEvaluator:
                 evaluation_table_obj.model_id == model_id,
                 evaluation_table_obj.evaluation_start_time == evaluation_start_time,
                 evaluation_table_obj.evaluation_end_time == evaluation_end_time,
-                evaluation_table_obj.as_of_date_frequency == cast(as_of_date_frequency, Interval),
+                evaluation_table_obj.as_of_date_frequency
+                == cast(as_of_date_frequency, Interval),
                 evaluation_table_obj.subset_hash == subset_hash,
             ).delete()
 
