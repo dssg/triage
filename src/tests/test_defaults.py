@@ -72,7 +72,8 @@ def test_model_grid_preset():
         'small': {'total_items': 35, 'model_types': 4},
         'medium': {'total_items': 64, 'model_types': 6},
         'large': {'total_items': 83, 'model_types': 6},
-        'texas': {'total_items': 115, 'model_types': 9},
+        'texas': {'total_items': 127, 'model_types': 10},
+        'whatever': {'total_items': 9, 'model_types': 1},
     }
 
     for grid_type, exp_results in test_cases.items():
