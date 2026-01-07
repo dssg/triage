@@ -42,7 +42,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libblas-dev liblapack-dev libatlas-base-dev gfortran
+        sudo apt-get install -y libblas-dev liblapack-dev libatlas-base-dev gfortran postgresql postgresql-contrib
     - name: Install dependencies
       run: |
         uv sync --extra dev

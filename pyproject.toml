@@ -60,7 +60,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = [
+dev = [
   "parsedatetime==2.6",
   "factory_boy==3.2.1",
   "pytest-postgresql>=6.0.0",
@@ -68,10 +68,12 @@ test = [
   "pytest-cov==3.0.0",
   "moto==3.1.7",
   "hypothesis==6.46.1",
-  "flake8==4.0.1",
+  "ruff>=0.8.0",
   "codecov==2.1.13",
   "coverage>=4.4",
-  "tox>=4.14,<5"
+]
+test = [
+  "triage[dev]",
 ]
 docs = [
   "mkdocs==1.6.1",
