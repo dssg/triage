@@ -23,7 +23,6 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 
 from triage.component import results_schema as schema
 
-
 sessionmaker = sessionmaker()
 session = scoped_session(sessionmaker)
 
@@ -218,4 +217,5 @@ def init_engine(new_engine):
     global sessionmaker, engine, session
     engine = new_engine
     session.remove()
-    sessionmaker.configure(bind=engine)
+    sessionmaker.configure(bind=engine, future=True)
+
