@@ -61,16 +61,20 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-  "parsedatetime==2.6",
-  "factory_boy==3.2.1",
-  "pytest-postgresql>=6.0.0",
-  "pytest>=8.2",
-  "pytest-cov==3.0.0",
-  "moto==3.1.7",
-  "hypothesis==6.46.1",
-  "ruff>=0.8.0",
+  "basedpyright>=1.31.7",
+  "bumpversion==0.6.0",
   "codecov==2.1.13",
   "coverage>=4.4",
+  "factory_boy==3.2.1",
+  "hypothesis==6.46.1",
+  "jupyter-console>=6.6.3",
+  "moto==3.1.7",
+  "parsedatetime==2.6",
+  "pytest>=8.2",
+  "pytest-cov==3.0.0",
+  "pytest-postgresql>=6.0.0",
+  "ruff>=0.8.0",
+  "wheel==0.38.2",
 ]
 test = [
   "triage[dev]",
@@ -80,23 +84,7 @@ docs = [
   "pymdown-extensions==10.8",
   "mkdocs-material==9.4.6",
   "mkdocstrings==0.29.1",
-  "mkdocstrings-python==1.16.10"
-]
-dev = [
-  "basedpyright>=1.31.7",
-  "jupyter-console>=6.6.3",
-  "pytest>=8.2",
-  "parsedatetime==2.6",
-  "factory_boy==3.2.1",
-  "pytest-postgresql>=6.0.0",
-  "moto==3.1.7",
-  "hypothesis==6.46.1",
-  "flake8==4.0.1",
-  "codecov==2.1.13",
-  "coverage>=4.4",
-  "tox>=4.14,<5",
-  "bumpversion==0.6.0",
-  "wheel==0.38.2"
+  "mkdocstrings-python==1.16.10",
 ]
 
 [project.urls]
