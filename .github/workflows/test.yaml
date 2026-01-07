@@ -16,20 +16,8 @@ jobs:
       matrix:
         python-version: ['3.12']
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    # Note: pytest-postgresql creates its own temporary PostgreSQL instances
+    # using system PostgreSQL binaries, so no Docker service is needed
 
     steps:
     - uses: actions/checkout@v4
@@ -50,7 +38,5 @@ jobs:
       run: |
         uv run ruff check src/
     - name: Run tests
-      env:
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
       run: |
-        uv run pytest src/tests/ -v --tb=short -x
+        uv run pytest src/tests/ -v --tb=short
