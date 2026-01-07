@@ -68,8 +68,8 @@ db_retry = retry(**DEFAULT_RETRY_KWARGS)
 def save_experiment_and_get_hash(config, db_engine):
     experiment_hash = filename_friendly_hash(config)
     with Session(db_engine) as session:
-        session.merge(Experiment(experiment_hash=experiment_hash, config=config))
-        session.commit()
+        with session.begin():
+            session.merge(Experiment(experiment_hash=experiment_hash, config=config))
 
     return experiment_hash
 
@@ -77,22 +77,24 @@ def save_experiment_and_get_hash(config, db_engine):
 @db_retry
 def associate_matrices_with_experiment(experiment_hash, matrix_uuids, db_engine):
     with Session(db_engine) as session:
-        for matrix_uuid in matrix_uuids:
-            session.merge(
-                ExperimentMatrix(experiment_hash=experiment_hash, matrix_uuid=matrix_uuid)
-            )
-        session.commit()
+        with session.begin():
+            for matrix_uuid in matrix_uuids:
+                session.merge(
+                    ExperimentMatrix(experiment_hash=experiment_hash, matrix_uuid=matrix_uuid)
+                )
+        
     logger.spam("Associated matrices with experiment in database")
 
 
 @db_retry
 def associate_models_with_experiment(experiment_hash, model_hashes, db_engine):
     with Session(db_engine) as session:
-        for model_hash in model_hashes:
-            session.merge(
-                ExperimentModel(experiment_hash=experiment_hash, model_hash=model_hash)
-            )
-        session.commit()
+        with session.begin():
+            for model_hash in model_hashes:
+                session.merge(
+                    ExperimentModel(experiment_hash=experiment_hash, model_hash=model_hash)
+                )
+    
     logger.spam("Associated models with experiment in database")
 
 
