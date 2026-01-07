@@ -46,7 +46,7 @@ First, clone this repository on your machine
 
 Second, in the cloned repository's top-level directory run
 
-    ./tutorial.sh up
+    just tutorial-up
 
 This will take several minutes the first time you do it.
 
