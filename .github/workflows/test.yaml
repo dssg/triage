@@ -39,4 +39,5 @@ jobs:
         uv run ruff check src/
     - name: Run tests
       run: |
-        uv run pytest src/tests/ -v --tb=short
+        uv run pytest src/tests/ -v --tb=short --timeout=300 -x
+      timeout-minutes: 30

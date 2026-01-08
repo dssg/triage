@@ -73,6 +73,7 @@ dev = [
   "pytest>=8.2",
   "pytest-cov==3.0.0",
   "pytest-postgresql>=6.0.0",
+  "pytest-timeout>=2.3.0",
   "ruff>=0.8.0",
   "wheel==0.38.2",
 ]
