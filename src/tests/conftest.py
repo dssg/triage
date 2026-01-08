@@ -1,13 +1,14 @@
-import pytest
-from pytest_postgresql import factories
 import tempfile
 from unittest import mock
 
-from tests.utils import sample_config, populate_source_data, open_side_effect
-from triage import create_engine
-from triage.component.catwalk.storage import ProjectStorage
-from triage.component.catwalk.db import ensure_db
+import pytest
+from pytest_postgresql import factories
+
 from tests.results_tests.factories import init_engine
+from tests.utils import open_side_effect, populate_source_data, sample_config
+from triage import create_engine
+from triage.component.catwalk.db import ensure_db
+from triage.component.catwalk.storage import ProjectStorage
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader
 from triage.experiments import SingleThreadedExperiment
 
@@ -29,6 +30,15 @@ def fixture_db_engine(postgresql):
     connection_url = f"postgresql+psycopg://{postgresql.info.user}@{postgresql.info.host}:{postgresql.info.port}/{postgresql.info.dbname}"
     engine = create_engine(connection_url)
     yield engine
+    # Clean up factory session before disposing engine.
+    # This prevents "AdminShutdown" errors when the session tries to rollback
+    # on a connection to a database that's about to be dropped by pytest-postgresql.
+    try:
+        from tests.results_tests.factories import session as factory_session
+
+        factory_session.remove()
+    except Exception:
+        pass  # Session might not be initialized yet, or already cleaned up
     engine.dispose()
 
 
@@ -79,8 +89,9 @@ def shared_db_engine(postgresql_proc):
 
     Uses pytest-postgresql's DatabaseJanitor for module-scoped database management.
     """
-    from pytest_postgresql.janitor import DatabaseJanitor
     import uuid
+
+    from pytest_postgresql.janitor import DatabaseJanitor
 
     # Create a unique database name for this module
     db_name = f"test_module_{uuid.uuid4().hex[:8]}"
