@@ -675,14 +675,14 @@ class Aggregation:
         for group, groupby in self.groups.items():
             query += "LEFT JOIN %s USING (%s)" % (self.get_table_name(group), groupby)
 
-        return text("CREATE TABLE %s AS (%s);" % (self.get_table_name(), query))
+        return text(f"CREATE TABLE {self.get_table_name()} AS ({query});")
 
     def get_drop(self, imputed=False):
         """
         Generate a drop table statement for the aggregation table
         Returns: string sql query
         """
-        return text("DROP TABLE IF EXISTS %s" % self.get_table_name(imputed=imputed))
+        return text(f"DROP TABLE IF EXISTS {self.get_table_name(imputed=imputed)}")
 
     def get_create_schema(self):
         """
@@ -806,15 +806,15 @@ class Aggregation:
             self.state_group,
         )
 
-        return text("CREATE TABLE %s AS (%s)" % (self.get_table_name(imputed=True), query))
+        return text(f"CREATE TABLE {self.get_table_name(imputed=True)} AS ({query})")
 
-    def execute(self, conn, join_table=None):
+    def execute(self, conn_, join_table=None):
         """
         Execute all SQL statements to create final aggregation table.
         Args:
             conn: the SQLAlchemy connection on which to execute
         """
-        self.validate(conn)
+        self.validate(conn_)
         create_schema = self.get_create_schema()
         creates = self.get_creates()
         drops = self.get_drops()
@@ -823,41 +823,39 @@ class Aggregation:
         drop = self.get_drop()
         create = self.get_create(join_table=join_table)
 
-        trans = conn.begin()
+        with conn_.begin() as conn:
+            if create_schema is not None:
+                conn.execute(text(create_schema))
 
-        if create_schema is not None:
-            conn.execute(text(create_schema))
+            for group in self.groups:
+                conn.execute(drops[group]) # already has a text wrap in self.get_drops()
+                conn.execute(creates[group]) # already returns a Text wrap stmt 
+                for insert in inserts[group]:
+                    conn.execute(insert) # already returns a Text wrap stmt
+                conn.execute(indexes[group]) # already returns a Text wrap stmt
 
-        for group in self.groups:
-            conn.execute(text(drops[group]))
-            conn.execute(text(creates[group]))
-            for insert in inserts[group]:
-                conn.execute(text(insert))
-            conn.execute(text(indexes[group]))
+            # create the aggregation table
+            conn.execute(drop) # already has a text wrap in self.get_drop()
+            conn.execute(create) # already has a text wrap in self.get_create()
 
-        # create the aggregation table
-        conn.execute(text(drop))
-        conn.execute(text(create))
+            # excute query to find columns with null values and create lists of columns
+            # that do and do not need imputation when creating the imputation table
+            res = conn.execute(text(self.find_nulls()))
+            null_counts = list(zip(res.keys(), res.fetchone()))
+            impute_cols = [col for col, val in null_counts if val > 0]
+            nonimpute_cols = [col for col, val in null_counts if val == 0]
+            res.close()
 
-        # excute query to find columns with null values and create lists of columns
-        # that do and do not need imputation when creating the imputation table
-        res = conn.execute(text(self.find_nulls()))
-        null_counts = list(zip(res.keys(), res.fetchone()))
-        impute_cols = [col for col, val in null_counts if val > 0]
-        nonimpute_cols = [col for col, val in null_counts if val == 0]
-        res.close()
+            # sql to drop and create the imputation table
+            drop_imp = self.get_drop(imputed=True)
+            create_imp = self.get_impute_create(
+                impute_cols=impute_cols, nonimpute_cols=nonimpute_cols
+            )
 
-        # sql to drop and create the imputation table
-        drop_imp = self.get_drop(imputed=True)
-        create_imp = self.get_impute_create(
-            impute_cols=impute_cols, nonimpute_cols=nonimpute_cols
-        )
+            # create the imputation table
+            conn.execute(drop_imp) # already has a text wrap in self.get_drop()
+            conn.execute(create_imp) # already has a text wrap in self.get_impute_create()
 
-        # create the imputation table
-        conn.execute(text(drop_imp))
-        conn.execute(text(create_imp))
-
-        trans.commit()
 
     def validate(self, conn):
         """
