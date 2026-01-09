@@ -1,12 +1,14 @@
+import sqlparse
 import verboselogs, logging
 logger = verboselogs.VerboseLogger(__name__)
 
+from sqlalchemy import text
 from triage.validation_primitives import (
     table_should_exist,
     table_should_have_column,
     column_should_be_timelike
 )
-import sqlparse
+
 
 
 class FromObj:
@@ -67,13 +69,16 @@ class FromObj:
     def maybe_materialize(self, db_engine):
         if self.should_materialize():
             logger.spam(f"from_obj in {self.name} looks like a subquery, so creating table")
-            db_engine.execute(self.drop_materialized_table_sql)
-            db_engine.execute(self.create_materialized_table_sql)
-            logger.spam(f"Created table to hold from_obj. New table: {self.materialized_table}")
+            with db_engine.begin() as conn:
+                conn.execute(text(self.drop_materialized_table_sql))
+                conn.execute(text(self.create_materialized_table_sql))
+                logger.spam(f"Created table to hold from_obj. New table: {self.materialized_table}")
+            
             self.validate(db_engine)
-            db_engine.execute(self.index_materialized_table_sql)
-            logger.spam(f"Indexed from_obj table: {self.materialized_table}")
-            logger.debug(f"Materialized table {self.materialized_table}")
+            with db_engine.begin() as conn: 
+                conn.execute(text(self.index_materialized_table_sql))
+                logger.spam(f"Indexed from_obj table: {self.materialized_table}")
+                logger.debug(f"Materialized table {self.materialized_table}")
         else:
             logger.debug(f"from_obj in {self.name} did not look like a subquery, so did not materialize")
 
