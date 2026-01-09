@@ -11,6 +11,8 @@ import pytest
 import sqlalchemy
 import testing.postgresql
 
+from sqlalchemy import text
+from triage import create_engine
 from triage.component.collate import Aggregate, SpacetimeAggregation
 
 
@@ -43,16 +45,30 @@ state_data = sorted(
 
 def test_basic_spacetime():
     with testing.postgresql.Postgresql() as psql:
-        engine = sqlalchemy.create_engine(psql.url())
-        engine.execute(
-            "create table events (entity_id int, event_date date, outcome bool)"
-        )
-        for event in events_data:
-            engine.execute("insert into events values (%s, %s, %s::bool)", event)
+        engine = create_engine(psql.url())
+        with engine.begin() as conn:
+            conn.execute(
+                text("create table events (entity_id int, event_date date, outcome bool)")
+            )
+            for event in events_data:
+                conn.execute(
+                    text("insert into events values (:entity_id, :event_date, cast(:outcome as bool))"),
+                    {
+                        "entity_id": event[0],
+                        "event_date": event[1],
+                        "outcome": event[2],
+                    }
+                )
 
-        engine.execute("create table states (entity_id int, as_of_date date)")
-        for state in state_data:
-            engine.execute("insert into states values (%s, %s)", state)
+            conn.execute(text("create table states (entity_id int, as_of_date date)"))
+            for state in state_data:
+                conn.execute(
+                    text("insert into states values (:entity_id, :as_of_date)"), 
+                    {
+                        "entity_id": state[0],
+                        "as_of_date": state[1],
+                    }
+                )
 
         agg = Aggregate(
             "outcome::int",
@@ -76,12 +92,13 @@ def test_basic_spacetime():
             output_date_column="as_of_date",
         )
 
-        st.execute(engine.connect())
+        st.execute(engine)
 
-        r = engine.execute(
-            "select * from events_entity_id order by entity_id, as_of_date"
-        )
-        rows = [x for x in r]
+        with engine.connect() as conn:
+            r = conn.execute(
+                text("select * from events_entity_id order by entity_id, as_of_date")
+            )
+        rows = [x._mapping for x in r]
         assert rows[0]["entity_id"] == 1
         assert rows[0]["as_of_date"] == date(2015, 1, 1)
         assert rows[0]["events_entity_id_1y_outcome::int_sum"] == 1
@@ -145,10 +162,11 @@ def test_basic_spacetime():
         assert len(rows) == 7
 
         # check some imputation results
-        r = engine.execute(
-            "select * from events_aggregation_imputed order by entity_id, as_of_date"
-        )
-        rows = [x for x in r]
+        with engine.connect() as conn:
+            r = conn.execute(
+                text("select * from events_aggregation_imputed order by entity_id, as_of_date")
+            )
+        rows = [x._mapping for x in r]
         assert rows[6]["entity_id"] == 4
         assert rows[6]["as_of_date"] == date(2015, 1, 1)
         assert rows[6]["events_entity_id_1y_outcome::int_sum"] == 3
@@ -195,14 +213,28 @@ def test_basic_spacetime():
 
 def test_input_min_date():
     with testing.postgresql.Postgresql() as psql:
-        engine = sqlalchemy.create_engine(psql.url())
-        engine.execute("create table events (entity_id int, date date, outcome bool)")
-        for event in events_data:
-            engine.execute("insert into events values (%s, %s, %s::bool)", event)
+        engine = create_engine(psql.url())
+        with engine.begin() as conn:
+            conn.execute(text("create table events (entity_id int, date date, outcome bool)"))
+            for event in events_data:
+                conn.execute(
+                    text("insert into events values (:entity_id, :date, cast(:outcome as bool))"), 
+                    {
+                        "entity_id": event[0],
+                        "date": event[1],
+                        "outcome": event[2],
+                    }
+                )
 
-        engine.execute("create table states (entity_id int, date date)")
-        for state in state_data:
-            engine.execute("insert into states values (%s, %s)", state)
+            conn.execute(text("create table states (entity_id int, date date)"))
+            for state in state_data:
+                conn.execute(
+                    text("insert into states values (:entity_id, :date)"), 
+                    {
+                        "entity_id": state[0],
+                        "date": state[1],
+                    }
+                )
 
         agg = Aggregate(
             "outcome::int",
@@ -226,10 +258,11 @@ def test_input_min_date():
             input_min_date="2015-11-10",
         )
 
-        st.execute(engine.connect())
+        st.execute(engine)
 
-        r = engine.execute("select * from events_entity_id order by entity_id")
-        rows = [x for x in r]
+        with engine.connect() as conn:
+            r = conn.execute(text("select * from events_entity_id order by entity_id"))
+        rows = [x._mapping for x in r]
 
         assert rows[0]["entity_id"] == 1
         assert rows[0]["date"] == date(2016, 1, 1)
@@ -253,20 +286,30 @@ def test_input_min_date():
             date_column='"date"',
             input_min_date="2014-11-10",
         )
+        
         with pytest.raises(ValueError):
-            st.validate(engine.connect())
+            st.validate(engine)
+        
         with pytest.raises(ValueError):
-            st.execute(engine.connect())
+            st.execute(engine)
 
 
 def test_join_with_cohort_table(db_engine):
     # if we specify joining with the cohort table
     # only entity_id/date pairs in the cohort table should show up
-    db_engine.execute("create table events (entity_id int, date date, outcome bool)")
-    for event in events_data:
-        db_engine.execute("insert into events values (%s, %s, %s::bool)", event)
+    with db_engine.begin() as conn:
+        conn.execute(text("create table events (entity_id int, date date, outcome bool)"))
+        for event in events_data:
+            conn.execute(
+                text("insert into events values (:entity_id, :date, cast(:outcome as bool))"), 
+                {
+                    "entity_id": event[0],
+                    "date": event[1],
+                    "outcome": event[2],
+                }
+            )
 
-    db_engine.execute("create table cohort (entity_id int, date date)")
+        conn.execute(text("create table cohort (entity_id int, date date)"))
 
     # use the states list from above except only include entities 1 and 2 in the cohort
     smaller_cohort = sorted(
@@ -275,9 +318,16 @@ def test_join_with_cohort_table(db_engine):
             set([l[1] for l in events_data] + [date(2016, 1, 1)]),
         )
     )
-    for state in smaller_cohort:
-        db_engine.execute("insert into cohort values (%s, %s)", state)
-
+    with db_engine.begin() as conn:
+        for state in smaller_cohort:
+            conn.execute(
+                text("insert into cohort values (:entity_id, :date)"), 
+                {
+                    "entity_id": state[0],
+                    "date": state[1],
+                }
+            )
+    
     # create our test aggregation with the important 'join_with_cohort_table' flag
     agg = Aggregate(
         "outcome::int",
@@ -301,10 +351,11 @@ def test_join_with_cohort_table(db_engine):
         join_with_cohort_table=True,
     )
 
-    st.execute(db_engine.connect())
+    st.execute(db_engine)
 
-    r = db_engine.execute("select * from events_entity_id order by entity_id, date")
-    rows = [x for x in r]
+    with db_engine.connect() as conn:
+        r = conn.execute(text("select * from events_entity_id order by entity_id, date"))
+    rows = [x._mapping for x in r]
 
     # these rows should be similar to the rows in the basic spacetime test,
     # except only the rows for entities 1 and 2 are present
