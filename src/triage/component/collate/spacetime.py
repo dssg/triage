@@ -300,7 +300,7 @@ class SpacetimeAggregation(Aggregation):
 
         return text("CREATE TABLE %s AS (%s);" % (self.get_table_name(), query))
 
-    def validate(self, conn):
+    def validate(self, conn_):
         """
         SpacetimeAggregations ensure that no intervals extend beyond the absolute
         minimum time.
@@ -313,31 +313,33 @@ class SpacetimeAggregation(Aggregation):
                         continue
                     # This could be done more efficiently all at once, but doing
                     # it this way allows for nicer error messages.
-                    r = conn.execute(
-                        text(
-                            "select ('%s'::date - '%s'::interval) < '%s'::date"
-                            % (date, interval, self.input_min_date)
+                    with conn_.connect() as conn:
+                        r = conn.execute(
+                            text(f"select {date::date} - {interval::interval} < cast(:input_min_date as date)"),
+                            {
+                                "input_min_date": self.input_min_date
+                            }
                         )
+                        if r.first()[0]:
+                            raise ValueError(
+                                "date '%s' - '%s' is before input_min_date ('%s')"
+                                % (date, interval, self.input_min_date)
+                            )
+        
+        with conn_.connect() as conn:
+            for date in self.dates:
+                r = conn.execute(
+                    text(f"select count(*) from {self.state_table} where {self.output_date_column} = cast(:date_ as date)"),
+                    {
+                        "date_": date,
+                    }
+                ).scalar_one()
+                if r == 0:
+                    raise ValueError(
+                        "date '%s' is not present in states table ('%s')"
+                        % (date, self.state_table)
                     )
-                    if r.fetchone()[0]:
-                        raise ValueError(
-                            "date '%s' - '%s' is before input_min_date ('%s')"
-                            % (date, interval, self.input_min_date)
-                        )
-                    r.close()
-        for date in self.dates:
-            r = conn.execute(
-                text(
-                    "select count(*) from %s where %s = '%s'::date"
-                    % (self.state_table, self.output_date_column, date)
-                )
-            )
-            if r.fetchone()[0] == 0:
-                raise ValueError(
-                    "date '%s' is not present in states table ('%s')"
-                    % (date, self.state_table)
-                )
-            r.close()
+                
 
     def find_nulls(self, imputed=False):
         """
@@ -397,4 +399,4 @@ class SpacetimeAggregation(Aggregation):
             self.output_date_column,
         )
 
-        return text("CREATE TABLE %s AS (%s)" % (self.get_table_name(imputed=True), query))
+        return text(f"CREATE TABLE {self.get_table_name(imputed=True)} AS ({query})")
