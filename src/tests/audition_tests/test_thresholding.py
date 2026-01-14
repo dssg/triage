@@ -1,7 +1,7 @@
 from unittest import TestCase
 from datetime import datetime
 import testing.postgresql
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 from triage.component.audition.distance_from_best import DistanceFromBestTable
 from triage.component.audition.thresholding import (
@@ -185,11 +185,22 @@ class ModelGroupThresholderTest(TestCase):
             (6, "2016-01-01", "recall@", "100_abs", 0.5, 0.5, 0.0, 0.38),
             (6, "2016-01-01", "false positives@", "100_abs", 40, 30, 10, 10),
         ]
-        for dist_row in distance_rows:
-            engine.execute(
-                "insert into dist_table values (%s, %s, %s, %s, %s, %s, %s, %s)",
-                dist_row,
-            )
+
+        with engine.begin() as conn:
+            for dist_row in distance_rows:
+                conn.execute(
+                    text("insert into dist_table values (:col1, :col2, :col3, :col4, :col5, :col6, :col7, :col8)"),
+                    {
+                        "col1": dist_row[0],
+                        "col2": dist_row[1],
+                        "col3": dist_row[2],
+                        "col4": dist_row[3],
+                        "col5": dist_row[4],
+                        "col6": dist_row[5],
+                        "col7": dist_row[6],
+                        "col8": dist_row[7],
+                    }
+                )
         thresholder = ModelGroupThresholder(
             distance_from_best_table=distance_table,
             train_end_times=["2014-01-01", "2015-01-01"],
