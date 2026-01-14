@@ -3,7 +3,7 @@ from datetime import datetime
 import factory
 import pandas as pd
 import testing.postgresql
-from sqlalchemy import create_engine
+from triage import create_engine
 
 from tests.results_tests.factories import (
     EvaluationFactory,
@@ -98,15 +98,14 @@ def test_PreAudition():
         assert len(pre_aud.get_model_groups_from_experiment(experiment_hash)['model_groups']) == 1
 
         # Expect the number of model groups for customs SQL
-        query = """
+        query = f"""
             SELECT DISTINCT(model_group_id)
             FROM triage_metadata.models
             JOIN triage_metadata.experiment_models using (model_hash)
             WHERE train_end_time >= '2013-01-01'
-            AND experiment_hash = '{}'
-        """.format(
-            experiment_hash
-        )
+            AND experiment_hash = '{experiment_hash}'
+        """
+        
         assert len(pre_aud.get_model_groups(query)) == 1
         # Expect the number of train_end_times after 2014-01-01
         assert len(pre_aud.get_train_end_times(after="2014-01-01")) == 6
