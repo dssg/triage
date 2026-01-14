@@ -4,7 +4,8 @@ from unittest.mock import patch
 import factory
 import numpy as np
 import testing.postgresql
-from sqlalchemy import create_engine
+from sqlalchemy import text
+from triage import create_engine
 
 from triage.component.audition.distance_from_best import (
     DistanceFromBestTable,
@@ -130,19 +131,40 @@ def test_DistanceFromBestTable():
 
         # get an ordered list of the model groups for a particular metric/time
         query = """
-            select model_group_id, raw_value, dist_from_best_case, dist_from_best_case_next_time
-            from dist_table where metric = %s and parameter = %s and train_end_time = %s
+            select 
+                model_group_id, 
+                raw_value, 
+                dist_from_best_case, 
+                dist_from_best_case_next_time
+            from dist_table 
+            where metric = :metric 
+            and parameter = :threshold 
+            and train_end_time = :train_end_time
             order by dist_from_best_case
-        """
+            """
 
-        prec_3y_ago = engine.execute(query, ("precision@", "100_abs", "2014-01-01"))
+        with engine.connect() as conn: 
+            prec_3y_ago = conn.execute(
+                text(query), 
+                {
+                    "metric": "precision@", 
+                    "threshold": "100_abs", 
+                    "train_end_time": "2014-01-01"}
+                )
         assert [row for row in prec_3y_ago] == [
             (models["spiky_3y_ago"].model_group_id, 0.8, 0, 0.17),
             (models["stable_3y_ago"].model_group_id, 0.6, 0.2, 0),
             (models["bad_3y_ago"].model_group_id, 0.4, 0.4, 0.18),
         ]
 
-        recall_2y_ago = engine.execute(query, ("recall@", "100_abs", "2015-01-01"))
+        with engine.connect() as conn:
+            recall_2y_ago = conn.execute(
+                text(query), 
+                {
+                    "metric": "recall@", 
+                    "threshold": "100_abs", 
+                    "train_end_time": "2015-01-01"}
+            )
         assert [row for row in recall_2y_ago] == [
             (models["spiky_2y_ago"].model_group_id, 0.8, 0, 0.19),
             (models["stable_2y_ago"].model_group_id, 0.56, 0.24, 0),
