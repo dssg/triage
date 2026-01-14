@@ -13,7 +13,7 @@ import pandas as pd
 import testing.postgresql
 from functools import cached_property
 from triage import create_engine
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text
 
 from triage.component.catwalk.db import ensure_db
@@ -23,7 +23,7 @@ from triage.component.results_schema import Model, Matrix
 from triage.experiments import CONFIG_VERSION
 from triage.util.structs import FeatureNameList
 
-from tests.results_tests.factories import init_engine, session, MatrixFactory
+from tests.results_tests.factories import MatrixFactory, session, init_engine
 
 matplotlib.use("Agg")
 
@@ -120,10 +120,11 @@ class MockMatrixStore(MatrixStore):
         self.init_labels = pd.Series(init_labels, dtype="float64")
         self.matrix_uuid = matrix_uuid
         self.init_as_of_dates = init_as_of_dates or []
-        with Session(db_engine) as session:
-        #session = sessionmaker(db_engine)()
-            session.add(Matrix(matrix_uuid=matrix_uuid))
-            session.commit()
+        #with Session(db_engine) as session:
+        session = sessionmaker(db_engine)()
+        #with Session() as session:
+        session.add(Matrix(matrix_uuid=matrix_uuid))
+        session.commit()
 
     @property
     def as_of_dates(self):
@@ -149,22 +150,22 @@ def fake_trained_model(
     Returns:
         (int) model id for database retrieval
     """
-    with Session(db_engine) as session:
-    #session = sessionmaker(db_engine)()
-        session.merge(Matrix(matrix_uuid=train_matrix_uuid))
+    #with Session(db_engine) as session:
+    session = sessionmaker(db_engine)()
+    session.merge(Matrix(matrix_uuid=train_matrix_uuid))
 
-        # Create the fake trained model and store in db
-        trained_model = MockTrainedModel()
-        db_model = Model(
-            model_hash="abcd",
-            train_matrix_uuid=train_matrix_uuid,
-            train_end_time=train_end_time,
-        )
-        session.add(db_model)
-        session.commit()
-        model_id = db_model.model_id
-        #session.close()
-        return trained_model, model_id
+    # Create the fake trained model and store in db
+    trained_model = MockTrainedModel()
+    db_model = Model(
+        model_hash="abcd",
+        train_matrix_uuid=train_matrix_uuid,
+        train_end_time=train_end_time,
+    )
+    session.add(db_model)
+    session.commit()
+    model_id = db_model.model_id
+    session.close()
+    return trained_model, model_id
 
 
 def matrix_metadata_creator(**override_kwargs):
