@@ -401,6 +401,10 @@ class MatrixStore:
         This includes setting the index (depending on the storage, may not be serializable)
         and downcasting.
         """
+        logger.spam(f"Matrix with labels head{matrix_with_labels.head()}")
+        logger.spam(f"Indices: {self.indices}")
+        logger.spam(f"Matrix with labels index names: {matrix_with_labels.index.names}")
+        logger.spam(f"Matrix dtypes {matrix_with_labels.dtypes}")
         if matrix_with_labels.index.names != self.indices:
             matrix_with_labels.set_index(self.indices, inplace=True)
         index_of_date = matrix_with_labels.index.names.index('as_of_date')
@@ -674,6 +678,9 @@ class CSVMatrixStore(MatrixStore):
         df = df_pl.to_pandas()
         end = time.time()
         logger.debug(f"Time converting from polars to pandas (sec): {(end-start)/60}")
+        # on pandas 2 the default unit for datetime is micro sec but we need ns
+        # so we change it before make it part of the index
+        df['as_of_date'] = df.as_of_date.astype('datetime64[ns]')
         df.set_index(["entity_id", "as_of_date"], inplace=True)
         logger.debug(f"df data types: {df.dtypes}")
         logger.spam(f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")

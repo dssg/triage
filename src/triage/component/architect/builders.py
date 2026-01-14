@@ -634,8 +634,12 @@ class MatrixBuilder(BuilderBase):
         df = df_pl_aux.to_pandas()
         end = time.time()
         logger.debug(f"Time converting from polars to pandas (sec): {(end-start)/60}")
+        # on pandas 2 the default unit for datetime is micro sec but we need ns
+        # so we change it before make it part of the index
+        df['as_of_date'] = df.as_of_date.astype('datetime64[ns]')
         df.set_index(["entity_id", "as_of_date"], inplace=True)
         logger.debug(f"df data types: {df.dtypes}")
+        logger.debug(f"df index data types: {df.index.dtypes}")
         logger.debug(f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
         # generating gzip file from csv
         generate_gzip(path_, matrix_uuid)
