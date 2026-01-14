@@ -111,8 +111,10 @@ class PreAudition:
             after: (string) YYYY-MM-DD time format
             query: (string) SQL query for train_end_times
         """
-        model_groups_stmt = ", ".join(map(str, self.model_groups + self.baseline_model_groups))
+        logger.debug(f"model groups: {self.model_groups}, baseline model groups: {self.baseline_model_groups}")
         if query is None:
+            model_groups_stmt = ", ".join(map(str, self.model_groups + self.baseline_model_groups))
+            
             query = f"""
             SELECT DISTINCT train_end_time
             FROM triage_metadata.models
@@ -121,7 +123,7 @@ class PreAudition:
             ORDER BY train_end_time
             ;
             """
-
+        logger.spam(f"pre audition get train end times with query: {query}")
         end_times = sorted(
             list(
                 pd.read_sql(text(query), 
