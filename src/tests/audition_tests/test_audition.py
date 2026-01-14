@@ -184,6 +184,7 @@ def test_Auditioner():
             },
         ]
         model_group_ids = [mg.model_group_id for mg in model_groups]
+        
         auditioner = Auditioner(
             db_engine, model_group_ids, train_end_times, no_filtering
         )
