@@ -2,13 +2,15 @@
 
 import sqlalchemy
 import wrapt
+import json
+import functools
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
 from contextlib import contextmanager
 from sqlalchemy.orm import Session
 from sqlalchemy.engine import make_url
-from sqlalchemy import inspect
-
-import json
-import functools
+from sqlalchemy import inspect, select
 
 from psycopg2.extras import DateRange, DateTimeRange
 from datetime import date, datetime
@@ -67,11 +69,17 @@ create_engine = functools.partial(SerializableDbEngine, json_serializer=json_dum
 @contextmanager
 def scoped_session(db_engine):
     """Provide a transactional scope around a series of operations."""
-    session = Session(bind=db_engine)
+    #session = sessionmaker(db_engine, future=True)
+    session = Session(
+        bind=db_engine,
+        future=True,
+        expire_on_commit=False,
+        )
+    
     try:
         yield session
         session.commit()
-    except:
+    except Exception:
         session.rollback()
         raise
     finally:
@@ -81,7 +89,11 @@ def scoped_session(db_engine):
 @contextmanager
 def get_for_update(db_engine, orm_class, primary_key):
     """ Gets object from the database to updated it """
+    logger.spam(f"ORM class: {orm_class} with primary key {primary_key}")
     with scoped_session(db_engine) as session:
-        obj = session.query(orm_class).get(primary_key)
+        obj = session.get(orm_class, primary_key)
+        logger.spam(f"obj from get_for_update: {obj}")
         yield obj
         session.merge(obj)
+
+
