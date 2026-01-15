@@ -459,7 +459,7 @@ def sample_config(query_source="filepath"):
                 "query": """\
                     select distinct entity_id
                     from events
-                    where entity_id %% 2 = 0
+                    where entity_id % 2 = 0
                     and outcome_date < '{as_of_date}'::date
                 """,
             },
