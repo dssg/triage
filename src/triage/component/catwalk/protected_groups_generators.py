@@ -66,7 +66,7 @@ class ProtectedGroupsGenerator:
                         f"delete from {self.protected_groups_table_name} where cohort_hash = '{cohort_hash}'"
                     )
                 )
-            logger.debug(f"Removed from {self.protected_groups_table_name} all rows from cohort {cohort_hash}")
+            logger.debug(f"Because replace flag is true, removed from {self.protected_groups_table_name} all rows from cohort {cohort_hash}")
 
         logger.spam(
             f"Creating protected_groups for {len(as_of_dates)} as of dates",
@@ -74,22 +74,26 @@ class ProtectedGroupsGenerator:
 
         for as_of_date in as_of_dates:
             if not self.replace:
-                logger.spam(
-                    "Looking for existing protected_groups for as of date {as_of_date}"
-                )
+                logger.spam(f"Looking for existing protected_groups for as of date {as_of_date}")
                 with self.db_engine.connect() as conn:
-                    any_existing_rows = list(conn.execute(
+                    result = conn.execute(
                         text(
                             f"""select 1 from {self.protected_groups_table_name}
-                            where as_of_date = '{as_of_date}'
-                            and cohort_hash = '{cohort_hash}'
+                            where as_of_date = :as_of_date
+                            and cohort_hash = :cohort_hash
                             limit 1
-                            """
-                        )
-                    ))
-                if len(any_existing_rows) == 1:
-                    logger.debug("Since nonzero existing protected_groups found, skipping")
-                    continue
+                            """ 
+                        ),
+                        {
+                            "as_of_date": as_of_date,
+                            "cohort_hash": cohort_hash,
+                        }
+                    )
+
+                    any_existing_rows = result.first() is not None 
+                    if any_existing_rows:
+                        logger.debug("Since nonzero existing protected_groups found, skipping")
+                        continue
 
             logger.debug(
                 f"Generating protected groups for as of date {as_of_date} "
@@ -108,12 +112,13 @@ class ProtectedGroupsGenerator:
                         f"select count(*) from {self.protected_groups_table_name}"
                     )
                 ).scalar()
-                if nrows == 0:
-                    logger.warning("Done creating protected_groups, but no rows in protected_groups table!")
-                else:
-                    logger.success(f"Protected groups stored in the table "
-                                f"{self.protected_groups_table_name} successfully")
-                    logger.spam(f"Protected groups table has {nrows} rows")
+        logger.spam(f"nrows: {nrows}")
+        if nrows == 0:
+            logger.warning("Done creating protected_groups, but no rows in protected_groups table!")
+        else:
+            logger.success(f"Protected groups stored in the table "
+                        f"{self.protected_groups_table_name} successfully")
+            logger.spam(f"Protected groups table has {nrows} rows")
 
     def generate(self, start_date, cohort_table_name, cohort_hash):
         attribute_columns = ", ".join([str(col) for col in self.attribute_columns])
@@ -133,7 +138,7 @@ class ProtectedGroupsGenerator:
             """
             
         logger.debug("Running protected_groups creation query")
-        logger.spam(f"Query to insert protected_df: {full_insert_query}")
+        logger.spam(f"Query to insert protected_df with start_date {start_date} and cohort_hash {cohort_hash}: {full_insert_query}")
         with self.db_engine.begin() as conn:
             conn.execute(
                 text(full_insert_query),
@@ -163,9 +168,11 @@ class ProtectedGroupsGenerator:
             join dates using(as_of_date)
             where cohort_hash = '{cohort_hash}'
         """
-        protected_df = pd.DataFrame.pg_copy_from(
+        logger.spam(f"Getting protected_df from query string: {query_string}")
+        
+        protected_df = pd.read_sql(
             query_string,
-            connectable=self.db_engine,
+            con=self.db_engine,
             parse_dates=["as_of_date"],
             index_col=MatrixStore.indices,
         )
