@@ -200,3 +200,10 @@ def generate_binned_scores(df, n_bins, group_by_elements=None):
     agg_all = agg_all.drop('score_bin', axis=1)
 
     return agg_all
+
+def crosstabs_exist_for_model(db_engine, model_id, crosstabs_table_name='crosstabs'):
+    results = [
+        row for row in db_engine.execute(f'select * from test_results.{crosstabs_table_name} where model_id={model_id}')
+    ]
+    
+    return len(results) > 0
