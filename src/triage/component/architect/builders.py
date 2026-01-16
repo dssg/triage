@@ -644,14 +644,16 @@ class MatrixBuilder(BuilderBase):
         generate_gzip(path_, matrix_uuid)
 
         # if matrix store is S3 
+        store_is_s3 = False
         if isinstance(matrix_store.matrix_base_store, S3Store):
             logger.debug(f"storing {matrix_uuid}.csv.gz on S3")
             matrix_store._save(path_, matrix_store.matrix_base_store.path)
+            store_is_s3 = True
 
         logger.debug(f"removing csvs files for matrix {matrix_uuid}")
         # addinig _sorted and _fixed files to list of files to rm 
         rm_filenames = generate_list_of_files_to_remove(filenames, matrix_uuid)
-        remove_unnecessary_files(rm_filenames, path_, matrix_uuid)
+        remove_unnecessary_files(rm_filenames, path_, matrix_uuid, store_is_s3)
 
         return df, labels_series
 

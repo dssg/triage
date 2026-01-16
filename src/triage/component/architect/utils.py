@@ -350,7 +350,7 @@ def generate_gzip(path, matrix_uuid):
         logger.error(f"An error occurred while generating gzip: {e}")
 
 
-def remove_unnecessary_files(filenames, path_, matrix_uuid):
+def remove_unnecessary_files(filenames, path_, matrix_uuid, storage_is_s3):
     """
     Removes the csvs generated for each feature, the label csv file,
     and the csv with all the features and label stitched togheter. 
@@ -360,6 +360,7 @@ def remove_unnecessary_files(filenames, path_, matrix_uuid):
         filenames (list): list of filenames to remove from disk
         path_ (string): Path 
         matrix_uuid (string): ID of the matrix
+        storage_is_s3 (bool): Whether the project store is a S3 bucket
     """
     # deleting features and label csvs
     for filename_ in filenames:
@@ -379,7 +380,7 @@ def remove_unnecessary_files(filenames, path_, matrix_uuid):
         logger.error(f"Error removing file {path_}/{matrix_uuid}.csv: {e}")
     
     # deleting the compressed CSV when the project path is S3
-    if path_.startswith('/tmp'):
+    if storage_is_s3:
         filename_ = f"{path_}/{matrix_uuid}.csv.gz"
         cmd_line = ['rm', filename_]
         logger.debug(f"About to remove gzip file with command {cmd_line}")

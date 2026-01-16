@@ -7,10 +7,11 @@ import matplotlib.table as tab
 import matplotlib.pyplot as plt
 from io import StringIO
 import altair as alt
+import itertools
+#from tabulate import tabulate
 
 from IPython.display import display
-import itertools
-
+from io import StringIO
 from descriptors import cachedproperty
 from sqlalchemy import create_engine
 from sklearn.calibration import calibration_curve
@@ -418,8 +419,14 @@ class Model:
         crosstabs_df['model_id'] = self.model_id
         crosstabs_df['matrix_uuid'] = matrix_uuid
 
-    
         if push_to_db:
+            # logging.info('Pushing the results to the DB')
+            # crosstabs_df.set_index(
+            #     ['model_id', 'matrix_uuid', 'feature', 'metric', 'threshold_type', 'threshold'], inplace=True
+            # )
+
+            # # TODO: Figure out to change the owner of the table
+            # crosstabs_df.pg_copy_to(schema='test_results', name=table_name, con=self.engine, if_exists='append')
             logging.info(f'Pushing the results to the database, {len(crosstabs_df)} rows')
                     
             crosstabs_df.set_index(
@@ -455,14 +462,170 @@ class Model:
             buffer.seek(0)
             
             columns = ', '.join(crosstabs_df.columns)
+            print(columns)
             cursor.copy_expert(f"COPY test_results.{table_name} ({columns}) FROM STDIN WITH CSV", buffer)
-        
+            # results.to_sql(con=db_engine, schema=table_schema, name=table_name, if_exists='append')
             conn.commit()
             cursor.close()
             conn.close()
 
         if return_df:
-            return crosstabs_df  
+            return crosstabs_df
+        
+
+    def display_crosstabs_pos_vs_neg(
+            self, 
+            threshold_type, threshold, table_name='crosstabs',
+            display_n_features=40,
+            filter_features=None,
+            support_threshold=0.1,
+            return_df=True,
+            show_plot=True,
+            matrix_uuid=None,
+            ax=None):
+        """ Display the crosstabs for the model
+
+        Args:
+            threshold_type (str): Type of rank threshold to use in splitting predicted positives from negatives. 
+                                Has to be one of the rank columns in the test_results.predictions_table
+
+            threshold (Union[int, float]): The rank threshold of the specified type. If the threshold type is an absolute, integer. 
+                                        If percentage, should be a float between 0 and 1
+        
+            table_name (str, optional): Table name to fetch crosstabs from (`test_results` schema). Defaults to 'crosstabs'.
+        """
+
+        q = f"""
+            select 
+                model_id, 
+                feature, 
+                metric, 
+                abs(value) as value 
+            from test_results.{table_name} 
+            where threshold_type = '{threshold_type}'
+            and threshold = {threshold}
+            and metric in (
+                'mean_ratio',
+                'mean_predicted_positive',
+                'mean_predicted_negative',
+                'support_pct_predicted_positive',
+                'support_pct_predicted_negative'
+            )
+            and model_id = {self.model_id}            
+        """
+
+        if matrix_uuid is not None:
+            q = q + f"\n and matrix_uuid='{matrix_uuid}'"
+        else:
+            matrix_uuid=self.pred_matrix_uuid
+
+        ct = pd.read_sql(q, self.engine)
+
+        if ct.empty:
+            logging.error(
+                f'''Crosstabs not found for model {self.model_id} and matrix={matrix_uuid} in table test_results.{table_name}. 
+                Please use crosstabs_pos_vs_neg function to generate crosstabs'''
+            )
+            raise ValueError('Crosstabs not found!')
+
+        # Creating the pivot table to convert to wide format indexed by the column
+        pivot_table = pd.pivot(
+            ct, 
+            index='feature', 
+            columns='metric', 
+            values='value'
+        )
+
+        # Shortening the names, and removing the index names to plot more cleanly
+        pivot_table.rename(
+            columns={
+                'mean_ratio': 'ratio',
+                'mean_predicted_positive': '(+)mean',
+                'mean_predicted_negative': '(-)mean',
+                'support_pct_predicted_negative': '(-)supp',
+                'support_pct_predicted_positive': '(+)supp'
+            }, 
+            inplace=True
+        )
+        pivot_table.index.name='feature_name'
+        pivot_table.columns.name=''
+
+        if filter_features is not None:
+            return pivot_table.loc[filter_features]
+
+        
+        # Filtering by the support threshold
+        msk1 = pivot_table['(+)supp'] > support_threshold
+        # Features with highest postive : negative ratio
+        # df1 = pivot_table[msk].sort_values(
+        #     'ratio', 
+        #      ascending = False
+        # ).head(display_n_features)
+
+
+        msk2 = pivot_table['(-)supp'] > support_threshold
+        # Features with the highest negative : positive ratio
+        # df2 = pivot_table[msk].sort_values(
+        #     ['ratio', '(-)supp'], 
+        #      ascending = [True, False]
+        # ).head(display_n_features)
+
+        df = pivot_table[msk1 | msk2].sort_values(
+            'ratio', 
+             ascending = False
+        ).head(display_n_features)
+
+        if show_plot:
+            if ax is None: 
+                fig, ax = plt.subplots(figsize=(4, 1 + (display_n_features *2) / 5), dpi=100)
+
+            t = tab.table(
+                ax, 
+                cellText=df.values.round(1), 
+                colLabels=df.columns, 
+                rowLoc='right',
+                rowLabels=df.index, 
+                bbox=[0, 0, 1, 1]
+            )
+        
+            ax.set_title(
+                f'Model Group: {self.model_group_id} | Train end: {self.train_end_time} | Model: {self.model_id}\n',
+                fontdict={
+                    'fontsize': 10,
+                    'verticalalignment': 'center',
+                    'horizontalalignment': 'center'
+                },
+                x=-0.1
+            )
+            ax.axis('off')
+
+            # Table formatting
+            t.auto_set_column_width([0, 1, 2, 3, 4])
+            for key, cell in t.get_celld().items():
+                cell.set_fontsize(9)
+                cell.set_linewidth(0.1)
+                # cell.PAD = 0.01
+                
+                # '''
+                # q = _generate_create_table_sql_statement_from_df(results, f'{table_schema}.{table_name}')
+                self.engine.execute(q)
+            
+        #     conn = self.engine.raw_connection()
+        #     cursor = conn.cursor()
+            
+        #     buffer = StringIO()
+        #     crosstabs_df.to_csv(buffer, index=False, header=False)
+        #     buffer.seek(0)
+            
+        #     columns = ', '.join(crosstabs_df.columns)
+        #     cursor.copy_expert(f"COPY test_results.{table_name} ({columns}) FROM STDIN WITH CSV", buffer)
+        
+        #     conn.commit()
+        #     cursor.close()
+        #     conn.close()
+
+        # if return_df:
+        #     return crosstabs_df  
         
     def error_analysis(self, project_path):
         """
@@ -669,7 +832,7 @@ class MultiModelAnalyzer:
             and model_group_id in ('{model_groups}')        
             """  
         # TODO do we really need experiment_hashes here? can we query with only model_group_ids?
-
+        
         # TODO: modify to remove pandas
         models = pd.read_sql(q, self.engine).to_dict(orient='records')
 
@@ -691,9 +854,9 @@ class MultiModelAnalyzer:
 
             for m in models:
                 if m['model_group_id'] in d:
-                    d[m['model_group_id']][m['train_end_time']] = SingleModelAnalyzer(m['model_id'], self.engine)
+                    d[m['model_group_id']][m['train_end_time']] = Model(m['model_id'], self.engine)
                 else:
-                    d[m['model_group_id']] = {m['train_end_time']: SingleModelAnalyzer(m['model_id'], self.engine)}
+                    d[m['model_group_id']] = {m['train_end_time']: Model(m['model_id'], self.engine)}
 
         return d 
     
@@ -730,7 +893,7 @@ class MultiModelAnalyzer:
         """
         fig, axes = self._get_subplots(subplot_width=subplot_width, subplot_len=subplot_len, sharey=sharey, sharex=sharex)
         
-        print(len(axes), len(axes[0]))
+        logging.info(f"{len(axes), len(axes[0])}")
 
         for j, mg in enumerate(self.models):
             for i, train_end_time in enumerate(self.models[mg]):
