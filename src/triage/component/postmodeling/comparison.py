@@ -14,7 +14,8 @@ from .utils import (
     get_evaluations_for_metric, 
     validation_group_model_exists,
     generate_overall_kde,
-    generate_kde_by_model_timechop
+    generate_kde_by_model_timechop,
+    crosstabs_exist_for_model
 ) 
 from triage.component.catwalk.evaluation import ModelEvaluator
 
@@ -763,13 +764,28 @@ class ModelComparison:
         'overlap': lambda x: 'high' if x > 0.8 else ('moderate' if x > 0.4 else 'low')
     }
     
+    similarity_color_map = {
+        'high': 'background-color: green',
+        'moderate': 'background-color: yellow',
+        'low': 'background-color: red'
+    }
+    
     metrics = {
         'jaccard': lambda s1, s2: len(s1.intersection(s2)) / len(s1.union(s2)),
         'overlap': lambda s1, s2: len(s1.intersection(s2)) / min(len(s1), len(s2))
     }
     
-    def __init__(self, engine, model_ids):
-        self.models = [Model(model_id, engine) for model_id in model_ids]
+    def __init__(self,engine, model_ids, metric='precision@', bias_metric='tpr_disparity', threshold='1_pct'):
+        self.models = [
+            ModelAnalyzer(
+                engine, 
+                model_id, 
+                performance_metric=metric, 
+                bias_metric=bias_metric,
+                threshold=threshold
+            ) 
+            for model_id in model_ids
+        ]
         self.model_ids = model_ids
         self.engine=engine
         
@@ -935,8 +951,37 @@ class ModelComparison:
         
         return results[row_msk], chart
         
+    def crosstabs(self, n_top_features,  project_path, alpha=0.05, crosstabs_table_name='crosstabs', replace=False, **kwargs):
+        
+        crosstabs = {}
+        for i, m in enumerate(self.model_ids):
+            if not (crosstabs_exist_for_model(self.engine, m, crosstabs_table_name) and not(replace)):
+                crosstabs[m] = self.models[i].calculate_crosstabs(
+                    project_path=project_path,
+                    push_to_db=True,
+                    table_name=crosstabs_table_name,
+                    return_df=True
+                )
+                
+                
+            else: 
+                crosstabs[m] = pd.read_sql(
+                    f'''select * from test_results.{crosstabs} where model_id ='{m}' ''',
+                    self.engine
+                )
+                
+            crosstabs[m] = pd.pivot_table(
+                data=crosstabs[m],
+                index='feature',
+                columns='metric',
+                values='value'
+            )
+            
+        for p in self.model_pairs:
+            pass
+                   
     
-    def comparison_summary(self, threshold, **kw):
+    def comparison_summary(self, style_df=True, **kw):
         # NOTE: This is very much WIP
         scores_ = self.score_distributions(**kw)
         list_, _ = self.topk_lists(threshold, **kw, plot=False)
@@ -945,5 +990,19 @@ class ModelComparison:
         joined_ = scores_.merge(list_, on=['model1', 'model2']) 
         joined_ = joined_.merge(feature_importance_, on=['model1', 'model2'], suffixes=['_list', '_feature_importance'])
         
+        if style_df:
+            def stylize_metrics(col):
+                metric = col.name.split('_')[0] 
+                if metric in self.metric_similairity_bins:
+                    categories = col.apply(self.metric_similairity_bins[metric])
+                
+                    return [self.similarity_color_map.get(c) for c in categories]
+
+                return ['' for _ in col]
+            
+            styled_ = joined_.set_index(['model1', 'model2']).style.apply(stylize_metrics).format('{:.3f}')
+            
+            return styled_
+            
         return joined_
         
