@@ -1,5 +1,6 @@
 """Functions to retrieve basic information about tables in a Postgres database"""
-from sqlalchemy import MetaData, Table, inspect, text, quoted_name, inspect
+from sqlalchemy import MetaData, Table, text, quoted_name
+
 
 def split_table(table_name):
     """Split a fully-qualified table name into schema and table
@@ -62,7 +63,7 @@ def table_exists(table_name, db_engine):
     Returns: (boolean) Whether or not the table exists in the database
     """
     schema, table = split_table(table_name)
-    inspector = inspect(db_engine)
+    inspector = db_engine.get_inspector() # get the inspector from SerializableDbEngine
     return inspector.has_table(table, schema=schema)
 
 
@@ -143,7 +144,7 @@ def table_has_column(table_name, column, db_engine):
     Returns: (boolean) Whether or not the table contains the column
     """
     schema, table = split_table(table_name)
-    inspector = inspect(db_engine)
+    inspector = db_engine.get_inspector() # get inspector from SerializableDbEngine
     columns = inspector.get_columns(table, schema=schema)
     # inspect returns column metadata dictionaries 
     return any(col['name'] == column for col in columns)
@@ -164,7 +165,7 @@ def column_type(table_name, column, db_engine):
         sqlalchemy.types.Boolean
     """
     schema, table = split_table(table_name)
-    inspector = inspect(db_engine)
+    inspector = db_engine.get_inspector() # get inspector from SerializableDbEngine
     columns = inspector.get_columns(table, schema=schema)
     for col in columns: 
         if col['name'] == column:
@@ -173,5 +174,5 @@ def column_type(table_name, column, db_engine):
     
 
 def schema_tables(schema_name, db_engine):
-    inspector = inspect(db_engine)
+    inspector = db_engine.get_inspector()
     return inspector.get_table_names(schema=schema_name)
