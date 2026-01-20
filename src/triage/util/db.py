@@ -1,5 +1,4 @@
 # coding: utf-8
-
 import sqlalchemy
 import wrapt
 import json
@@ -95,5 +94,3 @@ def get_for_update(db_engine, orm_class, primary_key):
         logger.spam(f"obj from get_for_update: {obj}")
         yield obj
         session.merge(obj)
-
-
