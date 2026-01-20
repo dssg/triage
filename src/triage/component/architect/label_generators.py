@@ -66,16 +66,16 @@ class LabelGenerator:
                                     f"""select 1 from {labels_table}
                                     where as_of_date = :as_of_date
                                     and label_timespan = CAST(:label_timespan as interval)
-                                    and label_name = :label_name 
+                                    and label_name = :label_name
                                     limit 1
                                     """
                                 ),
-                                { 
+                                {
                                     "as_of_date": as_of_date, 
                                     "label_timespan": label_timespan,
                                     "label_name": self.label_name,
                                 }
-                            ).scalar() is not None
+                            ).first() is not None
                     if any_existing_labels:
                         logger.spam("Since nonzero existing labels found, skipping")
                         continue
