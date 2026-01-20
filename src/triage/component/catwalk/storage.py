@@ -401,16 +401,13 @@ class MatrixStore:
         This includes setting the index (depending on the storage, may not be serializable)
         and downcasting.
         """
-        logger.spam(f"Matrix with labels head{matrix_with_labels.head()}")
-        logger.spam(f"Indices: {self.indices}")
-        logger.spam(f"Matrix with labels index names: {matrix_with_labels.index.names}")
-        logger.spam(f"Matrix dtypes {matrix_with_labels.dtypes}")
         if matrix_with_labels.index.names != self.indices:
             matrix_with_labels.set_index(self.indices, inplace=True)
         index_of_date = matrix_with_labels.index.names.index('as_of_date')
         if matrix_with_labels.index.levels[index_of_date].dtype != "datetime64[ns]":
             raise ValueError(f"Woah is {matrix_with_labels.index.levels[index_of_date].dtype}")
-        matrix_with_labels = downcast_matrix(matrix_with_labels)
+        # we no longer need to downcast to float32 since polars already have done it at this point
+        #matrix_with_labels = downcast_matrix(matrix_with_labels)
         labels = matrix_with_labels.pop(self.label_column_name)
         design_matrix = matrix_with_labels
         return design_matrix, labels
@@ -682,7 +679,7 @@ class CSVMatrixStore(MatrixStore):
         # so we change it before make it part of the index
         df['as_of_date'] = df.as_of_date.astype('datetime64[ns]')
         df.set_index(["entity_id", "as_of_date"], inplace=True)
-        logger.debug(f"df data types: {df.dtypes}")
+        logger.debug(f"df index data types:\n{df.index.dtypes}")
         logger.spam(f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
 
         # if the file was downloaded from S3 we delete it! 
