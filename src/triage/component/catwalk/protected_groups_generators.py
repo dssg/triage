@@ -103,22 +103,22 @@ class ProtectedGroupsGenerator:
                 cohort_table_name=cohort_table_name,
                 cohort_hash=cohort_hash
             )
-        if table_is_new:
-            logger.debug(f"Is table new? {table_is_new}")
-            with self.db_engine.begin() as conn:
+
+        with self.db_engine.begin() as conn:
+            if table_is_new:
                 conn.execute(text(f"create index on {self.protected_groups_table_name} (cohort_hash, as_of_date)"))
-                nrows = conn.execute(
-                    text(
-                        f"select count(*) from {self.protected_groups_table_name}"
-                    )
-                ).scalar()
-        logger.spam(f"nrows: {nrows}")
-        if nrows == 0:
-            logger.warning("Done creating protected_groups, but no rows in protected_groups table!")
-        else:
-            logger.success(f"Protected groups stored in the table "
-                        f"{self.protected_groups_table_name} successfully")
-            logger.spam(f"Protected groups table has {nrows} rows")
+            nrows = conn.execute(
+                text(
+                    f"select count(*) from {self.protected_groups_table_name}"
+                )
+            ).scalar()
+            logger.spam(f"nrows: {nrows}")
+            if nrows == 0:
+                logger.warning("Done creating protected_groups, but no rows in protected_groups table!")
+            else:
+                logger.success(f"Protected groups stored in the table "
+                            f"{self.protected_groups_table_name} successfully")
+                logger.spam(f"Protected groups table has {nrows} rows")
 
     def generate(self, start_date, cohort_table_name, cohort_hash):
         attribute_columns = ", ".join([str(col) for col in self.attribute_columns])
@@ -147,6 +147,7 @@ class ProtectedGroupsGenerator:
                     "cohort_hash": cohort_hash,
                 }
             )
+            
 
     def as_dataframe(self, as_of_dates, cohort_hash):
         """Queries the protected groups table to retrieve the protected attributes for each date
