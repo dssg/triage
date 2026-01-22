@@ -48,7 +48,7 @@ medium:
             criterion: ['entropy']
 
         'sklearn.ensemble.AdaBoostClassifier':
-            algorithm: ['SAMME.R']
+            algorithm: ['SAMME']
             n_estimators: [5,10,100]
 
         'sklearn.ensemble.ExtraTreesClassifier':
