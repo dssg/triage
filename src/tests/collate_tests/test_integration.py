@@ -2,6 +2,7 @@
 """Integration tests for `collate` module."""
 import testing.postgresql
 from sqlalchemy import create_engine
+from sqlalchemy import text
 from sqlalchemy.sql import expression as ex
 
 from triage.component.collate import Aggregation, Aggregate
@@ -28,7 +29,8 @@ def teardown_module():
 def test_engine():
     with Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
-        ((result,),) = engine.execute("SELECT COUNT(*) FROM food_inspections")
+        with engine.connect() as conn:
+            ((result,),) = conn.execute(text("SELECT COUNT(*) FROM food_inspections"))
     assert result == 966
 
 
@@ -48,7 +50,7 @@ def test_st_explicit_execute():
     )
     with Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
-        st.execute(engine.connect())
+        st.execute(engine)
 
 
 def test_st_lazy_execute():
@@ -65,7 +67,7 @@ def test_st_lazy_execute():
     )
     with Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
-        st.execute(engine.connect())
+        st.execute(engine)
 
 
 def test_st_execute_broadcast_intervals():
@@ -82,7 +84,7 @@ def test_st_execute_broadcast_intervals():
     )
     with Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
-        st.execute(engine.connect())
+        st.execute(engine)
 
 
 def test_execute():
@@ -96,7 +98,7 @@ def test_execute():
     )
     with Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
-        st.execute(engine.connect())
+        st.execute(engine)
 
 
 def test_execute_schema_output_date_column():
@@ -115,4 +117,4 @@ def test_execute_schema_output_date_column():
     )
     with Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
-        st.execute(engine.connect())
+        st.execute(engine)
