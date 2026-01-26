@@ -328,8 +328,11 @@ def test_make_entity_date_table_include_missing_labels():
         label_timespan="1 month",
     )
     # this line adds the new entity-date combo as an expected one
-    ids_dates = ids_dates.append(
-        {"entity_id": 0, "as_of_date": datetime.date(2016, 6, 1)}, ignore_index=True
+    ids_dates = pd.concat([
+                            ids_dates, 
+                            pd.DataFrame({"entity_id": [0], "as_of_date": [datetime.date(2016, 6, 1)]})
+                           ], 
+                           ignore_index=True
     )
 
     with testing.postgresql.Postgresql() as postgresql:
