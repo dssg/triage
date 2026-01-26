@@ -4,7 +4,7 @@ from triage.component import results_schema
 from alembic import command, script
 from sqlalchemy import text
 
-
+# given a new db -> that's why we are using db_engine instead of db_engine_with_results_schemas
 def test_upgrade_if_clean_upgrades_if_clean(db_engine):
     results_schema.upgrade_if_clean(db_engine.url)
     with db_engine.connect() as conn:

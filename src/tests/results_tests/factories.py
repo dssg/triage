@@ -1,19 +1,16 @@
 """Testing Factories for creating database objects in unit tests
 
-If init_engine is called first, objects are instantiated in the session at
-module level. Example:
+Factories now require an explicit session to be passed in via _session parameter.
+Example:
 
 ```
-from .factories import EvaluationFactory, session, init_engine
+from .factories import EvaluationFactory
 
-engine = # your engine creation code here
-init_engine(engine)
-EvaluationFactory()
-session.commit()
-
-results = engine.execute('select * from results.evaluations')
+# In your test
+def test_something(db_session):
+    evaluation = EvaluationFactory(_session=db_session)
+    db_session.commit()
 ```
-
 """
 from datetime import datetime
 
@@ -23,14 +20,30 @@ from sqlalchemy.orm import sessionmaker, scoped_session
 
 from triage.component import results_schema as schema
 
-sessionmaker = sessionmaker()
-session = scoped_session(sessionmaker)
+
+ScopedSession = scoped_session(sessionmaker())
+
+
+def set_session(session):
+    """
+    This should be called at the start of each test
+    
+    :param session: SQLAlchemy session to use for this test/thread
+    """
+    ScopedSession.remove()
+    ScopedSession.configure(bind=session.bind)
+
+
+def clear_session():
+    ScopedSession.remove()
 
 
 class ExperimentFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.Experiment
-        sqlalchemy_session = session
+        sqlalchemy_session = ScopedSession
+        sqlalchemy_session_persistence = "commit"
+        #sqlalchemy_session_persistence = "flush"
 
     experiment_hash = factory.fuzzy.FuzzyText()
     config = {}
@@ -39,7 +52,9 @@ class ExperimentFactory(factory.alchemy.SQLAlchemyModelFactory):
 class ModelGroupFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.ModelGroup
-        sqlalchemy_session = session
+        sqlalchemy_session = ScopedSession
+        sqlalchemy_session_persistence = "commit"
+        # sqlalchemy_session_persistence = "flush"
 
     model_type = "sklearn.ensemble.RandomForestClassifier"
     hyperparameters = {"hyperparam1": "value1", "hyperparam2": "value2"}
@@ -50,7 +65,9 @@ class ModelGroupFactory(factory.alchemy.SQLAlchemyModelFactory):
 class MatrixFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.Matrix
-        sqlalchemy_session = session
+        sqlalchemy_session = ScopedSession
+        sqlalchemy_session_persistence = "commit"
+        # sqlalchemy_session_persistence = "flush"
 
     matrix_uuid = factory.fuzzy.FuzzyText()
 
@@ -58,7 +75,9 @@ class MatrixFactory(factory.alchemy.SQLAlchemyModelFactory):
 class BaseModelFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.Model
-        sqlalchemy_session = session
+        sqlalchemy_session = ScopedSession
+        sqlalchemy_session_persistence = "commit"   
+        # sqlalchemy_session_persistence = "flush"
 
     model_group_rel = factory.SubFactory(ModelGroupFactory)
     model_hash = factory.fuzzy.FuzzyText()
@@ -79,7 +98,9 @@ class BaseModelFactory(factory.alchemy.SQLAlchemyModelFactory):
 class ExperimentModelFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.ExperimentModel
-        sqlalchemy_session = session
+        sqlalchemy_session = ScopedSession
+        sqlalchemy_session_persistence = "commit"
+        # sqlalchemy_session_persistence = "flush"
 
     model_rel = factory.SubFactory(BaseModelFactory)
     experiment_rel = factory.SubFactory(ExperimentFactory)
@@ -92,7 +113,9 @@ class ModelFactory(BaseModelFactory):
 class SubsetFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.Subset
-        sqlalchemy_session = session
+        sqlalchemy_session = ScopedSession
+        sqlalchemy_session_persistence = "commit"
+        # sqlalchemy_session_persistence = "flush"
 
     subset_hash = factory.fuzzy.FuzzyText()
     config = {}
@@ -102,7 +125,9 @@ class SubsetFactory(factory.alchemy.SQLAlchemyModelFactory):
 class FeatureImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.FeatureImportance
-        sqlalchemy_session = session
+        sqlalchemy_session = ScopedSession
+        sqlalchemy_session_persistence = "commit"   
+        # sqlalchemy_session_persistence = "flush"
 
     model_rel = factory.SubFactory(ModelFactory)
     feature = factory.fuzzy.FuzzyText()
@@ -114,7 +139,9 @@ class FeatureImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):
 class PredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.TestPrediction
-        sqlalchemy_session = session
+        sqlalchemy_session = ScopedSession
+        sqlalchemy_session_persistence = "commit"
+        # sqlalchemy_session_persistence = "flush"
 
     model_rel = factory.SubFactory(ModelFactory)
     entity_id = factory.fuzzy.FuzzyInteger(0)
@@ -129,7 +156,9 @@ class PredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
 class ListPredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.ListPrediction
-        sqlalchemy_session = session
+        sqlalchemy_session = ScopedSession
+        sqlalchemy_session_persistence = "commit"
+        # sqlalchemy_session_persistence = "flush"
 
     model_rel = factory.SubFactory(ModelFactory)
     entity_id = factory.fuzzy.FuzzyInteger(0)
@@ -144,7 +173,9 @@ class ListPredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
 class IndividualImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.IndividualImportance
-        sqlalchemy_session = session
+        sqlalchemy_session = ScopedSession
+        sqlalchemy_session_persistence = "commit"
+        # sqlalchemy_session_persistence = "flush"
 
     model_rel = factory.SubFactory(ModelFactory)
     entity_id = factory.fuzzy.FuzzyInteger(0)
@@ -158,7 +189,9 @@ class IndividualImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):
 class EvaluationFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.TestEvaluation
-        sqlalchemy_session = session
+        sqlalchemy_session = ScopedSession
+        sqlalchemy_session_persistence = "commit"
+        # sqlalchemy_session_persistence = "flush"
 
     model_rel = factory.SubFactory(ModelFactory)
     subset_hash = ''
@@ -183,7 +216,9 @@ class EvaluationFactory(factory.alchemy.SQLAlchemyModelFactory):
 class TriageRunFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.TriageRun
-        sqlalchemy_session = session
+        sqlalchemy_session = ScopedSession
+        sqlalchemy_session_persistence = "commit" 
+        # sqlalchemy_session_persistence = "flush"
 
     # experiment_rel = factory.SubFactory(ExperimentFactory)
 
@@ -211,11 +246,4 @@ class TriageRunFactory(factory.alchemy.SQLAlchemyModelFactory):
     last_updated_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     current_status = schema.TriageRunStatus.started
     stacktrace = ""
-
-
-def init_engine(new_engine):
-    global sessionmaker, engine, session
-    engine = new_engine
-    session.remove()
-    sessionmaker.configure(bind=engine, future=True)
 
