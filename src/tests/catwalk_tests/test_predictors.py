@@ -10,15 +10,7 @@ from sqlalchemy import text
 from numpy.testing import assert_array_almost_equal
 
 from triage.component.results_schema import TestPrediction, Matrix, Model
-from triage.component.catwalk.storage import TestMatrixType
-from triage.component.catwalk.db import ensure_db
-from tests.results_tests.factories import (
-    MatrixFactory,
-    ModelFactory,
-    PredictionFactory,
-    init_engine,
-    session as factory_session
-)
+
 from triage.database_reflection import table_has_data
 from triage.component.catwalk.predictors import Predictor
 from tests.utils import (
@@ -93,7 +85,7 @@ def prediction_results(matrix_type, predictor, predict_setup_args):
 
     matrix = pd.DataFrame.from_dict(source_dict)
     metadata = matrix_metadata_creator(matrix_type=matrix_type)
-    matrix_store = get_matrix_store(project_storage, matrix, metadata)
+    matrix_store = get_matrix_store(project_storage, db_engine, matrix, metadata)
 
     predict_proba = predictor.predict(
         model_id,
@@ -138,7 +130,7 @@ def test_predictor_save_predictions(matrix_type, predict_setup_args):
     # if save_predictions is sent as False, don't save
     predictor = Predictor(project_storage.model_storage_engine(), db_engine, rank_order='worst', save_predictions=False)
 
-    matrix_store = get_matrix_store(project_storage)
+    matrix_store = get_matrix_store(project_storage, db_engine)
     train_matrix_columns = matrix_store.columns()
 
     predict_proba = predictor.predict(
@@ -166,7 +158,7 @@ def test_predictor_needs_predictions(matrix_type, predict_setup_args):
     predictor = Predictor(project_storage.model_storage_engine(), db_engine, 'worst')
 
     metadata = matrix_metadata_creator(matrix_type=matrix_type)
-    matrix_store = get_matrix_store(project_storage, metadata=metadata)
+    matrix_store = get_matrix_store(project_storage, db_engine, metadata=metadata)
     train_matrix_columns = matrix_store.columns()
 
     # we haven't done anything yet, this should definitely need predictions
@@ -188,6 +180,7 @@ def test_predictor_get_train_columns(predict_setup_args):
     predictor = Predictor(project_storage.model_storage_engine(), db_engine, 'worst')
     train_store = get_matrix_store(
         project_storage=project_storage,
+        db_engine=db_engine,
         matrix=matrix_creator(),
         metadata=matrix_metadata_creator(matrix_type="train"),
     )
@@ -199,6 +192,7 @@ def test_predictor_get_train_columns(predict_setup_args):
     other_order_matrix = other_order_matrix[order]
     test_store = get_matrix_store(
         project_storage=project_storage,
+        db_engine=db_engine,
         matrix=other_order_matrix,
         metadata=matrix_metadata_creator(matrix_type="test"),
     )
@@ -240,7 +234,7 @@ def test_predictor_retrieve(predict_setup_args):
     )
 
     # create prediction set
-    matrix_store = get_matrix_store(project_storage)
+    matrix_store = get_matrix_store(project_storage, db_engine)
 
     predict_proba = predictor.predict(
         model_id,
