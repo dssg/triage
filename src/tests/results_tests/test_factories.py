@@ -42,7 +42,6 @@ def test_evaluation_factories_no_subset(db_engine_with_results_schema, db_sessio
         )
 
         rows = list(results)
-        print(len(rows))
         assert len(rows) == 2  # Should have 2 evaluations
         
         for row in rows:
