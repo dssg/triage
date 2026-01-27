@@ -129,7 +129,7 @@ class FeatureImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):
         sqlalchemy_session_persistence = "commit"   
         # sqlalchemy_session_persistence = "flush"
 
-    model_rel = factory.SubFactory(ModelFactory)
+    #model_rel = factory.SubFactory(ModelFactory)
     feature = factory.fuzzy.FuzzyText()
     feature_importance = factory.fuzzy.FuzzyDecimal(0, 1)
     rank_abs = 1
