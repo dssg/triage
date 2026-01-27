@@ -23,7 +23,7 @@ from triage.component.results_schema import Model, Matrix
 from triage.experiments import CONFIG_VERSION
 from triage.util.structs import FeatureNameList
 
-from tests.results_tests.factories import MatrixFactory
+from tests.results_tests.factories import MatrixFactory, set_session
 
 matplotlib.use("Agg")
 
@@ -120,11 +120,14 @@ class MockMatrixStore(MatrixStore):
         self.init_labels = pd.Series(init_labels, dtype="float64")
         self.matrix_uuid = matrix_uuid
         self.init_as_of_dates = init_as_of_dates or []
-        #with Session(db_engine) as session:
-        session = sessionmaker(db_engine)()
-        #with Session() as session:
-        session.add(Matrix(matrix_uuid=matrix_uuid))
-        session.commit()
+        
+        SessionLocal = sessionmaker(bind=db_engine)
+        session = SessionLocal()
+        try:
+            session.add(Matrix(matrix_uuid=matrix_uuid))
+            session.commit()
+        finally:
+            session.close()
 
     @property
     def as_of_dates(self):
@@ -150,22 +153,26 @@ def fake_trained_model(
     Returns:
         (int) model id for database retrieval
     """
-    #with Session(db_engine) as session:
-    session = sessionmaker(db_engine)()
-    session.merge(Matrix(matrix_uuid=train_matrix_uuid))
+    SessionLocal = sessionmaker(bind=db_engine)
+    session = SessionLocal()
 
-    # Create the fake trained model and store in db
-    trained_model = MockTrainedModel()
-    db_model = Model(
-        model_hash="abcd",
-        train_matrix_uuid=train_matrix_uuid,
-        train_end_time=train_end_time,
-    )
-    session.add(db_model)
-    session.commit()
-    model_id = db_model.model_id
-    session.close()
-    return trained_model, model_id
+    try:
+        session.merge(Matrix(matrix_uuid=train_matrix_uuid))
+
+        # Create the fake trained model and store in db
+        trained_model = MockTrainedModel()
+        db_model = Model(
+            model_hash="abcd",
+            train_matrix_uuid=train_matrix_uuid,
+            train_end_time=train_end_time,
+        )
+        session.add(db_model)
+        session.commit()
+        model_id = db_model.model_id
+        return trained_model, model_id
+    finally:
+        session.close()
+    
 
 
 def matrix_metadata_creator(**override_kwargs):
@@ -212,7 +219,7 @@ def matrix_creator():
     return pd.DataFrame.from_dict(source_dict)
 
 
-def get_matrix_store(project_storage, matrix=None, metadata=None, write_to_db=True):
+def get_matrix_store(project_storage, db_engine, matrix=None, metadata=None, write_to_db=True):
     """Return a matrix store associated with the given project storage.
     Also adds an entry in the matrices table if it doesn't exist already
 
@@ -226,7 +233,8 @@ def get_matrix_store(project_storage, matrix=None, metadata=None, write_to_db=Tr
         matrix = matrix_creator()
     if not metadata:
         metadata = matrix_metadata_creator()
-    matrix["as_of_date"] = matrix["as_of_date"].apply(pd.Timestamp)
+    
+    #matrix["as_of_date"] = matrix["as_of_date"].apply(pd.Timestamp)
     matrix.set_index(MatrixStore.indices, inplace=True)
     matrix_store = project_storage.matrix_storage_engine().get_store(
         filename_friendly_hash(metadata)
@@ -238,14 +246,21 @@ def get_matrix_store(project_storage, matrix=None, metadata=None, write_to_db=Tr
     matrix_store.save()
     matrix_store.clear_cache()
     if write_to_db:
-        if (
-            session.query(Matrix)
-            .filter(Matrix.matrix_uuid == matrix_store.uuid)
-            .count()
-            == 0
-        ):
-            MatrixFactory(matrix_uuid=matrix_store.uuid)
-            session.commit()
+        SessionLocal = sessionmaker(bind=db_engine)
+        session = SessionLocal()
+        try:
+            if (
+                session.query(Matrix)
+                .filter(Matrix.matrix_uuid == matrix_store.uuid)
+                .count()
+                == 0
+            ):
+                set_session(session)
+                MatrixFactory(matrix_uuid=matrix_store.uuid)
+                session.commit()
+        finally:
+            session.close()
+
     return matrix_store
 
 
@@ -258,7 +273,7 @@ def rig_engines():
     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         ensure_db(db_engine)
-        init_engine(db_engine)
+        
         with tempfile.TemporaryDirectory() as temp_dir:
             project_storage = ProjectStorage(temp_dir)
             yield db_engine, project_storage
