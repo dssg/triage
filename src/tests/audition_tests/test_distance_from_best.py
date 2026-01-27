@@ -5,6 +5,7 @@ import factory
 import numpy as np
 import testing.postgresql
 from sqlalchemy import text
+from sqlalchemy.orm import sessionmaker
 from triage import create_engine
 
 from triage.component.audition.distance_from_best import (
@@ -17,16 +18,17 @@ from tests.results_tests.factories import (
     EvaluationFactory,
     ModelFactory,
     ModelGroupFactory,
-    init_engine,
-    session,
+    set_session,
+    clear_session,
 )
 
 from .utils import create_sample_distance_table
 
 
 def _sql_add_days(sql_date, days):
+    print(f"DELETE ME! {type(sql_date)}, {sql_date}")
     return datetime.strftime(
-        datetime.strptime(sql_date, "%Y-%m-%d") + timedelta(days=days), "%Y-%m-%d"
+        sql_date + timedelta(days=days), "%Y-%m-%d"
     )
 
 
@@ -34,147 +36,159 @@ def test_DistanceFromBestTable():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
         ensure_db(engine)
-        init_engine(engine)
-        model_groups = {
-            "stable": ModelGroupFactory(model_type="myStableClassifier"),
-            "bad": ModelGroupFactory(model_type="myBadClassifier"),
-            "spiky": ModelGroupFactory(model_type="mySpikeClassifier"),
-        }
+        
+        SessionLocal = sessionmaker(bind=engine)
+        session = SessionLocal()
+        
+        try:
+            set_session(session)
 
-        class StableModelFactory(ModelFactory):
-            model_group_rel = model_groups["stable"]
+            model_groups = {
+                "stable": ModelGroupFactory(model_type="myStableClassifier"),
+                "bad": ModelGroupFactory(model_type="myBadClassifier"),
+                "spiky": ModelGroupFactory(model_type="mySpikeClassifier"),
+            }
 
-        class BadModelFactory(ModelFactory):
-            model_group_rel = model_groups["bad"]
+            class StableModelFactory(ModelFactory):
+                model_group_rel = model_groups["stable"]
 
-        class SpikyModelFactory(ModelFactory):
-            model_group_rel = model_groups["spiky"]
+            class BadModelFactory(ModelFactory):
+                model_group_rel = model_groups["bad"]
 
-        models = {
-            "stable_3y_ago": StableModelFactory(train_end_time="2014-01-01"),
-            "stable_2y_ago": StableModelFactory(train_end_time="2015-01-01"),
-            "stable_1y_ago": StableModelFactory(train_end_time="2016-01-01"),
-            "bad_3y_ago": BadModelFactory(train_end_time="2014-01-01"),
-            "bad_2y_ago": BadModelFactory(train_end_time="2015-01-01"),
-            "bad_1y_ago": BadModelFactory(train_end_time="2016-01-01"),
-            "spiky_3y_ago": SpikyModelFactory(train_end_time="2014-01-01"),
-            "spiky_2y_ago": SpikyModelFactory(train_end_time="2015-01-01"),
-            "spiky_1y_ago": SpikyModelFactory(train_end_time="2016-01-01"),
-        }
+            class SpikyModelFactory(ModelFactory):
+                model_group_rel = model_groups["spiky"]
 
-        class ImmediateEvalFactory(EvaluationFactory):
-            evaluation_start_time = factory.LazyAttribute(
-                lambda o: o.model_rel.train_end_time
-            )
-            evaluation_end_time = factory.LazyAttribute(
-                lambda o: _sql_add_days(o.model_rel.train_end_time, 1)
-            )
+            models = {
+                "stable_3y_ago": StableModelFactory(train_end_time="2014-01-01"),
+                "stable_2y_ago": StableModelFactory(train_end_time="2015-01-01"),
+                "stable_1y_ago": StableModelFactory(train_end_time="2016-01-01"),
+                "bad_3y_ago": BadModelFactory(train_end_time="2014-01-01"),
+                "bad_2y_ago": BadModelFactory(train_end_time="2015-01-01"),
+                "bad_1y_ago": BadModelFactory(train_end_time="2016-01-01"),
+                "spiky_3y_ago": SpikyModelFactory(train_end_time="2014-01-01"),
+                "spiky_2y_ago": SpikyModelFactory(train_end_time="2015-01-01"),
+                "spiky_1y_ago": SpikyModelFactory(train_end_time="2016-01-01"),
+            }
 
-        class MonthOutEvalFactory(EvaluationFactory):
-            evaluation_start_time = factory.LazyAttribute(
-                lambda o: _sql_add_days(o.model_rel.train_end_time, 31)
-            )
-            evaluation_end_time = factory.LazyAttribute(
-                lambda o: _sql_add_days(o.model_rel.train_end_time, 32)
-            )
-
-        class Precision100Factory(ImmediateEvalFactory):
-            metric = "precision@"
-            parameter = "100_abs"
-
-        class Precision100FactoryMonthOut(MonthOutEvalFactory):
-            metric = "precision@"
-            parameter = "100_abs"
-
-        class Recall100Factory(ImmediateEvalFactory):
-            metric = "recall@"
-            parameter = "100_abs"
-
-        class Recall100FactoryMonthOut(MonthOutEvalFactory):
-            metric = "recall@"
-            parameter = "100_abs"
-
-        for (add_val, PrecFac, RecFac) in (
-            (0, Precision100Factory, Recall100Factory),
-            (-0.15, Precision100FactoryMonthOut, Recall100FactoryMonthOut),
-        ):
-            PrecFac(model_rel=models["stable_3y_ago"], stochastic_value=0.6 + add_val)
-            PrecFac(model_rel=models["stable_2y_ago"], stochastic_value=0.57 + add_val)
-            PrecFac(model_rel=models["stable_1y_ago"], stochastic_value=0.59 + add_val)
-            PrecFac(model_rel=models["bad_3y_ago"], stochastic_value=0.4 + add_val)
-            PrecFac(model_rel=models["bad_2y_ago"], stochastic_value=0.39 + add_val)
-            PrecFac(model_rel=models["bad_1y_ago"], stochastic_value=0.43 + add_val)
-            PrecFac(model_rel=models["spiky_3y_ago"], stochastic_value=0.8 + add_val)
-            PrecFac(model_rel=models["spiky_2y_ago"], stochastic_value=0.4 + add_val)
-            PrecFac(model_rel=models["spiky_1y_ago"], stochastic_value=0.4 + add_val)
-            RecFac(model_rel=models["stable_3y_ago"], stochastic_value=0.55 + add_val)
-            RecFac(model_rel=models["stable_2y_ago"], stochastic_value=0.56 + add_val)
-            RecFac(model_rel=models["stable_1y_ago"], stochastic_value=0.55 + add_val)
-            RecFac(model_rel=models["bad_3y_ago"], stochastic_value=0.35 + add_val)
-            RecFac(model_rel=models["bad_2y_ago"], stochastic_value=0.34 + add_val)
-            RecFac(model_rel=models["bad_1y_ago"], stochastic_value=0.36 + add_val)
-            RecFac(model_rel=models["spiky_3y_ago"], stochastic_value=0.35 + add_val)
-            RecFac(model_rel=models["spiky_2y_ago"], stochastic_value=0.8 + add_val)
-            RecFac(model_rel=models["spiky_1y_ago"], stochastic_value=0.36 + add_val)
-        session.commit()
-        distance_table = DistanceFromBestTable(
-            db_engine=engine, models_table="models", distance_table="dist_table", agg_type="worst"
-        )
-        metrics = [
-            {"metric": "precision@", "parameter": "100_abs"},
-            {"metric": "recall@", "parameter": "100_abs"},
-        ]
-        model_group_ids = [mg.model_group_id for mg in model_groups.values()]
-        distance_table.create_and_populate(
-            model_group_ids, ["2014-01-01", "2015-01-01", "2016-01-01"], metrics
-        )
-
-        # get an ordered list of the model groups for a particular metric/time
-        query = """
-            select 
-                model_group_id, 
-                raw_value, 
-                dist_from_best_case, 
-                dist_from_best_case_next_time
-            from dist_table 
-            where metric = :metric 
-            and parameter = :threshold 
-            and train_end_time = :train_end_time
-            order by dist_from_best_case
-            """
-
-        with engine.connect() as conn: 
-            prec_3y_ago = conn.execute(
-                text(query), 
-                {
-                    "metric": "precision@", 
-                    "threshold": "100_abs", 
-                    "train_end_time": "2014-01-01"}
+            class ImmediateEvalFactory(EvaluationFactory):
+                evaluation_start_time = factory.LazyAttribute(
+                    lambda o: o.model_rel.train_end_time
                 )
-        assert [row for row in prec_3y_ago] == [
-            (models["spiky_3y_ago"].model_group_id, 0.8, 0, 0.17),
-            (models["stable_3y_ago"].model_group_id, 0.6, 0.2, 0),
-            (models["bad_3y_ago"].model_group_id, 0.4, 0.4, 0.18),
-        ]
+                evaluation_end_time = factory.LazyAttribute(
+                    lambda o: _sql_add_days(o.model_rel.train_end_time, 1)
+                )
 
-        with engine.connect() as conn:
-            recall_2y_ago = conn.execute(
-                text(query), 
-                {
-                    "metric": "recall@", 
-                    "threshold": "100_abs", 
-                    "train_end_time": "2015-01-01"}
+            class MonthOutEvalFactory(EvaluationFactory):
+                evaluation_start_time = factory.LazyAttribute(
+                    lambda o: _sql_add_days(o.model_rel.train_end_time, 31)
+                )
+                evaluation_end_time = factory.LazyAttribute(
+                    lambda o: _sql_add_days(o.model_rel.train_end_time, 32)
+                )
+
+            class Precision100Factory(ImmediateEvalFactory):
+                metric = "precision@"
+                parameter = "100_abs"
+
+            class Precision100FactoryMonthOut(MonthOutEvalFactory):
+                metric = "precision@"
+                parameter = "100_abs"
+
+            class Recall100Factory(ImmediateEvalFactory):
+                metric = "recall@"
+                parameter = "100_abs"
+
+            class Recall100FactoryMonthOut(MonthOutEvalFactory):
+                metric = "recall@"
+                parameter = "100_abs"
+
+            for (add_val, PrecFac, RecFac) in (
+                (0, Precision100Factory, Recall100Factory),
+                (-0.15, Precision100FactoryMonthOut, Recall100FactoryMonthOut),
+            ):
+                PrecFac(model_rel=models["stable_3y_ago"], stochastic_value=0.6 + add_val)
+                PrecFac(model_rel=models["stable_2y_ago"], stochastic_value=0.57 + add_val)
+                PrecFac(model_rel=models["stable_1y_ago"], stochastic_value=0.59 + add_val)
+                PrecFac(model_rel=models["bad_3y_ago"], stochastic_value=0.4 + add_val)
+                PrecFac(model_rel=models["bad_2y_ago"], stochastic_value=0.39 + add_val)
+                PrecFac(model_rel=models["bad_1y_ago"], stochastic_value=0.43 + add_val)
+                PrecFac(model_rel=models["spiky_3y_ago"], stochastic_value=0.8 + add_val)
+                PrecFac(model_rel=models["spiky_2y_ago"], stochastic_value=0.4 + add_val)
+                PrecFac(model_rel=models["spiky_1y_ago"], stochastic_value=0.4 + add_val)
+                RecFac(model_rel=models["stable_3y_ago"], stochastic_value=0.55 + add_val)
+                RecFac(model_rel=models["stable_2y_ago"], stochastic_value=0.56 + add_val)
+                RecFac(model_rel=models["stable_1y_ago"], stochastic_value=0.55 + add_val)
+                RecFac(model_rel=models["bad_3y_ago"], stochastic_value=0.35 + add_val)
+                RecFac(model_rel=models["bad_2y_ago"], stochastic_value=0.34 + add_val)
+                RecFac(model_rel=models["bad_1y_ago"], stochastic_value=0.36 + add_val)
+                RecFac(model_rel=models["spiky_3y_ago"], stochastic_value=0.35 + add_val)
+                RecFac(model_rel=models["spiky_2y_ago"], stochastic_value=0.8 + add_val)
+                RecFac(model_rel=models["spiky_1y_ago"], stochastic_value=0.36 + add_val)
+            session.commit()
+
+            distance_table = DistanceFromBestTable(
+                db_engine=engine, models_table="models", distance_table="dist_table", agg_type="worst"
             )
-        assert [row for row in recall_2y_ago] == [
-            (models["spiky_2y_ago"].model_group_id, 0.8, 0, 0.19),
-            (models["stable_2y_ago"].model_group_id, 0.56, 0.24, 0),
-            (models["bad_2y_ago"].model_group_id, 0.34, 0.46, 0.19),
-        ]
+            metrics = [
+                {"metric": "precision@", "parameter": "100_abs"},
+                {"metric": "recall@", "parameter": "100_abs"},
+            ]
+            model_group_ids = [mg.model_group_id for mg in model_groups.values()]
+            distance_table.create_and_populate(
+                model_group_ids, ["2014-01-01", "2015-01-01", "2016-01-01"], metrics
+            )
 
-        assert distance_table.observed_bounds == {
-            ("precision@", "100_abs"): (0.39, 0.8),
-            ("recall@", "100_abs"): (0.34, 0.8),
-        }
+            # get an ordered list of the model groups for a particular metric/time
+            query = """
+                select 
+                    model_group_id, 
+                    raw_value, 
+                    dist_from_best_case, 
+                    dist_from_best_case_next_time
+                from dist_table 
+                where metric = :metric 
+                and parameter = :threshold 
+                and train_end_time = :train_end_time
+                order by dist_from_best_case
+                """
+
+            with engine.connect() as conn: 
+                prec_3y_ago = conn.execute(
+                    text(query), 
+                    {
+                        "metric": "precision@", 
+                        "threshold": "100_abs", 
+                        "train_end_time": "2014-01-01"}
+                    )
+            assert [row for row in prec_3y_ago] == [
+                (models["spiky_3y_ago"].model_group_id, 0.8, 0, 0.17),
+                (models["stable_3y_ago"].model_group_id, 0.6, 0.2, 0),
+                (models["bad_3y_ago"].model_group_id, 0.4, 0.4, 0.18),
+            ]
+
+            with engine.connect() as conn:
+                recall_2y_ago = conn.execute(
+                    text(query), 
+                    {
+                        "metric": "recall@", 
+                        "threshold": "100_abs", 
+                        "train_end_time": "2015-01-01"}
+                )
+            assert [row for row in recall_2y_ago] == [
+                (models["spiky_2y_ago"].model_group_id, 0.8, 0, 0.19),
+                (models["stable_2y_ago"].model_group_id, 0.56, 0.24, 0),
+                (models["bad_2y_ago"].model_group_id, 0.34, 0.46, 0.19),
+            ]
+
+            assert distance_table.observed_bounds == {
+                ("precision@", "100_abs"): (0.39, 0.8),
+                ("recall@", "100_abs"): (0.34, 0.8),
+            }
+
+        finally:
+            clear_session()
+            session.close()
+
 
 
 def test_BestDistancePlotter():
