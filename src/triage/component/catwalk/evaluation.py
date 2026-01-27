@@ -660,8 +660,9 @@ class ModelEvaluator:
                 metric_defs_to_trial.append(metric_def)
 
         # 4. get average of n random trials
+        which_metrics = [obj.metric for obj in metric_defs_to_trial]
         logger.debug(
-            f"For model {model_id}, {len(metric_defs_to_trial)} metric definitions need {SORT_TRIALS} random trials each as best/worst evals were different"
+            f"For model {model_id}, {len(metric_defs_to_trial)} metric definitions ({which_metrics}) need {SORT_TRIALS} random trials each as best/worst evals were different"
         )
 
         random_eval_accumulator = defaultdict(list)
