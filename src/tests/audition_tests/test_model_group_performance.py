@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import numpy as np
 import testing.postgresql
-from sqlalchemy import create_engine
+from triage import create_engine
 
 from triage.component.audition.model_group_performance import (
     ModelGroupPerformancePlotter,
