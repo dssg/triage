@@ -1,14 +1,16 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 
 import os
+
 import numpy as np
 import pandas as pd
-
 from sqlalchemy import text
-from .utils import str_in_sql
+
 from .metric_directionality import sql_rank_order, value_agg_funcs
-from .plotting import plot_cats, plot_bounds, category_colordict, category_styledict
+from .plotting import category_colordict, category_styledict, plot_bounds, plot_cats
+from .utils import str_in_sql
 
 
 class DistanceFromBestTable:
@@ -37,8 +39,7 @@ class DistanceFromBestTable:
     def _create(self):
         """Create the distance-from-best table"""
         with self.db_engine.begin() as conn:
-            conn.execute(
-                text(f"""
+            conn.execute(text(f"""
                      create table {self.distance_table} (
                      model_group_id int,
                      train_end_time timestamp,
@@ -50,9 +51,7 @@ class DistanceFromBestTable:
                      raw_value_next_time float,
                      dist_from_best_case_next_time float
                     )
-                    """
-                )
-            )
+                    """))
 
     def _populate(self, model_group_ids, train_end_times, metrics):
         """Populate the distance table with the given model groups, times, and metrics
@@ -71,7 +70,8 @@ class DistanceFromBestTable:
         with self.db_engine.begin() as conn:
             for metric in metrics:
                 conn.execute(
-                    text("""
+                    text(
+                        """
                         insert into {new_table}
                         WITH first_evals AS (
                             SELECT *, row_number() OVER (
@@ -141,15 +141,17 @@ class DistanceFromBestTable:
                         from current_best_vals
                         order by train_end_time
                         """.format(
-                                model_group_ids=str_in_sql(model_group_ids),
-                                train_end_times=str_in_sql(train_end_times),
-                                models_table=self.models_table,
-                                metric=metric["metric"],
-                                parameter=metric["parameter"],
-                                metric_value_order=sql_rank_order(metric["metric"]),
-                                new_table=self.distance_table,
-                                metric_agg_fcn=value_agg_funcs(metric["metric"])[self.agg_type],
-                            )
+                            model_group_ids=str_in_sql(model_group_ids),
+                            train_end_times=str_in_sql(train_end_times),
+                            models_table=self.models_table,
+                            metric=metric["metric"],
+                            parameter=metric["parameter"],
+                            metric_value_order=sql_rank_order(metric["metric"]),
+                            new_table=self.distance_table,
+                            metric_agg_fcn=value_agg_funcs(metric["metric"])[
+                                self.agg_type
+                            ],
+                        )
                     )
                 )
 
@@ -165,19 +167,18 @@ class DistanceFromBestTable:
                 GROUP BY metric, parameter
             """
 
-        with self.db_engine.connect() as conn: 
+        with self.db_engine.connect() as conn:
             results = dict(
                 ((metric, parameter), (minimum, maximum))
-                    for metric, parameter, minimum, maximum in conn.execute(text(query))
-                )
-        
+                for metric, parameter, minimum, maximum in conn.execute(text(query))
+            )
+
         # return dict(
         #     ((metric, parameter), (minimum, maximum))
         #     for metric, parameter, minimum, maximum in self.db_engine.execute(query)
         # )
-    
-        return results
 
+        return results
 
     def create_and_populate(
         self, model_group_ids, train_end_times, metrics, delete=True
@@ -314,9 +315,7 @@ class BestDistancePlotter:
                 and model_group_id in ({model_group_str})
                 and train_end_time in ({train_end_str})
             GROUP BY 1,2,3
-        """.format(
-            **sel_params
-        )
+        """.format(**sel_params)
 
         return pd.read_sql(sel, self.distance_from_best_table.db_engine).sort_values(
             ["model_group_id", "distance"]
@@ -352,7 +351,7 @@ class BestDistancePlotter:
             )
 
             # set stable colors/styles by model type
-            categories = np.unique(df['model_type'])
+            categories = np.unique(df["model_type"])
             if not self.colordict:
                 self.colordict = category_colordict(self.cmap_name, categories, None)
             if not self.styledict:

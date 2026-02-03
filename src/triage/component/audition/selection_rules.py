@@ -1,10 +1,12 @@
 import inspect
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
 
-from numpy import exp, log, average
+from triage.logging import get_logger
 
-from .metric_directionality import greater_is_better, best_in_series, idxbest
+logger = get_logger(__name__)
+
+from numpy import average, exp, log
+
+from .metric_directionality import best_in_series, greater_is_better, idxbest
 
 
 def random_model_group(df, train_end_time, n=1):

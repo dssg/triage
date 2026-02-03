@@ -1,0 +1,168 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "triage"
+version = "5.5.3"
+description = "Risk modeling and prediction"
+readme = "README.md"
+license = { text = "MIT License" }
+requires-python = ">=3.12"
+authors = [
+  { name = "Center for Data Science and Public Policy", email = "datascifellows@gmail.com" }
+]
+keywords = ["triage"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12"
+]
+dependencies = [
+    "aequitas==1.0.0",
+    "alembic>=1.17.0",
+    "boto3>=1.22.4",
+    "click>=8.1.3",
+    "dickens>=2.1.1",
+    "graphviz>=0.21",
+    "icecream>=2.1.8",
+    "inflection>=0.5.1",
+    "loguru>=0.7.3",
+    "matplotlib>=3.10.7",
+    "numpy>=2.3.4",
+    "ohio>=0.5.0",
+    "pandas>=2.3.3",
+    "pebble>=5.1.3",
+    "plotly>=6.3.1",
+    "polars>=1.34.0",
+    "psycopg[binary]>=3.2.11",
+    "pyarrow>=21.0.0",
+    "python-dotenv>=1.0.0",
+    "pyyaml>=6.0.2",
+    "requests>=2.32.5",
+    "retrying>=1.4.2",
+    "rich>=14.2.0",
+    "s3fs>=0.4.2",
+    "scikit-learn>=1.7.2",
+    "seaborn>=0.13.2",
+    "signalled-timeout>=1.0.0",
+    "sqlalchemy>=2.0.44",
+    "sqlparse>=0.5.3",
+    "textual>=6.5.0",
+    "typer>=0.19.2",
+    "wrapt>=1.17.3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "basedpyright>=1.31.7",
+  "bumpversion==0.6.0",
+  "codecov==2.1.13",
+  "coverage>=4.4",
+  "factory_boy==3.2.1",
+  "fakeredis>=2.0.0",
+  "hypothesis==6.46.1",
+  "jupyter-console>=6.6.3",
+  "moto==3.1.7",
+  "parsedatetime==2.6",
+  "pytest>=8.2",
+  "pytest-cov==3.0.0",
+  "pytest-postgresql>=6.0.0",
+  "pytest-timeout>=2.3.0",
+  "ruff>=0.8.0",
+  "wheel==0.38.2",
+]
+test = [
+  "triage[dev]",
+]
+docs = [
+  "mkdocs==1.6.1",
+  "pymdown-extensions==10.8",
+  "mkdocs-material==9.4.6",
+  "mkdocstrings==0.29.1",
+  "mkdocstrings-python==1.16.10",
+]
+
+[project.urls]
+Documentation = "https://dssg.github.io/triage/"
+"Source Code" = "https://github.com/dssg/triage"
+Tutorial = "https://dssg.github.io/triage/dirtyduck/"
+
+[project.scripts]
+triage = "triage.cli:execute"
+
+[tool.flake8]
+exclude = ["docs"]
+max-line-length = 88
+
+[tool.pycodestyle]
+max-line-length = 88
+statistics = true
+
+[tool.hatch.build]
+exclude = ["src/tests"]
+
+[tool.hatch.build.sources]
+triage = "src/triage"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/triage"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "AUTHORS.rst",
+  "CONTRIBUTING.md",
+  "HISTORY.rst",
+  "LICENSE",
+  "MANIFEST.in",
+  "README.md",
+  "docs",
+  "dirtyduck",
+  "example",
+  "justfile",
+  "pyproject.toml",
+  "src"
+]
+
+[tool.tox]
+requires = ["tox>=4.14"]
+env_list = ["py3"]
+
+[tool.tox.env.py3]
+description = "Run the unit test suite with coverage"
+deps = [
+  ".[test]"
+]
+commands = [
+  "pytest --basetemp={envtmpdir} {posargs:-vvv --cov=triage}"
+]
+
+[tool.tox.env.py3.set_env]
+AWS_ACCESS_KEY_ID = "fake"
+AWS_SECRET_ACCESS_KEY = "fake"
+BOTO_CONFIG = "/dev/null"
+
+[tool.pytest.ini_options]
+testpaths = ["src/tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+exclude = [
+    "src/triage/component/postmodeling/deprecated/",  # Pre-existing bugs in deprecated code
+]
+
+[tool.ruff.lint]
+# Start with minimal rules to get CI passing, tighten incrementally
+select = [
+    "F821",  # undefined-name (critical - code won't run)
+    "F822",  # undefined-export
+    "F823",  # undefined-local
+]
+ignore = []

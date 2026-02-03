@@ -1,31 +1,33 @@
 import csv
 import datetime
 import hashlib
-import numpy as np
-import os
-import pandas as pd
+import io
 import json
-import postgres_copy
-import sqlalchemy
+import os
 import random
-import verboselogs, logging
 
-logger = verboselogs.VerboseLogger(__name__)
+import numpy as np
+import pandas as pd
+import sqlalchemy
+from psycopg import sql
 
-from itertools import chain
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
+
 from functools import partial
-from sqlalchemy import text, select
+from itertools import chain
 
 from retrying import retry
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
-from ohio import PipeTextIO
 
 from triage.component.results_schema import (
     Experiment,
-    Matrix,
-    Model,
     ExperimentMatrix,
     ExperimentModel,
+    Matrix,
+    Model,
     TriageRun,
 )
 
@@ -80,9 +82,11 @@ def associate_matrices_with_experiment(experiment_hash, matrix_uuids, db_engine)
         with session.begin():
             for matrix_uuid in matrix_uuids:
                 session.merge(
-                    ExperimentMatrix(experiment_hash=experiment_hash, matrix_uuid=matrix_uuid)
+                    ExperimentMatrix(
+                        experiment_hash=experiment_hash, matrix_uuid=matrix_uuid
+                    )
                 )
-        
+
     logger.spam("Associated matrices with experiment in database")
 
 
@@ -92,9 +96,11 @@ def associate_models_with_experiment(experiment_hash, model_hashes, db_engine):
         with session.begin():
             for model_hash in model_hashes:
                 session.merge(
-                    ExperimentModel(experiment_hash=experiment_hash, model_hash=model_hash)
+                    ExperimentModel(
+                        experiment_hash=experiment_hash, model_hash=model_hash
+                    )
                 )
-    
+
     logger.spam("Associated models with experiment in database")
 
 
@@ -113,7 +119,11 @@ def missing_matrix_uuids(experiment_hash, db_engine):
         and matrices.matrix_uuid is null
     """
     with db_engine.connect() as conn:
-        return conn.execute(text(query), {"experiment_hash": experiment_hash}).scalars().all()
+        return (
+            conn.execute(text(query), {"experiment_hash": experiment_hash})
+            .scalars()
+            .all()
+        )
 
 
 @db_retry
@@ -131,7 +141,14 @@ def missing_model_hashes(experiment_hash, db_engine):
         and models.model_hash is null
     """
     with db_engine.connect() as conn:
-        return conn.execute(text(query), {"experiment_hash": experiment_hash},).scalars().all()
+        return (
+            conn.execute(
+                text(query),
+                {"experiment_hash": experiment_hash},
+            )
+            .scalars()
+            .all()
+        )
 
 
 class Batch:
@@ -230,9 +247,9 @@ def retrieve_model_id_from_hash(db_engine, model_hash):
     with Session(db_engine) as session:
         stmt = select(Model).where(Model.model_hash == model_hash)
         saved = session.execute(stmt).scalar_one_or_none()
-        #saved = session.query(Model).filter_by(model_hash=model_hash).one_or_none()
+        # saved = session.query(Model).filter_by(model_hash=model_hash).one_or_none()
         return saved.model_id if saved else None
-    
+
 
 @db_retry
 def retrieve_model_hash_from_id(db_engine, model_id):
@@ -245,7 +262,7 @@ def retrieve_model_hash_from_id(db_engine, model_id):
     """
     with Session(db_engine) as session:
         return session.get(Model, model_id).model_hash
-        
+
 
 @db_retry
 def retrieve_existing_model_random_seeds(
@@ -278,18 +295,23 @@ def retrieve_existing_model_random_seeds(
         and triage_runs.random_seed = :experiment_random_seed
         order by models.run_time DESC, random()
     """)
-    logging.debug(f"Query that will retrieve random seeds for the model: {query}")
+    logger.debug(f"Query that will retrieve random seeds for the model: {query}")
     with db_engine.connect() as conn:
-        return conn.execute(query,
-                            {
-                                "model_group_id": model_group_id,
-                                "train_end_time": train_end_time,
-                                "train_matrix_uuid": train_matrix_uuid,
-                                "training_label_timespan": training_label_timespan,
-                                "experiment_random_seed": experiment_random_seed, 
-                            }
-                            ).scalars().all()
-        
+        return (
+            conn.execute(
+                query,
+                {
+                    "model_group_id": model_group_id,
+                    "train_end_time": train_end_time,
+                    "train_matrix_uuid": train_matrix_uuid,
+                    "training_label_timespan": training_label_timespan,
+                    "experiment_random_seed": experiment_random_seed,
+                },
+            )
+            .scalars()
+            .all()
+        )
+
 
 @db_retry
 def retrieve_experiment_seed_from_run_id(db_engine, run_id):
@@ -302,7 +324,7 @@ def retrieve_experiment_seed_from_run_id(db_engine, run_id):
     """
     with Session(db_engine) as session:
         return session.get(TriageRun, run_id).random_seed
-    
+
 
 def _write_csv(file_like, db_objects, type_of_object):
     writer = csv.writer(file_like, quoting=csv.QUOTE_MINIMAL, lineterminator="\n")
@@ -330,18 +352,38 @@ def save_db_objects(db_engine, db_objects):
     first_object = next(db_objects)
     type_of_object = type(first_object)
     columns = [col.name for col in first_object.__table__.columns]
+    table_name = first_object.__table__.name
+    schema_name = first_object.__table__.schema or "public"
 
-    with PipeTextIO(
-        partial(
-            _write_csv,
-            db_objects=chain((first_object,), db_objects),
-            type_of_object=type_of_object,
+    # Build CSV data in memory
+    csv_buffer = io.StringIO()
+    writer = csv.writer(csv_buffer, quoting=csv.QUOTE_MINIMAL, lineterminator="\n")
+    for db_object in chain((first_object,), db_objects):
+        if type(db_object) != type_of_object:
+            raise TypeError(
+                "Cannot copy collection of objects to db as they are not all "
+                f"of the same type. First object was {type_of_object} "
+                f"and later encountered a {type(db_object)}"
+            )
+        writer.writerow(
+            [getattr(db_object, col.name) for col in db_object.__table__.columns]
         )
-    ) as pipe:
-        postgres_copy.copy_from(
-            source=pipe,
-            dest=type_of_object,
-            engine_or_conn=db_engine,
-            columns=columns,
-            format="csv",
+    csv_buffer.seek(0)
+
+    # Use psycopg3's native COPY
+    connection = db_engine.raw_connection()
+    try:
+        cursor = connection.cursor()
+        # Build the COPY SQL using psycopg.sql for proper identifier quoting
+        column_identifiers = sql.SQL(", ").join(sql.Identifier(c) for c in columns)
+        copy_sql = sql.SQL("COPY {}.{} ({}) FROM STDIN WITH CSV").format(
+            sql.Identifier(schema_name),
+            sql.Identifier(table_name),
+            column_identifiers,
         )
+        with cursor.copy(copy_sql) as copy:
+            while data := csv_buffer.read(8192):
+                copy.write(data)
+        connection.commit()
+    finally:
+        connection.close()

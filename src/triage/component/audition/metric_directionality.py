@@ -1,5 +1,6 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 import operator
 
 from triage.component.catwalk.evaluation import ModelEvaluator
@@ -90,23 +91,22 @@ def idxbest(metric):
         return "idxmin"
 
 
-def value_agg_funcs(metric, lang='sql'):
+def value_agg_funcs(metric, lang="sql"):
     """Aggregation functions for combining multiple metric values (e.g., from different random seeds):
         metric (str): The name of a metric, ie 'precision@'
         lang (str): Either 'sql' or 'pandas' to return appropriate function names
-    Returns: (dict) Dictionary of function names to provide the desired 
+    Returns: (dict) Dictionary of function names to provide the desired
         aggregation of metric values
     """
-    if lang=='sql':
-        mean_fcn = 'avg'
-    elif lang=='pandas':
-        mean_fcn = 'mean'
+    if lang == "sql":
+        mean_fcn = "avg"
+    elif lang == "pandas":
+        mean_fcn = "mean"
     else:
-        raise ValueError('lang must be sql or pandas')
+        raise ValueError("lang must be sql or pandas")
 
     return {
-        'worst': worst_in_series(metric),
-        'best': best_in_series(metric),
-        'mean': mean_fcn
+        "worst": worst_in_series(metric),
+        "best": best_in_series(metric),
+        "mean": mean_fcn,
     }
-

@@ -1,11 +1,13 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 
 import os
-import pandas as pd
-import numpy as np
 
-from .plotting import plot_cats, category_colordict, category_styledict
+import numpy as np
+import pandas as pd
+
+from .plotting import category_colordict, category_styledict, plot_cats
 from .utils import str_in_sql
 
 
@@ -50,9 +52,11 @@ class ModelGroupPerformancePlotter:
             )
 
             # set stable colors/styles by model type
-            categories = np.unique(df['model_type'])
+            categories = np.unique(df["model_type"])
             if not self.colordict:
-                self.colordict = category_colordict(self.cmap_name, categories, self.highlight_grp)
+                self.colordict = category_colordict(
+                    self.cmap_name, categories, self.highlight_grp
+                )
             if not self.styledict:
                 self.styledict = category_styledict(self.colordict, self.highlight_grp)
 
@@ -109,7 +113,7 @@ class ModelGroupPerformancePlotter:
                 parameter=parameter,
                 dist_table=self.distance_from_best_table.distance_table,
                 model_group_ids=str_in_sql(model_group_ids),
-                train_end_times=str_in_sql(train_end_times)
+                train_end_times=str_in_sql(train_end_times),
             ),
             self.distance_from_best_table.db_engine,
         )

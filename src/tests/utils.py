@@ -5,30 +5,27 @@ import os
 import random
 import tempfile
 from contextlib import contextmanager
+from functools import cached_property
 from unittest import mock
 
 import matplotlib
 import numpy as np
 import pandas as pd
-import testing.postgresql
-from functools import cached_property
-from triage import create_engine
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text
+from sqlalchemy.orm import sessionmaker
 
+from tests.results_tests.factories import MatrixFactory, set_session
+from triage import create_engine
 from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.storage import MatrixStore, ProjectStorage
 from triage.component.catwalk.utils import filename_friendly_hash
-from triage.component.results_schema import Model, Matrix
+from triage.component.results_schema import Matrix, Model
 from triage.experiments import CONFIG_VERSION
 from triage.util.structs import FeatureNameList
-
-from tests.results_tests.factories import MatrixFactory, set_session
 
 matplotlib.use("Agg")
 
 from matplotlib import pyplot as plt  # noqa
-
 
 CONFIG_QUERY_DATA = {
     "cohort": {
@@ -120,7 +117,7 @@ class MockMatrixStore(MatrixStore):
         self.init_labels = pd.Series(init_labels, dtype="float64")
         self.matrix_uuid = matrix_uuid
         self.init_as_of_dates = init_as_of_dates or []
-        
+
         SessionLocal = sessionmaker(bind=db_engine)
         session = SessionLocal()
         try:
@@ -172,7 +169,6 @@ def fake_trained_model(
         return trained_model, model_id
     finally:
         session.close()
-    
 
 
 def matrix_metadata_creator(**override_kwargs):
@@ -219,7 +215,9 @@ def matrix_creator():
     return pd.DataFrame.from_dict(source_dict)
 
 
-def get_matrix_store(project_storage, db_engine, matrix=None, metadata=None, write_to_db=True):
+def get_matrix_store(
+    project_storage, db_engine, matrix=None, metadata=None, write_to_db=True
+):
     """Return a matrix store associated with the given project storage.
     Also adds an entry in the matrices table if it doesn't exist already
 
@@ -233,8 +231,8 @@ def get_matrix_store(project_storage, db_engine, matrix=None, metadata=None, wri
         matrix = matrix_creator()
     if not metadata:
         metadata = matrix_metadata_creator()
-    
-    #matrix["as_of_date"] = matrix["as_of_date"].apply(pd.Timestamp)
+
+    # matrix["as_of_date"] = matrix["as_of_date"].apply(pd.Timestamp)
     matrix.set_index(MatrixStore.indices, inplace=True)
     matrix_store = project_storage.matrix_storage_engine().get_store(
         filename_friendly_hash(metadata)
@@ -268,15 +266,16 @@ def get_matrix_store(project_storage, db_engine, matrix=None, metadata=None, wri
 def rig_engines():
     """Set up a db engine and project storage engine
 
+    DEPRECATED: Use the `rig_engines` pytest fixture instead.
+    This context manager is provided for backwards compatibility only.
+
     Yields (tuple) (database engine, project storage engine)
     """
-    with testing.postgresql.Postgresql() as postgresql:
-        db_engine = create_engine(postgresql.url())
-        ensure_db(db_engine)
-        
-        with tempfile.TemporaryDirectory() as temp_dir:
-            project_storage = ProjectStorage(temp_dir)
-            yield db_engine, project_storage
+    raise NotImplementedError(
+        "rig_engines() context manager has been removed. "
+        "Use the rig_engines pytest fixture from conftest.py instead. "
+        "Update your test to accept 'rig_engines' as a parameter."
+    )
 
 
 def populate_source_data(db_engine):
@@ -338,104 +337,96 @@ def populate_source_data(db_engine):
         (3, 1, "2014-01-01"),
         (3, 0, "2015-01-01"),
     ]
-    
+
     with db_engine.begin() as conn:
-        conn.execute(
-            text(
-                """
+        conn.execute(text("""
                 create table cat_complaints (
                 entity_id int,
                 as_of_date date,
                 cat_sightings int
                 )
-                """
-            )
-        )
+                """))
 
-        conn.execute(
-            text(
-                """
+        conn.execute(text("""
                 create table entity_zip_codes (
                 entity_id int,
                 zip_code text
                 )
-                """
-            )
-        )
+                """))
 
         conn.execute(
-            text("create table zip_code_demographics (zip_code text, ethnicity text, as_of_date date)")
+            text(
+                "create table zip_code_demographics (zip_code text, ethnicity text, as_of_date date)"
+            )
         )
         for demographic_row in zip_code_demographics:
             conn.execute(
-                text("insert into zip_code_demographics values (:zip_code, :ethnicity, :as_of_date)"), 
+                text(
+                    "insert into zip_code_demographics values (:zip_code, :ethnicity, :as_of_date)"
+                ),
                 {
                     "zip_code": demographic_row[0],
                     "ethnicity": demographic_row[1],
                     "as_of_date": demographic_row[2],
-                }
+                },
             )
 
         for entity_zip_code in entity_zip_codes:
             conn.execute(
-                text("insert into entity_zip_codes values (:entity_id, :zip_code)"), 
+                text("insert into entity_zip_codes values (:entity_id, :zip_code)"),
                 {
                     "entity_id": entity_zip_code[0],
                     "zip_code": entity_zip_code[1],
-                }
+                },
             )
 
-        conn.execute(
-            text(
-                """
+        conn.execute(text("""
                 create table zip_code_events (
                 zip_code text,
                 as_of_date date,
                 num_events int
                 )
-                """
-            )
-        )
+                """))
         for zip_code_event in zip_code_events:
             conn.execute(
-                text("insert into zip_code_events values (:zip_code, :as_of_date, :num_events)"), 
-                { 
+                text(
+                    "insert into zip_code_events values (:zip_code, :as_of_date, :num_events)"
+                ),
+                {
                     "zip_code": zip_code_event[0],
                     "as_of_date": zip_code_event[1],
                     "num_events": zip_code_event[2],
-                }
+                },
             )
 
         for complaint in complaints:
             conn.execute(
-                text("insert into cat_complaints values (:entity_id, :as_of_date, :cat_sightings)"), 
+                text(
+                    "insert into cat_complaints values (:entity_id, :as_of_date, :cat_sightings)"
+                ),
                 {
                     "entity_id": complaint[0],
                     "as_of_date": complaint[1],
                     "cat_sightings": complaint[2],
-                }
+                },
             )
 
-        conn.execute(
-            text(
-                """
+        conn.execute(text("""
                 create table events (
                 entity_id int,
                 outcome int,
                 outcome_date date
                 )
-                """
-            )
-        )
+                """))
 
         for event in events:
             conn.execute(
-                text("insert into events values (:entity_id, :outcome, :outcome_date)"), 
-                { 
+                text("insert into events values (:entity_id, :outcome, :outcome_date)"),
+                {
                     "entity_id": event[0],
                     "outcome": event[1],
                     "outcome_date": event[2],
-                }
+                },
             )
 
 
@@ -540,7 +531,7 @@ def sample_config(query_source="filepath"):
             "parameters",
         ],
         "feature_aggregations": feature_config,
-        # "cohort_config": cohort_config,
+        "cohort_config": cohort_config,
         "temporal_config": temporal_config,
         "grid_config": grid_config,
         "bias_audit_config": bias_audit_config,

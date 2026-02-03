@@ -1,10 +1,14 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 
 from sqlalchemy.orm import sessionmaker
 
-from triage.component.architect.entity_date_table_generators import EntityDateTableGenerator, SubsetEntityDateTableGenerator
-from triage.component.catwalk.utils import (filename_friendly_hash, get_subset_table_name)
+from triage.component.architect.entity_date_table_generators import (
+    EntityDateTableGenerator,
+    SubsetEntityDateTableGenerator,
+)
+from triage.component.catwalk.utils import filename_friendly_hash, get_subset_table_name
 from triage.component.results_schema import Subset
 
 
@@ -31,14 +35,9 @@ class SubsetterNoOp:
             "No subsets configuration is available, so subsets will not be created"
         )
 
+
 class Subsetter:
-    def __init__(
-        self,
-        db_engine,
-        replace,
-        as_of_times,
-        cohort_table_name
-    ):
+    def __init__(self, db_engine, replace, as_of_times, cohort_table_name):
         self.db_engine = db_engine
         self.replace = replace
         self.as_of_times = as_of_times
@@ -50,7 +49,7 @@ class Subsetter:
         for subset_config in subset_configs:
             if subset_config:
                 # adding the cohort_table name to the subset_config so the hash reflects the config table name
-                subset_config['cohort_table_name'] = self.cohort_table_name
+                subset_config["cohort_table_name"] = self.cohort_table_name
                 subset_hash = filename_friendly_hash(subset_config)
 
                 subset_table_generator = SubsetEntityDateTableGenerator(
@@ -58,7 +57,7 @@ class Subsetter:
                     db_engine=self.db_engine,
                     query=subset_config["query"],
                     replace=self.replace,
-                    cohort_table=self.cohort_table_name
+                    cohort_table=self.cohort_table_name,
                 )
                 subset_tasks.append(
                     {
@@ -76,14 +75,12 @@ class Subsetter:
         logger.success("Subsets stored successfully")
 
     def process_task(self, subset_config, subset_hash, subset_table_generator):
-        logger.debug(
-            f"Creating subset for {subset_config['name']}-{subset_hash}"
-        )
-        subset_table_generator.generate_entity_date_table(
-            as_of_dates=self.as_of_times
-        )
+        logger.debug(f"Creating subset for {subset_config['name']}-{subset_hash}")
+        subset_table_generator.generate_entity_date_table(as_of_dates=self.as_of_times)
         self.save_subset_to_db(subset_hash, subset_config)
-        logger.debug(f"Subset {subset_config['name']}-{subset_hash} created successfully")
+        logger.debug(
+            f"Subset {subset_config['name']}-{subset_hash} created successfully"
+        )
 
     def save_subset_to_db(self, subset_hash, subset_config):
         session = sessionmaker(bind=self.db_engine, future=True)()

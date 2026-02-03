@@ -1,18 +1,21 @@
 # coding: utf-8
+import functools
+import json
+
 import sqlalchemy
 import wrapt
-import json
-import functools
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 
 from contextlib import contextmanager
-from sqlalchemy.orm import Session
-from sqlalchemy.engine import make_url
-from sqlalchemy import inspect, select
-
-from psycopg2.extras import DateRange, DateTimeRange
 from datetime import date, datetime
+
+from psycopg.types.range import DateRange, TimestamptzRange
+from sqlalchemy import inspect, select
+from sqlalchemy.engine import make_url
+from sqlalchemy.orm import Session
 
 
 def serialize_to_database(obj):
@@ -21,7 +24,7 @@ def serialize_to_database(obj):
     if isinstance(obj, date):
         return str(obj.isoformat())
 
-    if isinstance(obj, (DateRange, DateTimeRange)):
+    if isinstance(obj, (DateRange, TimestamptzRange)):
         return f"[{obj.lower}, {obj.upper}]"
 
     return obj
@@ -29,7 +32,6 @@ def serialize_to_database(obj):
 
 def json_dumps(d):
     return json.dumps(d, default=serialize_to_database)
-
 
 
 class SerializableDbEngine(wrapt.ObjectProxy):
@@ -54,7 +56,7 @@ class SerializableDbEngine(wrapt.ObjectProxy):
     def __reduce_ex__(self, protocol):
         # wrapt requires reduce_ex to be implemented
         return self.__reduce__()
-    
+
     def get_inspector(self):
         return inspect(self.__wrapped__)
 
@@ -65,16 +67,17 @@ class SerializableDbEngine(wrapt.ObjectProxy):
 
 create_engine = functools.partial(SerializableDbEngine, json_serializer=json_dumps)
 
+
 @contextmanager
 def scoped_session(db_engine):
     """Provide a transactional scope around a series of operations."""
-    #session = sessionmaker(db_engine, future=True)
+    # session = sessionmaker(db_engine, future=True)
     session = Session(
         bind=db_engine,
         future=True,
         expire_on_commit=False,
-        )
-    
+    )
+
     try:
         yield session
         session.commit()
@@ -87,7 +90,7 @@ def scoped_session(db_engine):
 
 @contextmanager
 def get_for_update(db_engine, orm_class, primary_key):
-    """ Gets object from the database to updated it """
+    """Gets object from the database to updated it"""
     logger.spam(f"ORM class: {orm_class} with primary key {primary_key}")
     with scoped_session(db_engine) as session:
         obj = session.get(orm_class, primary_key)

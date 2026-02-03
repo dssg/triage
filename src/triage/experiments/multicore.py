@@ -1,19 +1,29 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 
 import traceback
 from functools import partial
-from pebble import ProcessPool
 from multiprocessing.reduction import ForkingPickler
 
-from triage.component.catwalk.utils import Batch
-from triage.component.catwalk import BatchKey
+from pebble import ProcessPool
 
+from triage.component.catwalk import BatchKey
+from triage.component.catwalk.utils import Batch
 from triage.experiments import ExperimentBase
 
 
 class MultiCoreExperiment(ExperimentBase):
-    def __init__(self, config, db_engine, *args, n_processes=1, n_bigtrain_processes=1, n_db_processes=1, **kwargs):
+    def __init__(
+        self,
+        config,
+        db_engine,
+        *args,
+        n_processes=1,
+        n_bigtrain_processes=1,
+        n_db_processes=1,
+        **kwargs,
+    ):
         """
         Args:
             config (dict)
@@ -25,7 +35,7 @@ class MultiCoreExperiment(ExperimentBase):
                 Random forests and extra trees fall under this category.
                 Usually good to start at 1, but can be increased if you have available memory.
             n_db_processes (int) How many parallel processes to use for database IO-intensive tasks.
-                Cohort creation, label creation, and feature creation fall under this category. 
+                Cohort creation, label creation, and feature creation fall under this category.
         """
         try:
             ForkingPickler.dumps(db_engine)
@@ -55,9 +65,8 @@ class MultiCoreExperiment(ExperimentBase):
         self.n_processes_lookup = {
             BatchKey.QUICKTRAIN: self.n_processes,
             BatchKey.BIGTRAIN: self.n_bigtrain_processes,
-            BatchKey.MAYBETRAIN: self.n_processes
+            BatchKey.MAYBETRAIN: self.n_processes,
         }
-
 
     def generated_chunked_parallelized_results(
         self, partially_bound_function, tasks, n_processes, chunksize=1
@@ -74,7 +83,7 @@ class MultiCoreExperiment(ExperimentBase):
                 except StopIteration:
                     break
                 except Exception:
-                    logger.exception('Child failure')
+                    logger.exception("Child failure")
 
     def process_train_test_batches(self, batches):
         partial_test = partial(
@@ -122,9 +131,7 @@ class MultiCoreExperiment(ExperimentBase):
         logger.info(
             f"Starting parallel subset creation: {len(subset_tasks)} subsets, {self.n_db_processes} processes",
         )
-        parallelize(
-            partial_subset, subset_tasks, self.n_db_processes
-        )
+        parallelize(partial_subset, subset_tasks, self.n_db_processes)
 
 
 def insert_into_table(insert_statements, feature_generator):
@@ -151,7 +158,7 @@ def parallelize(partially_bound_function, tasks, n_processes):
             except StopIteration:
                 break
             except Exception:
-                logger.exception('Child failure')
+                logger.exception("Child failure")
                 num_failures += 1
             else:
                 results.append(result)

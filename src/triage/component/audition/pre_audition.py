@@ -1,6 +1,8 @@
 import pandas as pd
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 
 from sqlalchemy import text
 
@@ -19,13 +21,14 @@ class PreAudition:
         self.baseline_model_groups = None
 
         if baseline_model_types:
-            baseline_types_list = ', '.join(["'%s'" % mt for mt in baseline_model_types])
-            self.baseline_where = 'AND model_type IN (%s)' % baseline_types_list
-            self.nonbaseline_where = 'AND model_type NOT IN (%s)' % baseline_types_list
+            baseline_types_list = ", ".join(
+                ["'%s'" % mt for mt in baseline_model_types]
+            )
+            self.baseline_where = "AND model_type IN (%s)" % baseline_types_list
+            self.nonbaseline_where = "AND model_type NOT IN (%s)" % baseline_types_list
         else:
-            self.baseline_where = 'AND FALSE'
-            self.nonbaseline_where = ''
-
+            self.baseline_where = "AND FALSE"
+            self.nonbaseline_where = ""
 
     def get_model_groups_from_label(self, label_def):
         """A funciton to pull model groups based on label definition in order
@@ -44,21 +47,24 @@ class PreAudition:
 
         with self.db_engine.connect() as conn:
             model_groups = pd.read_sql(
-                text(query.format(baseline_clause=self.nonbaseline_where)), 
-                con=conn, 
-                params={"label_definition": label_def}
+                text(query.format(baseline_clause=self.nonbaseline_where)),
+                con=conn,
+                params={"label_definition": label_def},
             )
         self.model_groups = list(model_groups["model_group_id"])
-        
+
         with self.db_engine.connect() as conn:
             baseline_model_groups = pd.read_sql(
-                text(query.format(baseline_clause=self.baseline_where)), 
-                con=conn, 
-                params={"label_definition": label_def}
+                text(query.format(baseline_clause=self.baseline_where)),
+                con=conn,
+                params={"label_definition": label_def},
             )
         self.baseline_model_groups = list(baseline_model_groups["model_group_id"])
 
-        return {'model_groups': self.model_groups, 'baseline_model_groups': self.baseline_model_groups}
+        return {
+            "model_groups": self.model_groups,
+            "baseline_model_groups": self.baseline_model_groups,
+        }
 
     def get_model_groups_from_experiment(self, experiment_hash):
         """A function to pull model groups based on experiment_hash in order
@@ -74,24 +80,27 @@ class PreAudition:
             WHERE experiment_hash = :experiment_hash
             {baseline_clause}
             """
-        
+
         with self.db_engine.connect() as conn:
             model_groups = pd.read_sql(
-                text(query.format(baseline_clause=self.nonbaseline_where)), 
-                con=conn, 
-                params={"experiment_hash": experiment_hash}
+                text(query.format(baseline_clause=self.nonbaseline_where)),
+                con=conn,
+                params={"experiment_hash": experiment_hash},
             )
         self.model_groups = list(model_groups["model_group_id"])
 
         with self.db_engine.connect() as conn:
             baseline_model_groups = pd.read_sql(
-                text(query.format(baseline_clause=self.baseline_where)), 
-                con=conn, 
-                params={"experiment_hash": experiment_hash}
+                text(query.format(baseline_clause=self.baseline_where)),
+                con=conn,
+                params={"experiment_hash": experiment_hash},
             )
         self.baseline_model_groups = list(baseline_model_groups["model_group_id"])
 
-        return {'model_groups': self.model_groups, 'baseline_model_groups': self.baseline_model_groups}
+        return {
+            "model_groups": self.model_groups,
+            "baseline_model_groups": self.baseline_model_groups,
+        }
 
     def get_model_groups(self, query):
         """A funciton to pull model groups based on customized query in order
@@ -111,10 +120,14 @@ class PreAudition:
             after: (string) YYYY-MM-DD time format
             query: (string) SQL query for train_end_times
         """
-        logger.debug(f"model groups: {self.model_groups}, baseline model groups: {self.baseline_model_groups}")
+        logger.debug(
+            f"model groups: {self.model_groups}, baseline model groups: {self.baseline_model_groups}"
+        )
         if query is None:
-            model_groups_stmt = ", ".join(map(str, self.model_groups + self.baseline_model_groups))
-            
+            model_groups_stmt = ", ".join(
+                map(str, self.model_groups + self.baseline_model_groups)
+            )
+
             query = f"""
             SELECT DISTINCT train_end_time
             FROM triage_metadata.models
@@ -126,9 +139,7 @@ class PreAudition:
         logger.spam(f"pre audition get train end times with query: {query}")
         end_times = sorted(
             list(
-                pd.read_sql(text(query), 
-                            con=self.db_engine, 
-                            params={"after": after})[
+                pd.read_sql(text(query), con=self.db_engine, params={"after": after})[
                     "train_end_time"
                 ]
             )

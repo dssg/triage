@@ -1,15 +1,14 @@
-#from __future__ import with_statement
+# from __future__ import with_statement
 
 import os
+import re
 
 import yaml
-import re
 from alembic import context
 from sqlalchemy import create_engine, pool, text
 from sqlalchemy.engine import URL
 
 from triage.component.results_schema import Base
-
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -26,6 +25,7 @@ target_metadata = Base.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+
 def get_excludes_from_config(config_, type_="tables"):
     excludes = config_.get(type_, None)
     if excludes is not None:
@@ -34,8 +34,8 @@ def get_excludes_from_config(config_, type_="tables"):
     return excludes
 
 
-excluded_tables = get_excludes_from_config(config.get_section('exclude'), "tables")
-excluded_indices = get_excludes_from_config(config.get_section('exclude'), "indices")
+excluded_tables = get_excludes_from_config(config.get_section("exclude"), "tables")
+excluded_indices = get_excludes_from_config(config.get_section("exclude"), "indices")
 
 
 def include_object(obj, name, type_, reflected, compare_to):
@@ -73,13 +73,14 @@ if not url:
     with open(db_config_file) as fd:
         config = yaml.full_load(fd)
         url = URL.create(
-            "postgresql+psycopg2",
+            "postgresql+psycopg",
             host=config["host"],
             username=config["user"],
             database=config["db"],
             password=config["pass"],
             port=config["port"],
         )
+
 
 def run_migrations_offline():
     """Run migrations in 'offline' mode.
@@ -120,7 +121,7 @@ def run_migrations_online():
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+            connection=connection,
             target_metadata=target_metadata,
             version_table="results_schema_versions",
             include_schemas=True,
@@ -133,6 +134,6 @@ def run_migrations_online():
 
 
 if context.is_offline_mode():
-    run_migrations_offline()                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+    run_migrations_offline()
 else:
     run_migrations_online()

@@ -1,5 +1,6 @@
 """Functions to retrieve basic information about tables in a Postgres database"""
-from sqlalchemy import MetaData, Table, text, quoted_name
+
+from sqlalchemy import MetaData, Table, quoted_name, text
 
 
 def split_table(table_name):
@@ -50,7 +51,9 @@ def reflected_table(table_name, db_engine):
     """
     schema, table = split_table(table_name)
     meta = MetaData(schema=schema)
-    return Table(table, meta, autoload_with=db_engine)
+    # Get the underlying engine if wrapped (e.g., SerializableDbEngine)
+    engine = getattr(db_engine, "__wrapped__", db_engine)
+    return Table(table, meta, autoload_with=engine)
 
 
 def table_exists(table_name, db_engine):
@@ -63,7 +66,7 @@ def table_exists(table_name, db_engine):
     Returns: (boolean) Whether or not the table exists in the database
     """
     schema, table = split_table(table_name)
-    inspector = db_engine.get_inspector() # get the inspector from SerializableDbEngine
+    inspector = db_engine.get_inspector()  # get the inspector from SerializableDbEngine
     return inspector.has_table(table, schema=schema)
 
 
@@ -78,11 +81,11 @@ def table_has_data(table_name, db_engine):
     """
     if not table_exists(table_name, db_engine):
         return False
-    
+
     sql = text(f"select * from {quoted_name(table_name, quote=True)} limit 1")
     with db_engine.connect() as conn:
         return conn.execute(sql).first() is not None
-   
+
 
 def table_row_count(table_name, db_engine):
     """Return the length of the table.
@@ -98,7 +101,7 @@ def table_row_count(table_name, db_engine):
     sql = text(f"select count(*) from {quoted_name(table_name, quote=True)}")
     with db_engine.connect() as conn:
         return conn.execute(sql).scalar_one()
-   
+
 
 def table_has_duplicates(table_name, column_list, db_engine):
     """Check whether the table has duplicate rows on the set of columns.
@@ -127,9 +130,9 @@ def table_has_duplicates(table_name, column_list, db_engine):
         SELECT MAX(num_records) FROM counts
     """)
 
-    with db_engine.connect() as conn: 
+    with db_engine.connect() as conn:
         return conn.execute(sql).scalar_one() > 1
-    
+
 
 def table_has_column(table_name, column, db_engine):
     """Check whether the table contains a column of the given name
@@ -144,10 +147,10 @@ def table_has_column(table_name, column, db_engine):
     Returns: (boolean) Whether or not the table contains the column
     """
     schema, table = split_table(table_name)
-    inspector = db_engine.get_inspector() # get inspector from SerializableDbEngine
+    inspector = db_engine.get_inspector()  # get inspector from SerializableDbEngine
     columns = inspector.get_columns(table, schema=schema)
-    # inspect returns column metadata dictionaries 
-    return any(col['name'] == column for col in columns)
+    # inspect returns column metadata dictionaries
+    return any(col["name"] == column for col in columns)
 
 
 def column_type(table_name, column, db_engine):
@@ -165,13 +168,13 @@ def column_type(table_name, column, db_engine):
         sqlalchemy.types.Boolean
     """
     schema, table = split_table(table_name)
-    inspector = db_engine.get_inspector() # get inspector from SerializableDbEngine
+    inspector = db_engine.get_inspector()  # get inspector from SerializableDbEngine
     columns = inspector.get_columns(table, schema=schema)
-    for col in columns: 
-        if col['name'] == column:
-            return type(col['type'])
+    for col in columns:
+        if col["name"] == column:
+            return type(col["type"])
     raise KeyError(f"Column {column} not found")
-    
+
 
 def schema_tables(schema_name, db_engine):
     inspector = db_engine.get_inspector()

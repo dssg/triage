@@ -1,6 +1,8 @@
 from itertools import product
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 
 from .selection_rules import BoundSelectionRule
 from .utils import make_list
@@ -47,11 +49,11 @@ def make_selection_rule_grid(rule_groups):
         list of bound selection rules.
 
     Arguments:
-        rule_groups (list): List of dicts used to specify selection rule grid. 
-        
+        rule_groups (list): List of dicts used to specify selection rule grid.
+
     Most users will want to use [rulemaker objects](#rulemakers)
     to generate their `rule_group` specifications.
-    
+
     An example rule_groups specification:
 
     ```
@@ -80,7 +82,6 @@ def make_selection_rule_grid(rule_groups):
     ```
     Returns:
         list: list of audition.selection_rules.BoundSelectionRule objects"""
-
 
     rules = []
     logger.debug("Expanding selection rule groups into full grid")

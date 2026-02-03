@@ -1,27 +1,24 @@
 import datetime
-from unittest import TestCase, mock
-import pandas as pd
-import testing.postgresql
-
 from contextlib import contextmanager
+from unittest import TestCase, mock
+
+import pandas as pd
 from sqlalchemy import text
-from triage import create_engine
-from triage.component.catwalk.utils import filename_friendly_hash
-from triage.component.architect.feature_group_creator import FeatureGroup
+
+from tests.utils import matrix_metadata_creator
 from triage.component.architect.builders import MatrixBuilder
+from triage.component.architect.feature_group_creator import FeatureGroup
 from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.storage import ProjectStorage
+from triage.component.catwalk.utils import filename_friendly_hash
 from triage.component.results_schema.schema import Matrix
 
 from .utils import (
-    create_schemas,
-    create_entity_date_df,
-    convert_string_column_to_date,
     TemporaryDirectory,
+    convert_string_column_to_date,
+    create_entity_date_df,
+    create_schemas,
 )
-
-from tests.utils import matrix_metadata_creator
-
 
 # make some fake features data
 
@@ -245,7 +242,7 @@ def get_matrix_storage_engine():
         yield ProjectStorage(temp_dir).matrix_storage_engine()
 
 
-def test_make_entity_date_table():
+def test_make_entity_date_table(db_engine):
     """Test that the make_entity_date_table function contains the correct
     values.
     """
@@ -265,46 +262,44 @@ def test_make_entity_date_table():
         label_timespan="1 month",
     )
 
-    with testing.postgresql.Postgresql() as postgresql:
-        # create an engine and generate a table with fake feature data
-        engine = create_engine(postgresql.url())
-        #ensure_db(engine)
-        create_schemas(
-            engine=engine, features_tables=features_tables, labels=labels, states=states
+    # create an engine and generate a table with fake feature data
+    create_schemas(
+        engine=db_engine, features_tables=features_tables, labels=labels, states=states
+    )
+
+    with get_matrix_storage_engine() as matrix_storage_engine:
+        builder = MatrixBuilder(
+            db_config=db_config,
+            matrix_storage_engine=matrix_storage_engine,
+            experiment_hash=experiment_hash,
+            engine=db_engine,
+        )
+        with db_engine.begin() as conn:
+            conn.execute(text("CREATE TABLE features.tmp_entity_date (a int, b date);"))
+
+        # call the function to test the creation of the table
+        entity_date_table_name = builder.make_entity_date_table(
+            as_of_times=dates,
+            label_type="binary",
+            label_name="booking",
+            state="active",
+            matrix_uuid="my_uuid",
+            matrix_type="train",
+            label_timespan="1 month",
         )
 
-        with get_matrix_storage_engine() as matrix_storage_engine:
-            builder = MatrixBuilder(
-                db_config=db_config,
-                matrix_storage_engine=matrix_storage_engine,
-                experiment_hash=experiment_hash,
-                engine=engine,
+        # read in the table
+        with db_engine.connect() as conn:
+            result = pd.read_sql(
+                f"select * from features.{entity_date_table_name} order by entity_id, as_of_date",
+                conn.connection,
             )
-            with engine.begin() as conn:
-                conn.execute(text("CREATE TABLE features.tmp_entity_date (a int, b date);"))
+        # compare the table to the test dataframe
+        test = result == ids_dates
+        assert test.all().all()
 
-            # call the function to test the creation of the table
-            entity_date_table_name = builder.make_entity_date_table(
-                as_of_times=dates,
-                label_type="binary",
-                label_name="booking",
-                state="active",
-                matrix_uuid="my_uuid",
-                matrix_type="train",
-                label_timespan="1 month",
-            )
 
-            # read in the table
-            with engine.connect() as conn:
-                result = pd.read_sql(
-                    f"select * from features.{entity_date_table_name} order by entity_id, as_of_date",
-                    conn.connection,
-                )
-            # compare the table to the test dataframe
-            test = result == ids_dates
-            assert test.all().all()
-
-def test_make_entity_date_table_include_missing_labels():
+def test_make_entity_date_table_include_missing_labels(db_engine):
     """Test that the make_entity_date_table function contains the correct
     values.
     """
@@ -328,499 +323,468 @@ def test_make_entity_date_table_include_missing_labels():
         label_timespan="1 month",
     )
     # this line adds the new entity-date combo as an expected one
-    ids_dates = pd.concat([
-                            ids_dates, 
-                            pd.DataFrame({"entity_id": [0], "as_of_date": [datetime.date(2016, 6, 1)]})
-                           ], 
-                           ignore_index=True
+    ids_dates = pd.concat(
+        [
+            ids_dates,
+            pd.DataFrame({"entity_id": [0], "as_of_date": [datetime.date(2016, 6, 1)]}),
+        ],
+        ignore_index=True,
     )
 
-    with testing.postgresql.Postgresql() as postgresql:
-        # create an engine and generate a table with fake feature data
-        engine = create_engine(postgresql.url())
-        #ensure_db(engine)
-        create_schemas(
-            engine=engine, features_tables=features_tables, labels=labels, states=states
+    # create an engine and generate a table with fake feature data
+    create_schemas(
+        engine=db_engine, features_tables=features_tables, labels=labels, states=states
+    )
+
+    with get_matrix_storage_engine() as matrix_storage_engine:
+        builder = MatrixBuilder(
+            db_config=db_config,
+            matrix_storage_engine=matrix_storage_engine,
+            experiment_hash=experiment_hash,
+            include_missing_labels_in_train_as=False,
+            engine=db_engine,
+        )
+        with db_engine.begin() as conn:
+            conn.execute(text("CREATE TABLE features.tmp_entity_date (a int, b date);"))
+        # call the function to test the creation of the table
+        entity_date_table_name = builder.make_entity_date_table(
+            as_of_times=dates,
+            label_type="binary",
+            label_name="booking",
+            state="active",
+            matrix_uuid="my_uuid",
+            matrix_type="train",
+            label_timespan="1 month",
         )
 
-        with get_matrix_storage_engine() as matrix_storage_engine:
-            builder = MatrixBuilder(
-                db_config=db_config,
-                matrix_storage_engine=matrix_storage_engine,
-                experiment_hash=experiment_hash,
-                include_missing_labels_in_train_as=False,
-                engine=engine,
-            )
-            with engine.begin() as conn:
-                conn.execute(text("CREATE TABLE features.tmp_entity_date (a int, b date);"))
-            # call the function to test the creation of the table
-            entity_date_table_name = builder.make_entity_date_table(
-                as_of_times=dates,
-                label_type="binary",
-                label_name="booking",
-                state="active",
-                matrix_uuid="my_uuid",
-                matrix_type="train",
-                label_timespan="1 month",
+        # read in the table
+        with db_engine.connect() as conn:
+            result = pd.read_sql(
+                f"select * from features.{entity_date_table_name} order by entity_id, as_of_date",
+                conn.connection,
             )
 
-            # read in the table
-            with engine.connect() as conn:
-                result = pd.read_sql(
-                    f"select * from features.{entity_date_table_name} order by entity_id, as_of_date",
-                    conn.connection,
-                )
-
-            # compare the table to the test dataframe
-            assert sorted(result.values.tolist()) == sorted(ids_dates.values.tolist())
+        # compare the table to the test dataframe
+        assert sorted(result.values.tolist()) == sorted(ids_dates.values.tolist())
 
 
-class TestMergeFeatureCSVs(TestCase):
-    def test_feature_load_queries(self):
-        """Tests if the number of queries for getting the features are the same as the number of feature tables in
-        the feature schema.
-        """
-        
-        dates = [
-            datetime.datetime(2016, 1, 1, 0, 0),
-            datetime.datetime(2016, 2, 1, 0, 0),
-            datetime.datetime(2016, 3, 1, 0, 0),
-            datetime.datetime(2016, 6, 1, 0, 0),
-        ]
+def test_feature_load_queries(db_engine):
+    """Tests if the number of queries for getting the features are the same as the number of feature tables in
+    the feature schema.
+    """
 
-        features = [["f1", "f2"], ["f3", "f4"]]
+    dates = [
+        datetime.datetime(2016, 1, 1, 0, 0),
+        datetime.datetime(2016, 2, 1, 0, 0),
+        datetime.datetime(2016, 3, 1, 0, 0),
+        datetime.datetime(2016, 6, 1, 0, 0),
+    ]
 
-        # create an engine and generate a table with fake feature data
-        with testing.postgresql.Postgresql() as postgresql:
-            engine = create_engine(postgresql.url())
-            #ensure_db(engine)
-            create_schemas(engine, features_tables, labels, states)
+    features = [["f1", "f2"], ["f3", "f4"]]
 
-            with get_matrix_storage_engine() as matrix_storage_engine:
-                builder = MatrixBuilder(
-                    db_config=db_config,
-                    matrix_storage_engine=matrix_storage_engine,
-                    experiment_hash=experiment_hash,
-                    engine=engine,
-                    include_missing_labels_in_train_as=False,
-                )
+    # create an engine and generate a table with fake feature data
+    create_schemas(db_engine, features_tables, labels, states)
 
-                # make the entity-date table
-                entity_date_table_name = builder.make_entity_date_table(
-                    as_of_times=dates,
-                    label_type="binary",
-                    label_name="booking",
-                    state="active",
-                    matrix_type="train",
-                    matrix_uuid="1234",
-                    label_timespan="1m",
-                )
+    with get_matrix_storage_engine() as matrix_storage_engine:
+        builder = MatrixBuilder(
+            db_config=db_config,
+            matrix_storage_engine=matrix_storage_engine,
+            experiment_hash=experiment_hash,
+            engine=db_engine,
+            include_missing_labels_in_train_as=False,
+        )
 
-                feature_dictionary = {
-                    f"features{i}": feature_list
-                    for i, feature_list in enumerate(features)
-                }
+        # make the entity-date table
+        entity_date_table_name = builder.make_entity_date_table(
+            as_of_times=dates,
+            label_type="binary",
+            label_name="booking",
+            state="active",
+            matrix_type="train",
+            matrix_uuid="1234",
+            label_timespan="1m",
+        )
 
-                result = builder.feature_load_queries(
-                    feature_dictionary=feature_dictionary, 
-                    entity_date_table_name=entity_date_table_name
-                )
-                
-                # lenght of the list should be the number of tables in feature schema
-                assert len(result) == len(features)
+        feature_dictionary = {
+            f"features{i}": feature_list for i, feature_list in enumerate(features)
+        }
+
+        result = builder.feature_load_queries(
+            feature_dictionary=feature_dictionary,
+            entity_date_table_name=entity_date_table_name,
+        )
+
+        # lenght of the list should be the number of tables in feature schema
+        assert len(result) == len(features)
 
 
-    def test_stitch_csvs(self):
-        """Tests if all the features and label were joined correctly in the csv
-        """
-        dates = [
-            datetime.datetime(2016, 1, 1, 0, 0),
-            datetime.datetime(2016, 2, 1, 0, 0),
-            datetime.datetime(2016, 3, 1, 0, 0),
-            datetime.datetime(2016, 6, 1, 0, 0),
-        ]
+def test_stitch_csvs(db_engine):
+    """Tests if all the features and label were joined correctly in the csv"""
+    dates = [
+        datetime.datetime(2016, 1, 1, 0, 0),
+        datetime.datetime(2016, 2, 1, 0, 0),
+        datetime.datetime(2016, 3, 1, 0, 0),
+        datetime.datetime(2016, 6, 1, 0, 0),
+    ]
 
-        features = [["f1", "f2"], ["f3", "f4"]]
+    features = [["f1", "f2"], ["f3", "f4"]]
 
-        with testing.postgresql.Postgresql() as postgresql:
-            # create an engine and generate a table with fake feature data
-            engine = create_engine(postgresql.url())
-            #ensure_db(engine)
-            create_schemas(
-                engine=engine, features_tables=features_tables, labels=labels, states=states
-            )
+    # create an engine and generate a table with fake feature data
+    create_schemas(
+        engine=db_engine, features_tables=features_tables, labels=labels, states=states
+    )
 
-            with get_matrix_storage_engine() as matrix_storage_engine:
-                builder = MatrixBuilder(
-                    db_config=db_config,
-                    matrix_storage_engine=matrix_storage_engine,
-                    experiment_hash=experiment_hash,
-                    engine=engine,
-                )
+    with get_matrix_storage_engine() as matrix_storage_engine:
+        builder = MatrixBuilder(
+            db_config=db_config,
+            matrix_storage_engine=matrix_storage_engine,
+            experiment_hash=experiment_hash,
+            engine=db_engine,
+        )
 
-                feature_dictionary = {
-                    f"features{i}": feature_list
-                    for i, feature_list in enumerate(features)
-                }
+        feature_dictionary = {
+            f"features{i}": feature_list for i, feature_list in enumerate(features)
+        }
 
-                # make the entity-date table
-                entity_date_table_name = builder.make_entity_date_table(
-                    as_of_times=dates,
-                    label_type="binary",
-                    label_name="booking",
-                    state="active",
-                    matrix_type="train",
-                    matrix_uuid="1234",
-                    label_timespan="1 month",
-                )
+        # make the entity-date table
+        entity_date_table_name = builder.make_entity_date_table(
+            as_of_times=dates,
+            label_type="binary",
+            label_name="booking",
+            state="active",
+            matrix_type="train",
+            matrix_uuid="1234",
+            label_timespan="1 month",
+        )
 
-                feature_queries = builder.feature_load_queries(
-                    feature_dictionary=feature_dictionary,
-                    entity_date_table_name=entity_date_table_name
-                )
+        feature_queries = builder.feature_load_queries(
+            feature_dictionary=feature_dictionary,
+            entity_date_table_name=entity_date_table_name,
+        )
 
-                label_query = builder.label_load_query(
-                    label_name="booking",
-                    label_type="binary",
-                    entity_date_table_name=entity_date_table_name,
-                    label_timespan='1 month'
-                )
+        label_query = builder.label_load_query(
+            label_name="booking",
+            label_type="binary",
+            entity_date_table_name=entity_date_table_name,
+            label_timespan="1 month",
+        )
 
-                matrix_store = matrix_storage_engine.get_store("1234")
-                
-                result, labels_ = builder.stitch_csvs(
-                    features_queries=feature_queries,
-                    label_query=label_query,
-                    matrix_store=matrix_store,
-                    matrix_uuid="1234"
-                )
+        matrix_store = matrix_storage_engine.get_store("1234")
 
-                # check if entity_id and as_of_date are as index 
-                should_be = ['entity_id', 'as_of_date']
-                actual_indices = result.index.names
-                TestCase().assertListEqual(should_be, actual_indices)
+        result, labels_ = builder.stitch_csvs(
+            features_queries=feature_queries,
+            label_query=label_query,
+            matrix_store=matrix_store,
+            matrix_uuid="1234",
+        )
 
-                # check that last element is not the label
-                last_col = 'booking'
-                output = result.columns.values[-1] # label name
-                TestCase().assertNotEqual(last_col, output)
+        # check if entity_id and as_of_date are as index
+        should_be = ["entity_id", "as_of_date"]
+        actual_indices = result.index.names
+        TestCase().assertListEqual(should_be, actual_indices)
 
-                # number of columns must be the sum of all the columns on each feature table 
-                TestCase().assertEqual(result.shape[1], 4, 
-                                       "Number of features don't match")
+        # check that last element is not the label
+        last_col = "booking"
+        output = result.columns.values[-1]  # label name
+        TestCase().assertNotEqual(last_col, output)
 
-                # number of rows 
-                assert result.shape[0] ==  5
-                TestCase().assertEqual(result.shape[0], 5, 
-                                       "Number of rows don't match")
+        # number of columns must be the sum of all the columns on each feature table
+        TestCase().assertEqual(result.shape[1], 4, "Number of features don't match")
 
-                # types of the final df should be float32
-                types = set(result.apply(lambda x: x.dtype == 'float32').values)
-                TestCase().assertTrue(types, "NOT all cols in matrix are float32!")
+        # number of rows
+        assert result.shape[0] == 5
+        TestCase().assertEqual(result.shape[0], 5, "Number of rows don't match")
+
+        # types of the final df should be float32
+        types = set(result.apply(lambda x: x.dtype == "float32").values)
+        TestCase().assertTrue(types, "NOT all cols in matrix are float32!")
 
 
-class TestBuildMatrix(TestCase):
-    
-    def test_train_matrix(self):
-        dates = [
-                    datetime.datetime(2016, 1, 1, 0, 0),
-                    datetime.datetime(2016, 2, 1, 0, 0),
-                    datetime.datetime(2016, 3, 1, 0, 0),
-                ]
+def test_train_matrix(db_engine):
+    dates = [
+        datetime.datetime(2016, 1, 1, 0, 0),
+        datetime.datetime(2016, 2, 1, 0, 0),
+        datetime.datetime(2016, 3, 1, 0, 0),
+    ]
 
-        features = [["f1", "f2"], ["f3", "f4"]]
-        
-        with testing.postgresql.Postgresql() as postgresql:
-            # create an engine and generate a table with fake feature data
-            engine = create_engine(postgresql.url())
-            ensure_db(engine)
-            create_schemas(
-                engine=engine,
-                features_tables=features_tables,
-                labels=labels,
-                states=states,
-            )
+    features = [["f1", "f2"], ["f3", "f4"]]
 
-            with get_matrix_storage_engine() as matrix_storage_engine:
-                builder = MatrixBuilder(
-                    db_config=db_config,
-                    matrix_storage_engine=matrix_storage_engine,
-                    experiment_hash=experiment_hash,
-                    engine=engine,
-                )
+    # create an engine and generate a table with fake feature data
+    ensure_db(db_engine)
+    create_schemas(
+        engine=db_engine,
+        features_tables=features_tables,
+        labels=labels,
+        states=states,
+    )
 
-                good_metadata = {
-                    "matrix_id": "hi",
-                    "state": "active",
-                    "label_name": "booking",
-                    "end_time": datetime.datetime(2016, 3, 1, 0, 0),
-                    "feature_start_time": datetime.datetime(2016, 1, 1, 0, 0),
-                    "label_timespan": "1 month",
-                    "max_training_history": "1 month",
-                    "test_duration": "1 month",
-                    "indices": ["entity_id", "as_of_date"],
-                }
+    with get_matrix_storage_engine() as matrix_storage_engine:
+        builder = MatrixBuilder(
+            db_config=db_config,
+            matrix_storage_engine=matrix_storage_engine,
+            experiment_hash=experiment_hash,
+            engine=db_engine,
+        )
 
-                feature_dictionary = {
-                    f"features{i}": feature_list
-                    for i, feature_list in enumerate(features)
-                }
+        good_metadata = {
+            "matrix_id": "hi",
+            "state": "active",
+            "label_name": "booking",
+            "end_time": datetime.datetime(2016, 3, 1, 0, 0),
+            "feature_start_time": datetime.datetime(2016, 1, 1, 0, 0),
+            "label_timespan": "1 month",
+            "max_training_history": "1 month",
+            "test_duration": "1 month",
+            "indices": ["entity_id", "as_of_date"],
+        }
 
-                uuid = filename_friendly_hash(good_metadata)
-                builder.build_matrix(
-                    as_of_times=dates,
-                    label_name="booking",
-                    label_type="binary",
-                    feature_dictionary=feature_dictionary,
-                    matrix_metadata=good_metadata,
-                    matrix_uuid=uuid,
-                    matrix_type="train",
-                )
-            
-                assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
+        feature_dictionary = {
+            f"features{i}": feature_list for i, feature_list in enumerate(features)
+        }
 
-                #engine_ = create_engine(postgresql.url())
-                #assert (
-                builder.sessionmaker().query(Matrix)#.get(uuid).feature_dictionary
-                #   == feature_dictionary
-                #)     
-    
-    def test_test_matrix(self):
-        dates = [
-                    datetime.datetime(2016, 1, 1, 0, 0),
-                    datetime.datetime(2016, 2, 1, 0, 0),
-                    datetime.datetime(2016, 3, 1, 0, 0),
-                ]
+        uuid = filename_friendly_hash(good_metadata)
+        builder.build_matrix(
+            as_of_times=dates,
+            label_name="booking",
+            label_type="binary",
+            feature_dictionary=feature_dictionary,
+            matrix_metadata=good_metadata,
+            matrix_uuid=uuid,
+            matrix_type="train",
+        )
 
-        features = [["f1", "f2"], ["f3", "f4"]]
+        assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
 
-        with testing.postgresql.Postgresql() as postgresql:
-            # create an engine and generate a table with fake feature data
-            engine = create_engine(postgresql.url())
-            ensure_db(engine)
-            create_schemas(
-                engine=engine,
-                features_tables=features_tables,
-                labels=labels,
-                states=states,
-            )
+        builder.sessionmaker().query(Matrix)
 
-            with get_matrix_storage_engine() as matrix_storage_engine:
-                builder = MatrixBuilder(
-                    db_config=db_config,
-                    matrix_storage_engine=matrix_storage_engine,
-                    experiment_hash=experiment_hash,
-                    engine=engine,
-                )
 
-                good_metadata = {
-                    "matrix_id": "hi",
-                    "state": "active",
-                    "label_name": "booking",
-                    "end_time": datetime.datetime(2016, 3, 1, 0, 0),
-                    "feature_start_time": datetime.datetime(2016, 1, 1, 0, 0),
-                    "label_timespan": "1 month",
-                    "max_training_history": "1 month",
-                    "test_duration": "1 month",
-                    "indices": ["entity_id", "as_of_date"],
-                }
+def test_test_matrix(db_engine):
+    dates = [
+        datetime.datetime(2016, 1, 1, 0, 0),
+        datetime.datetime(2016, 2, 1, 0, 0),
+        datetime.datetime(2016, 3, 1, 0, 0),
+    ]
 
-                feature_dictionary = {
-                    f"features{i}": feature_list
-                    for i, feature_list in enumerate(features)
-                }
+    features = [["f1", "f2"], ["f3", "f4"]]
 
-                uuid = filename_friendly_hash(good_metadata)
-                builder.build_matrix(
-                    as_of_times=dates,
-                    label_name="booking",
-                    label_type="binary",
-                    feature_dictionary=feature_dictionary,
-                    matrix_metadata=good_metadata,
-                    matrix_uuid=uuid,
-                    matrix_type="test",
-                )
+    # create an engine and generate a table with fake feature data
+    ensure_db(db_engine)
+    create_schemas(
+        engine=db_engine,
+        features_tables=features_tables,
+        labels=labels,
+        states=states,
+    )
 
-                assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
-    
+    with get_matrix_storage_engine() as matrix_storage_engine:
+        builder = MatrixBuilder(
+            db_config=db_config,
+            matrix_storage_engine=matrix_storage_engine,
+            experiment_hash=experiment_hash,
+            engine=db_engine,
+        )
 
-    def test_nullcheck(self):
-        dates = [
-                    datetime.datetime(2016, 1, 1, 0, 0),
-                    datetime.datetime(2016, 2, 1, 0, 0),
-                    datetime.datetime(2016, 3, 1, 0, 0),
-                ]
+        good_metadata = {
+            "matrix_id": "hi",
+            "state": "active",
+            "label_name": "booking",
+            "end_time": datetime.datetime(2016, 3, 1, 0, 0),
+            "feature_start_time": datetime.datetime(2016, 1, 1, 0, 0),
+            "label_timespan": "1 month",
+            "max_training_history": "1 month",
+            "test_duration": "1 month",
+            "indices": ["entity_id", "as_of_date"],
+        }
 
-        features = [["f1", "f2"], ["f3", "f4"]]
+        feature_dictionary = {
+            f"features{i}": feature_list for i, feature_list in enumerate(features)
+        }
 
-        with testing.postgresql.Postgresql() as postgresql:
-            # create an engine and generate a table with fake feature data
-            engine = create_engine(postgresql.url())
-            ensure_db(engine)
-            create_schemas(
-                engine=engine,
-                features_tables=features_tables,
-                labels=labels,
-                states=states,
-            )
+        uuid = filename_friendly_hash(good_metadata)
+        builder.build_matrix(
+            as_of_times=dates,
+            label_name="booking",
+            label_type="binary",
+            feature_dictionary=feature_dictionary,
+            matrix_metadata=good_metadata,
+            matrix_uuid=uuid,
+            matrix_type="test",
+        )
 
-            with get_matrix_storage_engine() as matrix_storage_engine:
-                builder = MatrixBuilder(
-                    db_config=db_config,
-                    matrix_storage_engine=matrix_storage_engine,
-                    experiment_hash=experiment_hash,
-                    engine=engine,
-                )
+        assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
 
-                good_metadata = {
-                    "matrix_id": "hi",
-                    "state": "active",
-                    "label_name": "booking",
-                    "end_time": datetime.datetime(2016, 3, 1, 0, 0),
-                    "feature_start_time": datetime.datetime(2016, 1, 1, 0, 0),
-                    "label_timespan": "1 month",
-                    "max_training_history": "1 month",
-                    "test_duration": "1 month",
-                    "indices": ["entity_id", "as_of_date"],
-                }
 
-                feature_dictionary = {
-                    f"features{i}": feature_list
-                    for i, feature_list in enumerate(features)
-                }
+def test_nullcheck(db_engine):
+    dates = [
+        datetime.datetime(2016, 1, 1, 0, 0),
+        datetime.datetime(2016, 2, 1, 0, 0),
+        datetime.datetime(2016, 3, 1, 0, 0),
+    ]
 
-                uuid = filename_friendly_hash(good_metadata)
-                # check if an exception was raised (but swallowed in the original code)
-                # so looking for a None data frame. Verify code in builders.py/build_matrix
-                # when we catch a ValueError we just do a return, not raising an exception 
-                # maybe we should consider to actually raise an exception? (2026-01-04)
-                # that will stop the run though!
-        
-                result = builder.build_matrix(
-                                    as_of_times=dates,
-                                    label_name="booking",
-                                    label_type="binary",
-                                    feature_dictionary=feature_dictionary,
-                                    matrix_metadata=good_metadata,
-                                    matrix_uuid=uuid,
-                                    matrix_type="other",
-                                )
-                self.assertIsNone(result)
-    
-    def test_replace_false_rerun(self):
-        with testing.postgresql.Postgresql() as postgresql:
-            # create an engine and generate a table with fake feature data
-            engine = create_engine(postgresql.url())
-            ensure_db(engine)
-            create_schemas(
-                engine=engine,
-                features_tables=features_tables,
-                labels=labels,
-                states=states,
-            )
+    features = [["f1", "f2"], ["f3", "f4"]]
 
-            dates = [
-                datetime.datetime(2016, 1, 1, 0, 0),
-                datetime.datetime(2016, 2, 1, 0, 0),
-                datetime.datetime(2016, 3, 1, 0, 0),
-            ]
+    # create an engine and generate a table with fake feature data
+    ensure_db(db_engine)
+    create_schemas(
+        engine=db_engine,
+        features_tables=features_tables,
+        labels=labels,
+        states=states,
+    )
 
-            with get_matrix_storage_engine() as matrix_storage_engine:
-                builder = MatrixBuilder(
-                    db_config=db_config,
-                    matrix_storage_engine=matrix_storage_engine,
-                    experiment_hash=experiment_hash,
-                    engine=engine,
-                    replace=False,
-                )
+    with get_matrix_storage_engine() as matrix_storage_engine:
+        builder = MatrixBuilder(
+            db_config=db_config,
+            matrix_storage_engine=matrix_storage_engine,
+            experiment_hash=experiment_hash,
+            engine=db_engine,
+        )
 
-                feature_dictionary = {
-                    "features0": ["f1", "f2"],
-                    "features1": ["f3", "f4"],
-                }
-                matrix_metadata = {
-                    "matrix_id": "hi",
-                    "state": "active",
-                    "label_name": "booking",
-                    "end_time": datetime.datetime(2016, 3, 1, 0, 0),
-                    "feature_start_time": datetime.datetime(2016, 1, 1, 0, 0),
-                    "label_timespan": "1 month",
-                    "test_duration": "1 month",
-                    "indices": ["entity_id", "as_of_date"],
-                }
-                uuid = filename_friendly_hash(matrix_metadata)
-                builder.build_matrix(
-                    as_of_times=dates,
-                    label_name="booking",
-                    label_type="binary",
-                    feature_dictionary=feature_dictionary,
-                    matrix_metadata=matrix_metadata,
-                    matrix_uuid=uuid,
-                    matrix_type="test",
-                )
+        good_metadata = {
+            "matrix_id": "hi",
+            "state": "active",
+            "label_name": "booking",
+            "end_time": datetime.datetime(2016, 3, 1, 0, 0),
+            "feature_start_time": datetime.datetime(2016, 1, 1, 0, 0),
+            "label_timespan": "1 month",
+            "max_training_history": "1 month",
+            "test_duration": "1 month",
+            "indices": ["entity_id", "as_of_date"],
+        }
 
-                assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
-                # rerun
-                builder.make_entity_date_table = mock.Mock()
-                builder.build_matrix(
-                    as_of_times=dates,
-                    label_name="booking",
-                    label_type="binary",
-                    feature_dictionary=feature_dictionary,
-                    matrix_metadata=matrix_metadata,
-                    matrix_uuid=uuid,
-                    matrix_type="test",
-                )
-                assert not builder.make_entity_date_table.called
-    
-    def test_replace_true_rerun(self):
-        with testing.postgresql.Postgresql() as postgresql:
-            # create an engine and generate a table with fake feature data
-            engine = create_engine(postgresql.url())
-            ensure_db(engine)
-            create_schemas(
-                engine=engine,
-                features_tables=features_tables,
-                labels=labels,
-                states=states,
-            )
-            matrix_metadata = matrix_metadata_creator(
-                state="active", test_duration="1month", label_name="booking"
-            )
+        feature_dictionary = {
+            f"features{i}": feature_list for i, feature_list in enumerate(features)
+        }
 
-            dates = [
-                datetime.datetime(2016, 1, 1, 0, 0),
-                datetime.datetime(2016, 2, 1, 0, 0),
-                datetime.datetime(2016, 3, 1, 0, 0),
-            ]
+        uuid = filename_friendly_hash(good_metadata)
+        # check if an exception was raised (but swallowed in the original code)
+        # so looking for a None data frame. Verify code in builders.py/build_matrix
+        # when we catch a ValueError we just do a return, not raising an exception
+        # maybe we should consider to actually raise an exception? (2026-01-04)
+        # that will stop the run though!
 
-            feature_dictionary = {"features0": ["f1", "f2"], "features1": ["f3", "f4"]}
-            uuid = filename_friendly_hash(matrix_metadata)
-            build_args = dict(
-                as_of_times=dates,
-                label_name="booking",
-                label_type="binary",
-                feature_dictionary=feature_dictionary,
-                matrix_metadata=matrix_metadata,
-                matrix_uuid=uuid,
-                matrix_type="test",
-            )
+        result = builder.build_matrix(
+            as_of_times=dates,
+            label_name="booking",
+            label_type="binary",
+            feature_dictionary=feature_dictionary,
+            matrix_metadata=good_metadata,
+            matrix_uuid=uuid,
+            matrix_type="other",
+        )
+        assert result is None
 
-            with get_matrix_storage_engine() as matrix_storage_engine:
-                builder = MatrixBuilder(
-                    db_config=db_config,
-                    matrix_storage_engine=matrix_storage_engine,
-                    experiment_hash=experiment_hash,
-                    engine=engine,
-                    replace=True,
-                )
 
-                builder.build_matrix(**build_args)
+def test_replace_false_rerun(db_engine):
+    # create an engine and generate a table with fake feature data
+    ensure_db(db_engine)
+    create_schemas(
+        engine=db_engine,
+        features_tables=features_tables,
+        labels=labels,
+        states=states,
+    )
 
-                assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
-                assert builder.sessionmaker().query(Matrix).get(uuid)
-                # rerun
-                builder.build_matrix(**build_args)
-                assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
-                assert builder.sessionmaker().query(Matrix).get(uuid)
-    
+    dates = [
+        datetime.datetime(2016, 1, 1, 0, 0),
+        datetime.datetime(2016, 2, 1, 0, 0),
+        datetime.datetime(2016, 3, 1, 0, 0),
+    ]
+
+    with get_matrix_storage_engine() as matrix_storage_engine:
+        builder = MatrixBuilder(
+            db_config=db_config,
+            matrix_storage_engine=matrix_storage_engine,
+            experiment_hash=experiment_hash,
+            engine=db_engine,
+            replace=False,
+        )
+
+        feature_dictionary = {
+            "features0": ["f1", "f2"],
+            "features1": ["f3", "f4"],
+        }
+        matrix_metadata = {
+            "matrix_id": "hi",
+            "state": "active",
+            "label_name": "booking",
+            "end_time": datetime.datetime(2016, 3, 1, 0, 0),
+            "feature_start_time": datetime.datetime(2016, 1, 1, 0, 0),
+            "label_timespan": "1 month",
+            "test_duration": "1 month",
+            "indices": ["entity_id", "as_of_date"],
+        }
+        uuid = filename_friendly_hash(matrix_metadata)
+        builder.build_matrix(
+            as_of_times=dates,
+            label_name="booking",
+            label_type="binary",
+            feature_dictionary=feature_dictionary,
+            matrix_metadata=matrix_metadata,
+            matrix_uuid=uuid,
+            matrix_type="test",
+        )
+
+        assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
+        # rerun
+        builder.make_entity_date_table = mock.Mock()
+        builder.build_matrix(
+            as_of_times=dates,
+            label_name="booking",
+            label_type="binary",
+            feature_dictionary=feature_dictionary,
+            matrix_metadata=matrix_metadata,
+            matrix_uuid=uuid,
+            matrix_type="test",
+        )
+        assert not builder.make_entity_date_table.called
+
+
+def test_replace_true_rerun(db_engine):
+    # create an engine and generate a table with fake feature data
+    ensure_db(db_engine)
+    create_schemas(
+        engine=db_engine,
+        features_tables=features_tables,
+        labels=labels,
+        states=states,
+    )
+    matrix_metadata = matrix_metadata_creator(
+        state="active", test_duration="1month", label_name="booking"
+    )
+
+    dates = [
+        datetime.datetime(2016, 1, 1, 0, 0),
+        datetime.datetime(2016, 2, 1, 0, 0),
+        datetime.datetime(2016, 3, 1, 0, 0),
+    ]
+
+    feature_dictionary = {"features0": ["f1", "f2"], "features1": ["f3", "f4"]}
+    uuid = filename_friendly_hash(matrix_metadata)
+    build_args = dict(
+        as_of_times=dates,
+        label_name="booking",
+        label_type="binary",
+        feature_dictionary=feature_dictionary,
+        matrix_metadata=matrix_metadata,
+        matrix_uuid=uuid,
+        matrix_type="test",
+    )
+
+    with get_matrix_storage_engine() as matrix_storage_engine:
+        builder = MatrixBuilder(
+            db_config=db_config,
+            matrix_storage_engine=matrix_storage_engine,
+            experiment_hash=experiment_hash,
+            engine=db_engine,
+            replace=True,
+        )
+
+        builder.build_matrix(**build_args)
+
+        assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
+        assert builder.sessionmaker().query(Matrix).get(uuid)
+        # rerun
+        builder.build_matrix(**build_args)
+        assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
+        assert builder.sessionmaker().query(Matrix).get(uuid)

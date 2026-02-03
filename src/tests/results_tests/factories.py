@@ -12,22 +12,36 @@ def test_something(db_session):
     db_session.commit()
 ```
 """
+
 from datetime import datetime
 
 import factory
 import factory.fuzzy
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 from triage.component import results_schema as schema
 
-
 ScopedSession = scoped_session(sessionmaker())
+# Alias for backward compatibility with existing test imports
+session = ScopedSession
+
+
+def init_engine(engine):
+    """Initialize the factories with a database engine.
+
+    This configures the scoped session to use the provided engine.
+    Should be called after ensure_db() sets up the schema.
+
+    :param engine: SQLAlchemy engine instance
+    """
+    ScopedSession.remove()
+    ScopedSession.configure(bind=engine)
 
 
 def set_session(session):
     """
     This should be called at the start of each test
-    
+
     :param session: SQLAlchemy session to use for this test/thread
     """
     ScopedSession.remove()
@@ -43,7 +57,7 @@ class ExperimentFactory(factory.alchemy.SQLAlchemyModelFactory):
         model = schema.Experiment
         sqlalchemy_session = ScopedSession
         sqlalchemy_session_persistence = "commit"
-        #sqlalchemy_session_persistence = "flush"
+        # sqlalchemy_session_persistence = "flush"
 
     experiment_hash = factory.fuzzy.FuzzyText()
     config = {}
@@ -76,7 +90,7 @@ class BaseModelFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.Model
         sqlalchemy_session = ScopedSession
-        sqlalchemy_session_persistence = "commit"   
+        sqlalchemy_session_persistence = "commit"
         # sqlalchemy_session_persistence = "flush"
 
     model_group_rel = factory.SubFactory(ModelGroupFactory)
@@ -107,7 +121,7 @@ class ExperimentModelFactory(factory.alchemy.SQLAlchemyModelFactory):
 
 
 class ModelFactory(BaseModelFactory):
-    experiment_association = factory.RelatedFactory(ExperimentModelFactory, 'model_rel')
+    experiment_association = factory.RelatedFactory(ExperimentModelFactory, "model_rel")
 
 
 class SubsetFactory(factory.alchemy.SQLAlchemyModelFactory):
@@ -126,10 +140,10 @@ class FeatureImportanceFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.FeatureImportance
         sqlalchemy_session = ScopedSession
-        sqlalchemy_session_persistence = "commit"   
+        sqlalchemy_session_persistence = "commit"
         # sqlalchemy_session_persistence = "flush"
 
-    #model_rel = factory.SubFactory(ModelFactory)
+    # model_rel = factory.SubFactory(ModelFactory)
     feature = factory.fuzzy.FuzzyText()
     feature_importance = factory.fuzzy.FuzzyDecimal(0, 1)
     rank_abs = 1
@@ -150,7 +164,6 @@ class PredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
     label_value = factory.fuzzy.FuzzyInteger(0, 1)
     matrix_rel = factory.SubFactory(MatrixFactory)
     test_label_timespan = "3m"
-
 
 
 class ListPredictionFactory(factory.alchemy.SQLAlchemyModelFactory):
@@ -194,7 +207,7 @@ class EvaluationFactory(factory.alchemy.SQLAlchemyModelFactory):
         # sqlalchemy_session_persistence = "flush"
 
     model_rel = factory.SubFactory(ModelFactory)
-    subset_hash = ''
+    subset_hash = ""
     evaluation_start_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     evaluation_end_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     as_of_date_frequency = "3d"
@@ -217,7 +230,7 @@ class TriageRunFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = schema.TriageRun
         sqlalchemy_session = ScopedSession
-        sqlalchemy_session_persistence = "commit" 
+        sqlalchemy_session_persistence = "commit"
         # sqlalchemy_session_persistence = "flush"
 
     # experiment_rel = factory.SubFactory(ExperimentFactory)
@@ -226,7 +239,7 @@ class TriageRunFactory(factory.alchemy.SQLAlchemyModelFactory):
     start_method = "run"
     git_hash = "abcd"
     triage_version = "4.2.0"
-    python_version = '3.6.2 (default, May 28 2020, 13:23:43) \n[GCC 9.3.0]'
+    python_version = "3.6.2 (default, May 28 2020, 13:23:43) \n[GCC 9.3.0]"
     platform = "Linux!!!"
     os_user = "dsapp"
     working_directory = "/the/best/directory"
@@ -234,7 +247,7 @@ class TriageRunFactory(factory.alchemy.SQLAlchemyModelFactory):
     log_location = "/the/logs"
     experiment_class_path = "triage.experiments.singlethreaded.SingleThreadedExperiment"
     experiment_kwargs = {}
-    installed_libraries = ['triage']
+    installed_libraries = ["triage"]
     matrix_building_started = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     matrices_made = 0
     matrices_skipped = 0
@@ -246,4 +259,3 @@ class TriageRunFactory(factory.alchemy.SQLAlchemyModelFactory):
     last_updated_time = factory.fuzzy.FuzzyNaiveDateTime(datetime(2008, 1, 1))
     current_status = schema.TriageRunStatus.started
     stacktrace = ""
-

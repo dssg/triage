@@ -1,7 +1,9 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 
 from sqlalchemy import text
+
 from triage.component.architect.utils import str_in_sql
 from triage.util.structs import FeatureNameList
 
@@ -19,7 +21,7 @@ class FeatureDictionaryCreator:
         ]
 
     def feature_dictionary(self, feature_table_names, index_column_lookup):
-        """ Create a dictionary of feature names, where keys are feature tables
+        """Create a dictionary of feature names, where keys are feature tables
         and values are lists of feature names.
 
         :return: feature_dictionary
@@ -35,7 +37,8 @@ class FeatureDictionaryCreator:
                     for row in conn.execute(
                         text(
                             self._build_feature_names_query(
-                                feature_table_name, index_column_lookup[feature_table_name]
+                                feature_table_name,
+                                index_column_lookup[feature_table_name],
                             )
                         )
                     )
@@ -45,7 +48,7 @@ class FeatureDictionaryCreator:
         return feature_dictionary
 
     def _build_feature_names_query(self, table_name, index_columns):
-        """ For a given feature table, get the names of the feature columns.
+        """For a given feature table, get the names of the feature columns.
 
         :param table_name: name of the feature table
         :type table_name: str

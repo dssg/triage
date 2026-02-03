@@ -1,21 +1,21 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 
 import datetime
-import shutil
-import sys
-import random
-from contextlib import contextmanager
 import functools
-import operator
-import tempfile
-import subprocess
 import gzip
+import operator
+import random
+import shutil
+import subprocess
+import sys
+import tempfile
+from contextlib import contextmanager
 
-import sqlalchemy
-
-import pandas as pd
 import numpy as np
+import pandas as pd
+import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 
 from triage.component.results_schema import Model
@@ -35,12 +35,14 @@ def feature_list(feature_dictionary):
     """
     if not feature_dictionary:
         return FeatureNameList()
-    return FeatureNameList(sorted(
-        functools.reduce(
-            operator.concat,
-            (feature_dictionary[key] for key in feature_dictionary.keys()),
+    return FeatureNameList(
+        sorted(
+            functools.reduce(
+                operator.concat,
+                (feature_dictionary[key] for key in feature_dictionary.keys()),
+            )
         )
-    ))
+    )
 
 
 def convert_string_column_to_date(column):
@@ -48,22 +50,16 @@ def convert_string_column_to_date(column):
 
 
 def create_features_table(table_number, table, engine):
-    engine.execute(
-        """
+    engine.execute("""
             create table features.features{} (
                 entity_id int, as_of_date date, f{} int, f{} int
             )
-        """.format(
-            table_number, (table_number * 2) + 1, (table_number * 2) + 2
-        )
-    )
+        """.format(table_number, (table_number * 2) + 1, (table_number * 2) + 2))
     for row in table:
         engine.execute(
             """
                 insert into features.features{} values (%s, %s, %s, %s)
-            """.format(
-                table_number
-            ),
+            """.format(table_number),
             row,
         )
 
@@ -78,7 +74,7 @@ def create_entity_date_df(
     label_type,
     label_timespan,
 ):
-    """ This function makes a pandas DataFrame that mimics the entity-date table
+    """This function makes a pandas DataFrame that mimics the entity-date table
     for testing against.
     """
     0, "2016-02-01", "1 month", "booking", "binary", 0
@@ -115,13 +111,13 @@ def create_entity_date_df(
 
 
 def change_datetimes_on_metadata(metadata):
-    for element in metadata.keys(): 
+    for element in metadata.keys():
         if (element.endswith("_time")) or (element.endswith("_times")):
             if isinstance(metadata[element], list):
                 metadata[element] = [str(ele) for ele in metadata[element]]
-            else: 
+            else:
                 metadata[element] = str(metadata[element])
-   
+
     return metadata
 
 
@@ -192,24 +188,18 @@ def assert_index(engine, table, column):
              t.relkind = 'r' AND
              t.relname = '{table_name}' AND
              a.attname = '{column_name}'
-    """.format(
-        table_name=table, column_name=column
-    )
+    """.format(table_name=table, column_name=column)
     num_results = len([row for row in engine.execute(query)])
     assert num_results >= 1
 
 
 def create_dense_state_table(db_engine, table_name, data):
-    db_engine.execute(
-        """create table {} (
+    db_engine.execute("""create table {} (
         entity_id int,
         state text,
         start_time timestamp,
         end_time timestamp
-    )""".format(
-            table_name
-        )
-    )
+    )""".format(table_name))
 
     for row in data:
         db_engine.execute(
@@ -237,8 +227,8 @@ def _num_elements(x):
 
 
 def check_rows_in_files(filenames, matrix_uuid):
-    """Checks if the number of rows among all the CSV files for features and 
-    and label for a matrix uuid are the same. 
+    """Checks if the number of rows among all the CSV files for features and
+    and label for a matrix uuid are the same.
 
     Args:
         filenames (List): List of CSV files to check the number of rows
@@ -246,7 +236,7 @@ def check_rows_in_files(filenames, matrix_uuid):
     """
     outputs = []
     for element in filenames:
-        logging.debug(f"filename: {element}")
+        logger.debug(f"filename: {element}")
         just_filename = element.split("/")[-1]
         if (element.endswith(".csv")) and (just_filename.startswith(matrix_uuid)):
             cmd_line = "wc -l " + element
@@ -255,31 +245,36 @@ def check_rows_in_files(filenames, matrix_uuid):
     # get the number of rows from the subprocess
     rows = [_num_elements(output) for output in outputs]
     rows_set = set(rows)
-    logging.debug(f"number of rows in files {rows_set}")
+    logger.debug(f"number of rows in files {rows_set}")
 
-    if len(rows_set) == 1: 
+    if len(rows_set) == 1:
         return True
     else:
         return False
 
+
 def check_entity_ids_in_files(filenames, matrix_uuid):
     """Verifies if all the files in features and label have the same exact entity ids and knowledge dates"""
     # get first 2 columns on each file (entity_id, knowledge_date)
-    for element in filenames: 
-        logging.debug(f"getting entity id and knowledge date from features {element}")
+    for element in filenames:
+        logger.debug(f"getting entity id and knowledge date from features {element}")
         just_filename = element.split("/")[-1]
         prefix = element.split(".")[0]
         if (element.endswith(".csv")) and (just_filename.startswith(matrix_uuid)):
-            cmd_line = f"cut -d ',' -f 1,2 {element} | sort -k 1,2 > {prefix}_sorted.csv"
+            cmd_line = (
+                f"cut -d ',' -f 1,2 {element} | sort -k 1,2 > {prefix}_sorted.csv"
+            )
             subprocess.run(cmd_line, shell=True)
-    
+
     base_file = filenames[0]
     comparisons = []
     for i in range(1, len(filenames)):
         if (filenames[i].endswith(".csv")) and (filenames[i].startswith(matrix_uuid)):
             cmd_line = f"diff {base_file} {filenames[i]}"
-            comparisons.append(subprocess.run(cmd_line, shell=True, capture_output=True))
-    
+            comparisons.append(
+                subprocess.run(cmd_line, shell=True, capture_output=True)
+            )
+
     if len(comparisons) == 0:
         return True
     else:
@@ -287,14 +282,16 @@ def check_entity_ids_in_files(filenames, matrix_uuid):
 
 
 def remove_entity_id_and_knowledge_dates(filenames, matrix_uuid):
-    """drop entity id and knowledge date from all features and label files but one""" 
+    """drop entity id and knowledge date from all features and label files but one"""
     correct_filenames = []
 
     for i in range(len(filenames)):
         just_filename = filenames[i].split("/")[-1]
         prefix = filenames[i].split(".")[0]
-        if not (just_filename.endswith("_sorted.csv")) and (just_filename.startswith(matrix_uuid)):
-            if prefix.endswith("_0"): 
+        if not (just_filename.endswith("_sorted.csv")) and (
+            just_filename.startswith(matrix_uuid)
+        ):
+            if prefix.endswith("_0"):
                 # only the first file will have entity_id and knowledge data but needs to also be sorted
                 cmd_line = f"sort -k 1,2 {filenames[i]} > {prefix}_fixed.csv"
             else:
@@ -309,7 +306,7 @@ def remove_entity_id_and_knowledge_dates(filenames, matrix_uuid):
 
     return correct_filenames
 
-    
+
 def generate_list_of_files_to_remove(filenames, matrix_uuid):
     """Generate the list of all files that need to be removed"""
     # adding _sorted
@@ -317,14 +314,14 @@ def generate_list_of_files_to_remove(filenames, matrix_uuid):
 
     for element in filenames:
         rm_files.append(element)
-        if (element.split("/")[-1].startswith(matrix_uuid)):
+        if element.split("/")[-1].startswith(matrix_uuid):
             prefix = element.split(".")[0]
-            # adding sorted files 
+            # adding sorted files
             rm_files.append(prefix + "_sorted.csv")
             # adding fixed files
             rm_files.append(prefix + "_fixed.csv")
 
-    logging.debug(f"Files to be removed {rm_files}")
+    logger.debug(f"Files to be removed {rm_files}")
     return rm_files
 
 
@@ -340,8 +337,8 @@ def generate_gzip(path, matrix_uuid):
     filepath_ = "/".join(filename_.split("/")[:-1])
     logger.debug(f"About to generate gzip for {matrix_uuid}.csv in {filepath_}")
     try:
-        with open(filename_, 'rb') as f_in:
-            with gzip.open(f"{filename_}.gz", 'wb') as f_out:
+        with open(filename_, "rb") as f_in:
+            with gzip.open(f"{filename_}.gz", "wb") as f_out:
                 shutil.copyfileobj(f_in, f_out)
                 logger.debug(f"gzip file {filename_}.gz generated")
     except FileNotFoundError as e:
@@ -353,18 +350,18 @@ def generate_gzip(path, matrix_uuid):
 def remove_unnecessary_files(filenames, path_, matrix_uuid, storage_is_s3):
     """
     Removes the csvs generated for each feature, the label csv file,
-    and the csv with all the features and label stitched togheter. 
+    and the csv with all the features and label stitched togheter.
     The csv with all merged is being deleted while generating the gzip.
 
     Args:
         filenames (list): list of filenames to remove from disk
-        path_ (string): Path 
+        path_ (string): Path
         matrix_uuid (string): ID of the matrix
         storage_is_s3 (bool): Whether the project store is a S3 bucket
     """
     # deleting features and label csvs
     for filename_ in filenames:
-        cmd_line = ['rm', filename_] 
+        cmd_line = ["rm", filename_]
         logger.debug(f"removing files with command {cmd_line}")
         try:
             subprocess.run(cmd_line, check=True)
@@ -372,21 +369,20 @@ def remove_unnecessary_files(filenames, path_, matrix_uuid, storage_is_s3):
             logger.error(f"Error removing file {filename_}: {e}")
 
     # deleting the merged csv
-    cmd_line = ['rm', f'{path_}/{matrix_uuid}.csv']
+    cmd_line = ["rm", f"{path_}/{matrix_uuid}.csv"]
     logger.debug(f"removing stitched csv with command {cmd_line}")
     try:
         subprocess.run(cmd_line, check=True)
     except subprocess.CalledProcessError as e:
         logger.error(f"Error removing file {path_}/{matrix_uuid}.csv: {e}")
-    
+
     # deleting the compressed CSV when the project path is S3
     if storage_is_s3:
         filename_ = f"{path_}/{matrix_uuid}.csv.gz"
-        cmd_line = ['rm', filename_]
+        cmd_line = ["rm", filename_]
         logger.debug(f"About to remove gzip file with command {cmd_line}")
         try:
             subprocess.run(cmd_line, check=True)
             logger.debug(f"gzip file {filename_} removed")
         except subprocess.CalledProcessError as e:
             logger.error(f"Error removing file {filename_}: {e}")
-            

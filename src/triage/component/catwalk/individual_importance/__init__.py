@@ -1,12 +1,13 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 
 from sqlalchemy import text
+
 from triage.component.catwalk.utils import save_db_objects
 from triage.component.results_schema import IndividualImportance
 
 from .uniform import uniform_distribution
-
 
 CALCULATE_STRATEGIES = {"uniform": uniform_distribution}
 
@@ -22,12 +23,10 @@ class IndividualImportanceCalculatorNoOp:
             "No individual feature importance configuration is available, so no individual feature importance will be created"
         )
 
-
     def save(self, importance_records, model_id, as_of_date, method_name):
         logger.notice(
             "No individual feature importance configuration is available, so no individual feature importance will be created"
         )
-
 
 
 class IndividualImportanceCalculator:
@@ -49,23 +48,20 @@ class IndividualImportanceCalculator:
         self.replace = replace
 
     def _num_existing_importances(self, model_id, as_of_date, method):
-        sql = text(
-                f"""select count(*) from test_results.individual_importances
+        sql = text(f"""select count(*) from test_results.individual_importances
                     where model_id = :model_id
                     and as_of_date = :as_of_date
-                    and method = :method"""
-            )
-        
-        with self.db_engine.connect() as conn: 
+                    and method = :method""")
+
+        with self.db_engine.connect() as conn:
             return conn.execute(
                 sql,
                 {
-                   "model_id": model_id, 
-                   "as_of_date": as_of_date,
-                   "method": method, 
-                }
+                    "model_id": model_id,
+                    "as_of_date": as_of_date,
+                    "method": method,
+                },
             ).scalar_one()
-        
 
     def _needs_new_importances(self, model_id, as_of_date, method, matrix_store):
         """Determines whether or not importances matching the arguments are present in the database
@@ -158,19 +154,17 @@ class IndividualImportanceCalculator:
         """
         with self.db_engine.begin() as conn:
             conn.execute(
-                text(
-                    f"""
+                text(f"""
                         delete from test_results.individual_importances
                         where model_id = :model_id
                         and as_of_date = :as_of_date
                         and method = :method_name
-                    """
-                ),
+                    """),
                 {
                     "model_id": model_id,
-                    "as_of_date": as_of_date, 
+                    "as_of_date": as_of_date,
                     "method_name": method_name,
-                }
+                },
             )
         record_stream = (
             IndividualImportance(

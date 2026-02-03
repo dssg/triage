@@ -1,10 +1,14 @@
-import verboselogs
+from sqlalchemy import quoted_name, text
 
-from sqlalchemy import text, quoted_name
-from triage.database_reflection import table_has_data, table_row_count, table_exists, table_has_duplicates
+from triage.database_reflection import (
+    table_exists,
+    table_has_data,
+    table_has_duplicates,
+    table_row_count,
+)
+from triage.logging import get_logger
 
-
-logger = verboselogs.VerboseLogger(__name__)
+logger = get_logger(__name__)
 DEFAULT_ACTIVE_STATE = "active"
 
 
@@ -27,7 +31,15 @@ class EntityDateTableGenerator:
                 and not run the query if so.
             If true, the existing table will be dropped and recreated.
     """
-    def __init__(self, query, db_engine, entity_date_table_name, labels_table_name=None, replace=True):
+
+    def __init__(
+        self,
+        query,
+        db_engine,
+        entity_date_table_name,
+        labels_table_name=None,
+        replace=True,
+    ):
         self.db_engine = db_engine
         self.query = query
         self.entity_date_table_name = entity_date_table_name
@@ -44,46 +56,51 @@ class EntityDateTableGenerator:
         """
         logger.spam(f"Generating entity_date table {self.entity_date_table_name}")
         if self.query:
-            logger.spam(f"Query is present, so running query on as_of_dates: {as_of_dates}")
+            logger.spam(
+                f"Query is present, so running query on as_of_dates: {as_of_dates}"
+            )
             self._create_and_populate_entity_date_table_from_query(as_of_dates)
         elif self.labels_table_name:
             self._create_and_populate_entity_date_table_from_labels()
         else:
-            raise ValueError("Neither query not labels table name is available, cannot compute cohort")
+            raise ValueError(
+                "Neither query not labels table name is available, cannot compute cohort"
+            )
         logger.spam(f"Table {self.entity_date_table_name} created and populated")
 
         if not table_has_data(self.entity_date_table_name, self.db_engine):
             raise ValueError(self._empty_table_message(as_of_dates))
 
         if table_has_duplicates(
-            self.entity_date_table_name,
-            ['entity_id', 'as_of_date'],
-            self.db_engine
-            ):
+            self.entity_date_table_name, ["entity_id", "as_of_date"], self.db_engine
+        ):
             raise ValueError(f"Duplicates found in {self.entity_date_table_name}!")
 
         logger.debug(f"Entity-date table generated at {self.entity_date_table_name}")
         logger.spam(f"Generating stats on {self.entity_date_table_name}")
-        logger.spam(f"Row count of {self.entity_date_table_name}: {table_row_count(self.entity_date_table_name, self.db_engine)}")
-
+        logger.spam(
+            f"Row count of {self.entity_date_table_name}: {table_row_count(self.entity_date_table_name, self.db_engine)}"
+        )
 
     def _maybe_create_entity_date_table(self):
-        if self.replace or not table_exists(self.entity_date_table_name, self.db_engine):
+        if self.replace or not table_exists(
+            self.entity_date_table_name, self.db_engine
+        ):
             logger.spam(f"Creating entity_date table {self.entity_date_table_name}")
             with self.db_engine.begin() as conn:
-                conn.execute(text(f"drop table if exists {self.entity_date_table_name}"))
                 conn.execute(
-                    text(
-                        f"""create table {self.entity_date_table_name} (
+                    text(f"drop table if exists {self.entity_date_table_name}")
+                )
+                conn.execute(text(f"""create table {self.entity_date_table_name} (
                             entity_id integer,
                             as_of_date timestamp,
                             {DEFAULT_ACTIVE_STATE} boolean
                         )
-                        """
-                    )
-                )
+                        """))
 
-            logger.spam(f"Creating indices on entity_id and as_of_date for entity_date table {self.entity_date_table_name}")
+            logger.spam(
+                f"Creating indices on entity_id and as_of_date for entity_date table {self.entity_date_table_name}"
+            )
             with self.db_engine.begin() as conn:
                 conn.execute(
                     text(
@@ -103,23 +120,27 @@ class EntityDateTableGenerator:
         Args:
         as_of_dates (list of datetime.date): Dates to calculate entity states as of
         """
-        
+
         self._maybe_create_entity_date_table()
-        logger.spam(f"Inserting rows into entity_date table {self.entity_date_table_name}")
+        logger.spam(
+            f"Inserting rows into entity_date table {self.entity_date_table_name}"
+        )
         for as_of_date in as_of_dates:
             formatted_date = f"{as_of_date.isoformat()}"
-            logger.spam(f"Looking for existing entity_date rows for as of date {as_of_date}")
+            logger.spam(
+                f"Looking for existing entity_date rows for as of date {as_of_date}"
+            )
             with self.db_engine.connect() as conn:
-                any_existing = list(conn.execute(
-                    text(
-                        f"""select 1 from {self.entity_date_table_name}
+                any_existing = list(
+                    conn.execute(text(f"""select 1 from {self.entity_date_table_name}
                         where as_of_date = '{formatted_date}'
                         limit 1
-                        """
-                    )
-                ))
+                        """))
+                )
             if len(any_existing) == 1:
-                logger.notice(f"Since >0 entity_date rows found for date {as_of_date}, skipping")
+                logger.notice(
+                    f"Since >0 entity_date rows found for date {as_of_date}, skipping"
+                )
                 continue
             dated_query = self.query.format(as_of_date=formatted_date)
             full_query = f"""insert into {quoted_name(self.entity_date_table_name, quote=True)}
@@ -127,7 +148,9 @@ class EntityDateTableGenerator:
                 from ({dated_query}) q
                 group by 1, 2, 3
             """
-            logger.spam(f"Running entity_date query for date: {as_of_date}, {full_query}")
+            logger.spam(
+                f"Running entity_date query for date: {as_of_date}, {full_query}"
+            )
             with self.db_engine.begin() as conn:
                 conn.execute(text(full_query))
 
@@ -136,7 +159,9 @@ class EntityDateTableGenerator:
         from the labels table
         """
         self._maybe_create_entity_date_table()
-        logger.spam(f"Populating entity_date table {self.entity_date_table_name} from labels table {self.labels_table_name}")
+        logger.spam(
+            f"Populating entity_date table {self.entity_date_table_name} from labels table {self.labels_table_name}"
+        )
         if not table_exists(self.labels_table_name, self.db_engine):
             logger.warning("Labels table does not exist, cannot populate entity-dates")
             return
@@ -146,9 +171,7 @@ class EntityDateTableGenerator:
         # _create_and_populate_entity_date_table_from_query
         logger.spam(f"Looking for existing entity_date rows for label as of dates")
         with self.db_engine.connect() as conn:
-            existing_dates = list(conn.execute(
-                text(
-                    f"""
+            existing_dates = list(conn.execute(text(f"""
                     with label_dates as (
                         select distinct as_of_date::DATE AS as_of_date FROM {self.labels_table_name}
                     )
@@ -158,13 +181,13 @@ class EntityDateTableGenerator:
                     select distinct l.as_of_date
                     from label_dates l
                     join cohort_dates c using(as_of_date)
-                    """
-                )
-            ))
+                    """)))
         if len(existing_dates) > 0:
-            existing_dates = ', '.join([rec[0].isoformat() for rec in existing_dates])
-            logger.notice(f'Existing entity_dates records found for the following dates, '
-                f'so new records will not be inserted for these dates {existing_dates}')
+            existing_dates = ", ".join([rec[0].isoformat() for rec in existing_dates])
+            logger.notice(
+                f"Existing entity_dates records found for the following dates, "
+                f"so new records will not be inserted for these dates {existing_dates}"
+            )
 
         insert_query = f"""
             insert into {self.entity_date_table_name}
@@ -210,7 +233,9 @@ class CohortTableGeneratorNoOp(EntityDateTableGenerator):
         return
 
     def clean_up(self):
-        logger.warning("No cohort configuration is available, so no cohort will be tear down")
+        logger.warning(
+            "No cohort configuration is available, so no cohort will be tear down"
+        )
         return
 
     @property
@@ -219,11 +244,21 @@ class CohortTableGeneratorNoOp(EntityDateTableGenerator):
 
 
 class SubsetEntityDateTableGenerator(EntityDateTableGenerator):
-    def __init__(self, query, db_engine, entity_date_table_name, labels_table_name=None, replace=True, cohort_table=None):
-        super().__init__(query, db_engine, entity_date_table_name, labels_table_name, replace)
-        print('Initializing the new child class Subset entity date generator')
+    def __init__(
+        self,
+        query,
+        db_engine,
+        entity_date_table_name,
+        labels_table_name=None,
+        replace=True,
+        cohort_table=None,
+    ):
+        super().__init__(
+            query, db_engine, entity_date_table_name, labels_table_name, replace
+        )
+        print("Initializing the new child class Subset entity date generator")
         self.cohort_table = cohort_table
-        
+
     def create_and_populate_entity_date_table_from_query(self, as_of_dates):
         """Create an entity_date table by sequentially running a
             given date-parameterized query for all known dates.
@@ -231,24 +266,28 @@ class SubsetEntityDateTableGenerator(EntityDateTableGenerator):
         Args:
             as_of_dates (list of datetime.date): Dates to calculate entity states as of
         """
-        
+
         self._maybe_create_entity_date_table()
-        logger.spam(f"Inserting rows into entity_date table {self.entity_date_table_name}")
-        
+        logger.spam(
+            f"Inserting rows into entity_date table {self.entity_date_table_name}"
+        )
+
         for as_of_date in as_of_dates:
             formatted_date = f"{as_of_date.isoformat()}"
-            logger.spam(f"Looking for existing entity_date rows for as of date {as_of_date}")
+            logger.spam(
+                f"Looking for existing entity_date rows for as of date {as_of_date}"
+            )
             with self.db_engine.connect() as conn:
-                any_existing = list(conn.execute(
-                    text(
-                        f"""select 1 from "{self.entity_date_table_name}"
+                any_existing = list(
+                    conn.execute(text(f"""select 1 from "{self.entity_date_table_name}"
                         where as_of_date = '{formatted_date}'
                         limit 1
-                        """
-                    )
-                ))
+                        """))
+                )
             if len(any_existing) == 1:
-                logger.notice(f"Since >0 entity_date rows found for date {as_of_date}, skipping")
+                logger.notice(
+                    f"Since >0 entity_date rows found for date {as_of_date}, skipping"
+                )
                 continue
             dated_query = self.query.format(as_of_date=formatted_date)
             full_query = f"""insert into {self.entity_date_table_name}
@@ -263,27 +302,28 @@ class SubsetEntityDateTableGenerator(EntityDateTableGenerator):
                 ) q 
                 group by 1, 2, 3
             """
-            logger.spam(f"Running entity_date query for date: {as_of_date}, {full_query}")
+            logger.spam(
+                f"Running entity_date query for date: {as_of_date}, {full_query}"
+            )
             with self.db_engine.begin() as conn:
-                conn.execute(
-                    text(full_query)
-                )
-            
-            
+                conn.execute(text(full_query))
+
     def generate_entity_date_table(self, as_of_dates):
         if self.query:
-            logger.spam(f"Query is present, so running query on as_of_dates: {as_of_dates}")
+            logger.spam(
+                f"Query is present, so running query on as_of_dates: {as_of_dates}"
+            )
             self.create_and_populate_entity_date_table_from_query(as_of_dates)
         else:
-            logger.warning('Query not working, subset table not created!')
-    
+            logger.warning("Query not working, subset table not created!")
+
         if table_has_duplicates(
-            self.entity_date_table_name,
-            ['entity_id', 'as_of_date'],
-            self.db_engine
-            ):
+            self.entity_date_table_name, ["entity_id", "as_of_date"], self.db_engine
+        ):
             raise ValueError(f"Duplicates found in {self.entity_date_table_name}!")
 
         logger.debug(f"Entity-date table generated at {self.entity_date_table_name}")
         logger.spam(f"Generating stats on {self.entity_date_table_name}")
-        logger.spam(f"Row count of {self.entity_date_table_name}: {table_row_count(self.entity_date_table_name, self.db_engine)}")
+        logger.spam(
+            f"Row count of {self.entity_date_table_name}: {table_row_count(self.entity_date_table_name, self.db_engine)}"
+        )

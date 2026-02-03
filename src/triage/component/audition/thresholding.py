@@ -1,10 +1,13 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
 
-from sqlalchemy import text
-from .metric_directionality import is_better_operator
-import pandas as pd
+logger = get_logger(__name__)
+
 from datetime import datetime
+
+import pandas as pd
+from sqlalchemy import text
+
+from .metric_directionality import is_better_operator
 
 
 def _past_threshold(df, metric_filter):
@@ -78,18 +81,21 @@ def model_groups_filter(
         ) as t
         WHERE train_end_time_list @> {end_times_sql}
         """
-    with db_engine.connect() as conn: 
-        model_group_ids = {row.model_group_id for row in conn.execute(text(query))} # change in sqlalchemy 2
+    with db_engine.connect() as conn:
+        model_group_ids = {
+            row.model_group_id for row in conn.execute(text(query))
+        }  # change in sqlalchemy 2
 
     if not model_group_ids:
-        raise ValueError("The train_end_times passed in is not a subset of train end times of any model group. Please double check that all the model groups have the specified train end times.")
+        raise ValueError(
+            "The train_end_times passed in is not a subset of train end times of any model group. Please double check that all the model groups have the specified train end times."
+        )
 
     dropped_model_groups = len(initial_model_group_ids) - len(model_group_ids)
     logger.debug(
         f"Dropped {dropped_model_groups} model groups which don't match the train end times"
     )
     logger.debug(f"Found {len(model_group_ids)} total model groups past the checker")
-
 
     return model_group_ids
 
@@ -183,7 +189,7 @@ class ModelGroupThresholder:
             close_to_best = self.model_groups_close_to_best_case(df_as_of)
             logger.debug(
                 f"Found {len(close_to_best)} model groups close to best for {train_end_time}",
-                            )
+            )
             close_to_best_model_groups |= close_to_best
 
             past_threshold = self.model_groups_past_threshold(df_as_of)

@@ -1,46 +1,44 @@
-import verboselogs, logging
+from triage.logging import get_logger
 
-logger = verboselogs.VerboseLogger(__name__)
+logger = get_logger(__name__)
 
-from abc import ABC, abstractmethod
 import cProfile
+import itertools
 import marshal
 import os
 import random
 import time
-import itertools
+from abc import ABC, abstractmethod
 
 from descriptors import cachedproperty
 from timeout import timeout
 
-from triage.component.architect.label_generators import (
-    LabelGenerator,
-    LabelGeneratorNoOp,
-    DEFAULT_LABEL_NAME,
+from triage.component import results_schema
+from triage.component.architect.builders import MatrixBuilder
+from triage.component.architect.entity_date_table_generators import (
+    CohortTableGeneratorNoOp,
+    EntityDateTableGenerator,
 )
-
 from triage.component.architect.features import (
-    FeatureGenerator,
     FeatureDictionaryCreator,
+    FeatureGenerator,
     FeatureGroupCreator,
     FeatureGroupMixer,
 )
-from triage.component.architect.planner import Planner
-from triage.component.architect.builders import MatrixBuilder
-from triage.component.architect.entity_date_table_generators import (
-    EntityDateTableGenerator,
-    CohortTableGeneratorNoOp,
+from triage.component.architect.label_generators import (
+    DEFAULT_LABEL_NAME,
+    LabelGenerator,
+    LabelGeneratorNoOp,
 )
-from triage.component.timechop import Timechop
-from triage.component import results_schema
+from triage.component.architect.planner import Planner
 from triage.component.catwalk import (
-    ModelTrainer,
-    ModelEvaluator,
-    Predictor,
     IndividualImportanceCalculator,
     IndividualImportanceCalculatorNoOp,
+    ModelEvaluator,
     ModelGrouper,
+    ModelTrainer,
     ModelTrainTester,
+    Predictor,
     Subsetter,
     SubsetterNoOp,
 )
@@ -48,43 +46,40 @@ from triage.component.catwalk.protected_groups_generators import (
     ProtectedGroupsGenerator,
     ProtectedGroupsGeneratorNoOp,
 )
-
-from triage.component.catwalk.utils import (
-    save_experiment_and_get_hash,
-    associate_models_with_experiment,
-    associate_matrices_with_experiment,
-    missing_matrix_uuids,
-    missing_model_hashes,
-    filename_friendly_hash,
-)
 from triage.component.catwalk.storage import (
     CSVMatrixStore,
+    MatrixStorageEngine,
     ModelStorageEngine,
     ProjectStorage,
-    MatrixStorageEngine,
+)
+from triage.component.catwalk.utils import (
+    associate_matrices_with_experiment,
+    associate_models_with_experiment,
+    filename_friendly_hash,
+    missing_matrix_uuids,
+    missing_model_hashes,
+    save_experiment_and_get_hash,
 )
 from triage.component.postmodeling.experiment_summarizer import ExperimentReport
-
+from triage.component.timechop import Timechop
+from triage.database_reflection import table_has_data
 from triage.experiments import CONFIG_VERSION
+from triage.experiments.defaults import (
+    fill_feature_group_definition,
+    fill_model_grid_presets,
+    fill_timechop_config_missing,
+)
 from triage.experiments.validate import ExperimentValidator
 from triage.tracking import (
-    initialize_tracking_and_get_run_id,
     experiment_entrypoint,
+    initialize_tracking_and_get_run_id,
+    record_bias_hash,
     record_cohort_table_name,
     record_labels_table_name,
-    record_bias_hash,
     record_matrix_building_started,
     record_model_building_started,
 )
-
-from triage.experiments.defaults import (
-    fill_timechop_config_missing,
-    fill_feature_group_definition,
-    fill_model_grid_presets,
-)
-
-from triage.database_reflection import table_has_data
-from triage.util.conf import dt_from_str, parse_from_obj, load_query_if_needed
+from triage.util.conf import dt_from_str, load_query_if_needed, parse_from_obj
 from triage.util.db import get_for_update
 from triage.util.introspection import bind_kwargs, classpath
 
@@ -428,7 +423,7 @@ class ExperimentBase(ABC):
                 db_engine=self.db_engine,
                 replace=self.replace,
                 as_of_times=self.all_as_of_times,
-                cohort_table_name=self.cohort_table_name
+                cohort_table_name=self.cohort_table_name,
             )
         else:
             self.subsetter = SubsetterNoOp()
@@ -706,7 +701,7 @@ class ExperimentBase(ABC):
         if not table_has_data(self.labels_table_name, self.db_engine):
             logger.warning("labels table is not populated, cannot build any matrices")
             return {}
-        (updated_split_definitions, matrix_build_tasks) = self.planner.generate_plans(
+        updated_split_definitions, matrix_build_tasks = self.planner.generate_plans(
             self.split_definitions, self.feature_dicts
         )
         self.full_matrix_definitions = updated_split_definitions
@@ -719,7 +714,7 @@ class ExperimentBase(ABC):
         Returns: (list) temporal and feature information for each matrix
 
         """
-        (updated_split_definitions, matrix_build_tasks) = self.planner.generate_plans(
+        updated_split_definitions, matrix_build_tasks = self.planner.generate_plans(
             self.split_definitions, self.feature_dicts
         )
         self.matrix_build_tasks = matrix_build_tasks
@@ -925,7 +920,9 @@ class ExperimentBase(ABC):
                 )
 
     def _summary_report(self):
-        logger.debug(f"experiment hash to send to experiment report for summary: {self.experiment_hash}")
+        logger.debug(
+            f"experiment hash to send to experiment report for summary: {self.experiment_hash}"
+        )
         er = ExperimentReport(self.db_engine, [self.experiment_hash])
         er.generate_summary()
 

@@ -1,9 +1,11 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.utils import check_array
+
 
 class CutOff(BaseEstimator, TransformerMixin):
     """Transform features cutting values out of established range
@@ -35,10 +37,10 @@ class CutOff(BaseEstimator, TransformerMixin):
         self.feature_range = feature_range
         self.copy = copy
 
-
     def fit(self, X, y=None):
+        # Set a fitted attribute to satisfy sklearn's check_is_fitted
+        self.n_features_in_ = X.shape[1] if hasattr(X, "shape") else 1
         return self
-
 
     def transform(self, X):
         feature_range = self.feature_range

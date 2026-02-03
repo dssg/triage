@@ -1,15 +1,16 @@
 # coding: utf-8
-import verboselogs, logging
-
 from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.linear_model import LogisticRegression
+from sklearn.multiclass import OneVsRestClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.multiclass import OneVsRestClassifier
-from sklearn.linear_model import LogisticRegression
+
+from triage.logging import get_logger
 
 from .transformers import CutOff
 
-logger = verboselogs.VerboseLogger(__name__)
+logger = get_logger(__name__)
+
 
 class ScaledLogisticRegression(BaseEstimator, ClassifierMixin):
     """
@@ -31,7 +32,7 @@ class ScaledLogisticRegression(BaseEstimator, ClassifierMixin):
         random_state=None,
         solver="saga",
         max_iter=100,
-        #multi_class="ovr", # deprecated since sklearn 1.5
+        # multi_class="ovr", # deprecated since sklearn 1.5
         verbose=0,
         warm_start=False,
         n_jobs=1,
@@ -46,7 +47,7 @@ class ScaledLogisticRegression(BaseEstimator, ClassifierMixin):
         self.random_state = random_state
         self.solver = solver
         self.max_iter = max_iter
-        #self.multi_class = multi_class # deprecated since sklearn 1.5
+        # self.multi_class = multi_class # deprecated since sklearn 1.5
         self.verbose = verbose
         self.warm_start = warm_start
         self.n_jobs = n_jobs
@@ -65,7 +66,7 @@ class ScaledLogisticRegression(BaseEstimator, ClassifierMixin):
                 random_state=random_state,
                 solver=solver,
                 max_iter=max_iter,
-                #multi_class=multi_class, # deprecated since sklearn 1.5
+                # multi_class=multi_class, # deprecated since sklearn 1.5
                 verbose=verbose,
                 warm_start=warm_start,
                 n_jobs=n_jobs,
@@ -91,7 +92,9 @@ class ScaledLogisticRegression(BaseEstimator, ClassifierMixin):
 
         # now we have OneVsRestClassifier, we need to iterate over estimators_
         # to get coef_ and intercept_
-        logger.debug(f"Getting coef_ and intercept_ from OneVsRestClassifier. Estimators: {len(self.pipeline.named_steps['lr'].estimators_)}")
+        logger.debug(
+            f"Getting coef_ and intercept_ from OneVsRestClassifier. Estimators: {len(self.pipeline.named_steps['lr'].estimators_)}"
+        )
 
         self.coef_ = self.pipeline.named_steps["lr"].estimators_[0].coef_
         self.intercept_ = self.pipeline.named_steps["lr"].estimators_[0].intercept_

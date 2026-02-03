@@ -1,13 +1,14 @@
 import ohio.ext.pandas
 import pandas as pd
-import verboselogs, logging
 
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
 
-from scipy import stats
-import yaml
-import psycopg2
+logger = get_logger(__name__)
+
 from io import StringIO
+
+import yaml
+from scipy import stats
 
 from triage.component.architect.database_reflection import table_exists
 from triage.component.catwalk.storage import ProjectStorage
@@ -49,8 +50,13 @@ low_risk_std = lambda hr, lr: lr.std(axis=0)
 hr_lr_ratio = lambda hr, lr: hr.mean(axis=0) / lr.mean(axis=0)
 high_risk_support = lambda hr, lr: (hr > 0).sum(axis=0)
 low_risk_support = lambda hr, lr: (lr > 0).sum(axis=0)
-high_risk_support_pct = lambda hr, lr: round((hr > 0).sum(axis=0).astype(float) / len(hr), 3)
-low_risk_support_pct = lambda hr, lr: round((lr > 0).sum(axis=0).astype(float) / len(lr), 3)
+high_risk_support_pct = lambda hr, lr: round(
+    (hr > 0).sum(axis=0).astype(float) / len(hr), 3
+)
+low_risk_support_pct = lambda hr, lr: round(
+    (lr > 0).sum(axis=0).astype(float) / len(lr), 3
+)
+
 
 def hr_lr_ttest(hr, lr):
     """Returns the t-test (T statistic and p value), comparing the features for
@@ -255,34 +261,46 @@ def run_crosstabs(db_engine, crosstabs_config):
         )
 
 
-def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type, threshold, matrix_uuid=None, push_to_db=True, table_schema='test_results', table_name='crosstabs', return_as_dataframe=True, replace=False):
-    """ Calculate crosstabs for a model based on the matrix. 
-        
-        Args: 
-            db_engine: Database engine
-            project_path (str): Path where the experiment artifacts (models and matrices) are stored
-            thresholds (Dict{str: Union[float, int}]): A dictionary that maps threhold type to the threshold
-                                                    The threshold type can be one of the rank columns in the test_results.predictions_table
-           
-            matrix_uuid (str, optional): To run crosstabs for a different matrix than the validation matrix from the experiment
+def run_crosstabs_from_matrix(
+    db_engine,
+    project_path,
+    model_id,
+    threshold_type,
+    threshold,
+    matrix_uuid=None,
+    push_to_db=True,
+    table_schema="test_results",
+    table_name="crosstabs",
+    return_as_dataframe=True,
+    replace=False,
+):
+    """Calculate crosstabs for a model based on the matrix.
 
-            push_to_db (bool, optional): Whether to write the results to the database. Defaults to True
-            
-            table_schame (str, optional): Database schema to store the crosstabs table. Defaults to `test_results`
-            table_name (str, optional): Table name to use. Defaults to `crosstabs`. If the table exists, results are appended
+    Args:
+        db_engine: Database engine
+        project_path (str): Path where the experiment artifacts (models and matrices) are stored
+        thresholds (Dict{str: Union[float, int}]): A dictionary that maps threhold type to the threshold
+                                                The threshold type can be one of the rank columns in the test_results.predictions_table
 
-        return:
-            Dataframe of crosstabs
+        matrix_uuid (str, optional): To run crosstabs for a different matrix than the validation matrix from the experiment
+
+        push_to_db (bool, optional): Whether to write the results to the database. Defaults to True
+
+        table_schame (str, optional): Database schema to store the crosstabs table. Defaults to `test_results`
+        table_name (str, optional): Table name to use. Defaults to `crosstabs`. If the table exists, results are appended
+
+    return:
+        Dataframe of crosstabs
     """
-    
-    logging.info('Fetching predictions')
-    
-    where_clause = f'where model_id = {model_id}'
-    
+
+    logger.info("Fetching predictions")
+
+    where_clause = f"where model_id = {model_id}"
+
     if matrix_uuid:
         where_clause += f" and matrix_uuid = '{matrix_uuid}'"
-    
-    q = f'''
+
+    q = f"""
         select 
         matrix_uuid,
         entity_id,
@@ -294,130 +312,148 @@ def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type,
         case when {threshold_type} <= {threshold} then 1 else 0 end as high_risk
         from test_results.predictions p
         {where_clause}
-    '''
-    
-    id_columns = ['entity_id', 'as_of_date']
-    
+    """
+
+    id_columns = ["entity_id", "as_of_date"]
+
     predictions = pd.read_sql(q, db_engine).set_index(id_columns)
-    
+
     if predictions.empty:
-        logging.error('No predictions were found for the model and matrix')
-        return 
+        logger.error("No predictions were found for the model and matrix")
+        return
 
     # The same model can have multiple test matrices. If not specified, we calculate crosstabs for all matrices
     matrices = [matrix_uuid]
     if matrix_uuid is None:
         matrices = predictions.matrix_uuid.unique()
-        
-    logging.info(f'Matrices for crosstabs: {matrices}')
-    
-    crosstab_tasks = list() # store a list of matrix uuids we need crosstabs for
-        
-    if table_exists(f'{table_schema}.{table_name}', db_engine):
-        logging.info(f'The {table_schema}.{table_name} table exists. Checking for existing crosstabs')
-        
-        for matrix_uuid in matrices: 
-            df = pd.read_sql(f'''
+
+    logger.info(f"Matrices for crosstabs: {matrices}")
+
+    crosstab_tasks = list()  # store a list of matrix uuids we need crosstabs for
+
+    if table_exists(f"{table_schema}.{table_name}", db_engine):
+        logger.info(
+            f"The {table_schema}.{table_name} table exists. Checking for existing crosstabs"
+        )
+
+        for matrix_uuid in matrices:
+            df = pd.read_sql(
+                f"""
                     select 1 from {table_schema}.{table_name}
                     where model_id = {model_id}
                     and matrix_uuid = '{matrix_uuid}'
                     and threshold_type = '{threshold_type}'
                     and threshold = {threshold}
-                ''', db_engine)
-            
+                """,
+                db_engine,
+            )
+
             if not df.empty:
-                if replace: 
-                    logging.info(f'Exsiting crosstabs found for model {model_id} and matrix {matrix_uuid}. Replace is True. Deleting.')
-                    q = f'''
+                if replace:
+                    logger.info(
+                        f"Exsiting crosstabs found for model {model_id} and matrix {matrix_uuid}. Replace is True. Deleting."
+                    )
+                    q = f"""
                         delete from {table_schema}.{table_name}
                         where model_id = {model_id}
                         and matrix_uuid = '{matrix_uuid}'
                         and threshold_type = '{threshold_type}'
                         and threshold = {threshold}
-                    '''
-                    
+                    """
+
                     db_engine.execute(q)
-                                        
+
                 else:
-                    logging.info(f'Existing crosstabs found for model {model_id} and matrix {matrix_uuid}. Replace flag is not set. Skipping')
+                    logger.info(
+                        f"Existing crosstabs found for model {model_id} and matrix {matrix_uuid}. Replace flag is not set. Skipping"
+                    )
                     continue
-            
-            logging.info(f'Crosstabs task added for matrix {matrix_uuid}')
+
+            logger.info(f"Crosstabs task added for matrix {matrix_uuid}")
             crosstab_tasks.append(matrix_uuid)
-            
+
     else:
-        logging.info(f'{table_schema}.{table_name} does not exist. Calculating crostabs for all matrices')
+        logger.info(
+            f"{table_schema}.{table_name} does not exist. Calculating crostabs for all matrices"
+        )
         crosstab_tasks = matrices
-            
+
     if len(crosstab_tasks) == 0:
-        logging.warning('Crosstabs calculation not needed. Exiting.')
+        logger.warning("Crosstabs calculation not needed. Exiting.")
         return
-    
+
     project_storage = ProjectStorage(project_path)
     matrix_storage_engine = project_storage.matrix_storage_engine()
-    
+
     results = list()
     for m in crosstab_tasks:
         matrix = matrix_storage_engine.get_store(matrix_uuid=m).design_matrix
-        
+
         feature_names = matrix.columns
-        
-        matrix = matrix.join(predictions[predictions['matrix_uuid'] == m], how='left')
-        
+
+        matrix = matrix.join(predictions[predictions["matrix_uuid"] == m], how="left")
+
         # topk_msk = matrix[threshold_type] <= threshold
-        topk_msk = matrix['high_risk'] == 1
-        
+        topk_msk = matrix["high_risk"] == 1
+
         positives = matrix[topk_msk][feature_names]
         negatives = matrix[~topk_msk][feature_names]
-        
+
         for name, function in crosstab_functions:
-            logging.info(f'Calculating {name}')
-            
+            logger.info(f"Calculating {name}")
+
             if name == ["ttest_T", "ttest_p"]:
                 res = function(positives, negatives)
 
-                this_result = res.drop(columns=['ttest_p'])
-                
+                this_result = res.drop(columns=["ttest_p"])
+
                 # TODO: This is very hacky and ugly
-                this_result.rename(columns={'ttest_T': 0}, inplace=True)
-                this_result['metric'] = 'ttest_T'
+                this_result.rename(columns={"ttest_T": 0}, inplace=True)
+                this_result["metric"] = "ttest_T"
                 results.append(this_result)
-                
-                this_result = res.drop(columns=['ttest_T'])
-                
+
+                this_result = res.drop(columns=["ttest_T"])
+
                 # TODO: This is very hacky and ugly
-                this_result.rename(columns={'ttest_p': 0}, inplace=True)
-                this_result['metric'] = 'ttest_p'
-                
+                this_result.rename(columns={"ttest_p": 0}, inplace=True)
+                this_result["metric"] = "ttest_p"
+
                 results.append(this_result)
-            
+
                 continue
-                
+
             this_result = pd.DataFrame(function(positives, negatives))
-            
-            this_result['metric'] = name
-                
+
+            this_result["metric"] = name
+
             results.append(this_result)
-                        
+
     results = pd.concat(results).reset_index()
-    results.rename(columns={'index': 'feature', 0:'value'}, inplace=True)
-    results['threshold_type'] = threshold_type
-    results['threshold'] = threshold
-    results['model_id'] = model_id
-    results['matrix_uuid'] = matrix_uuid
-    
+    results.rename(columns={"index": "feature", 0: "value"}, inplace=True)
+    results["threshold_type"] = threshold_type
+    results["threshold"] = threshold
+    results["model_id"] = model_id
+    results["matrix_uuid"] = matrix_uuid
+
     if push_to_db:
-        logging.info(f'Pushing the results to the database, {len(results)} rows')
-                
+        logger.info(f"Pushing the results to the database, {len(results)} rows")
+
         results.set_index(
-            ['model_id', 'matrix_uuid', 'feature', 'metric', 'threshold_type', 'threshold'],
-            inplace=True
+            [
+                "model_id",
+                "matrix_uuid",
+                "feature",
+                "metric",
+                "threshold_type",
+                "threshold",
+            ],
+            inplace=True,
         )
-        
+
         results = results.reset_index()
-        
-        if not table_exists(f'{table_schema}.{table_name}', db_engine):
-            q = f'''
+
+        if not table_exists(f"{table_schema}.{table_name}", db_engine):
+            q = f"""
                 create schema if not exists {table_schema};
                 
                 create table {table_schema}.{table_name} (
@@ -430,26 +466,25 @@ def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type,
                   value FLOAT  
                 );
             
-            '''
+            """
             # q = _generate_create_table_sql_statement_from_df(results, f'{table_schema}.{table_name}')
             db_engine.execute(q)
-        
+
         conn = db_engine.raw_connection()
         cursor = conn.cursor()
-        
+
         buffer = StringIO()
         results.to_csv(buffer, index=False, header=False)
         buffer.seek(0)
-        
-        columns = ', '.join(results.columns)
+
+        columns = ", ".join(results.columns)
         print(columns)
-        cursor.copy_expert(f"COPY {table_schema}.{table_name} ({columns}) FROM STDIN WITH CSV", buffer)
+        cursor.copy_expert(
+            f"COPY {table_schema}.{table_name} ({columns}) FROM STDIN WITH CSV", buffer
+        )
         # results.to_sql(con=db_engine, schema=table_schema, name=table_name, if_exists='append')
         conn.commit()
         cursor.close()
         conn.close()
-        
+
     return results
-        
-                
-        

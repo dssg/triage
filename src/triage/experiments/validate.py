@@ -1,19 +1,18 @@
 import importlib
 
-import verboselogs, logging
+from triage.logging import get_logger
 
-logger = verboselogs.VerboseLogger(__name__)
+logger = get_logger(__name__)
 
-from itertools import permutations
 from datetime import datetime
+from itertools import permutations
 from textwrap import dedent
-from sqlalchemy import text
+
 from sklearn.model_selection import ParameterGrid
+from sqlalchemy import text
 
-from triage.component import architect
-from triage.component import catwalk
+from triage.component import architect, catwalk
 from triage.component.timechop import Timechop
-
 from triage.util.conf import convert_str_to_relativedelta, load_query_if_needed
 from triage.validation_primitives import string_is_tablesafe
 
@@ -65,29 +64,17 @@ class TemporalValidator(Validator):
             )
             splits = chopper.chop_time()
         except Exception as e:
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
             Section: temporal_config -
             Timechop could not produce temporal splits from config {}.
             Error: {}
-            """.format(
-                        temporal_config, e
-                    )
-                )
-            )
+            """.format(temporal_config, e)))
         for split_num, split in enumerate(splits):
             if len(split["train_matrix"]["as_of_times"]) == 0:
-                raise ValueError(
-                    dedent(
-                        """
+                raise ValueError(dedent("""
                 Section: temporal_config -
                 Computed split {} has a train matrix with no as_of_times.
-                """.format(
-                            split
-                        )
-                    )
-                )
+                """.format(split)))
 
             # timechop computes the last time available to train data
             # and stores it in the matrix as 'matrix_info_end_time'
@@ -101,16 +88,10 @@ class TemporalValidator(Validator):
 
             for test_matrix in split["test_matrices"]:
                 if len(test_matrix["as_of_times"]) == 0:
-                    raise ValueError(
-                        dedent(
-                            """
+                    raise ValueError(dedent("""
                     Section: temporal_config -
                     Computed split {} has a test matrix with no as_of_times.
-                    """.format(
-                                split
-                            )
-                        )
-                    )
+                    """.format(split)))
                 overlapping_times = [
                     as_of_time
                     for as_of_time in test_matrix["as_of_times"]
@@ -156,31 +137,23 @@ class FeatureAggregationsValidator(Validator):
                     )
                 )
         if not string_is_tablesafe(aggregation_config["prefix"]):
-            raise ValueError(
-                dedent(
-                    f"""Section: feature_aggregations -
+            raise ValueError(dedent(f"""Section: feature_aggregations -
                     Feature aggregation prefix should only contain
                     lowercase letters, numbers, and underscores.
                     Aggregation config: {aggregation_config}
-                    """
-                )
-            )
+                    """))
         if "groups" in aggregation_config:
             if aggregation_config["groups"] != [self.entity_id_column]:
                 raise ValueError(
-                    dedent(
-                        """Specifying groupings for feature aggregation is 
+                    dedent("""Specifying groupings for feature aggregation is 
                         not supported. Features can only be grouped at the 
-                        entity_id level."""
-                    )
+                        entity_id level.""")
                 )
             else:
                 logger.warning(
-                    dedent(
-                        """Specifying groupings for feature aggregation is 
+                    dedent("""Specifying groupings for feature aggregation is 
                         not supported. In the future, please exclude this key 
-                        from your feature configuration."""
-                    )
+                        from your feature configuration.""")
                 )
 
         logger.debug("Validation of feature aggregation keys was successful")
@@ -192,16 +165,10 @@ class FeatureAggregationsValidator(Validator):
             and "categoricals" not in aggregation_config
             and "array_categoricals" not in aggregation_config
         ):
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
             Section: feature_aggregations -
             Need either aggregates, categoricals, or array_categoricals
-            in {}""".format(
-                        aggregation_config
-                    )
-                )
-            )
+            in {}""".format(aggregation_config)))
         logger.debug("Validation of aggregates was successful")
 
     def _validate_categoricals(self, categoricals):
@@ -209,27 +176,15 @@ class FeatureAggregationsValidator(Validator):
         conn = self.db_engine.connect()
         for categorical in categoricals:
             if "choice_query" in categorical and "choices" in categorical:
-                raise ValueError(
-                    dedent(
-                        """
+                raise ValueError(dedent("""
                 Section: feature_aggregations -
                 Both 'choice_query' and 'choices' specified for {}.
-                Please only specify one.""".format(
-                            categorical
-                        )
-                    )
-                )
+                Please only specify one.""".format(categorical)))
             if not ("choice_query" in categorical or "choices" in categorical):
-                raise ValueError(
-                    dedent(
-                        """
+                raise ValueError(dedent("""
                 Section: feature_aggregations -
                 Neither 'choice_query' and 'choices' specified for {}.
-                Please specify one.""".format(
-                            categorical
-                        )
-                    )
-                )
+                Please specify one.""".format(categorical)))
             if "choice_query" in categorical:
                 logger.spam("Validating choice query")
                 choice_query = categorical["choice_query"]
@@ -237,17 +192,11 @@ class FeatureAggregationsValidator(Validator):
                     conn.execute(text(f"explain {choice_query}"))
                     logger.debug("Validation of choice query was successful")
                 except Exception as e:
-                    raise ValueError(
-                        dedent(
-                            """
+                    raise ValueError(dedent("""
                     Section: feature_aggregations -
                     choice query does not run.
                     choice query: "{}"
-                    Full error: {}""".format(
-                                choice_query, e
-                            )
-                        )
-                    )
+                    Full error: {}""".format(choice_query, e)))
 
         logger.debug("Validation of categoricals was successful")
 
@@ -258,17 +207,11 @@ class FeatureAggregationsValidator(Validator):
             conn.execute(text(f"explain select * from {from_obj}"))
             logger.debug("Validation of from_obj was successful")
         except Exception as e:
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
                 Section: feature_aggregations -
                 from_obj query does not run.
                 from_obj: "{}"
-                Full error: {}""".format(
-                        from_obj, e
-                    )
-                )
-            )
+                Full error: {}""".format(from_obj, e)))
 
     def _validate_time_intervals(self, intervals):
         logger.spam("Validating time intervals")
@@ -281,17 +224,11 @@ class FeatureAggregationsValidator(Validator):
                     convert_str_to_relativedelta(interval)
                     logger.debug("Validation of time intervals was successful")
                 except Exception as e:
-                    raise ValueError(
-                        dedent(
-                            """
+                    raise ValueError(dedent("""
                     Section: feature_aggregations -
                     Time interval is invalid.
                     interval: "{}"
-                    Full error: {}""".format(
-                                interval, e
-                            )
-                        )
-                    )
+                    Full error: {}""".format(interval, e)))
 
     def _validate_imputation_rule(self, aggregate_type, impute_rule):
         """Validate the imputation rule for a given aggregation type."""
@@ -317,13 +254,9 @@ class FeatureAggregationsValidator(Validator):
 
         # no imputation rule was specified
         if "type" not in impute_rule.keys():
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
             Section: feature_aggregations -
-            Imputation type must be specified"""
-                )
-            )
+            Imputation type must be specified"""))
 
         # a rule was specified, but not valid for this type of aggregate
         if impute_rule["type"] not in valid_types.keys():
@@ -331,8 +264,7 @@ class FeatureAggregationsValidator(Validator):
                 dedent(
                     """
             Section: feature_aggregations -
-            Invalid imputation type %s for %s"""
-                    % (impute_rule["type"], aggregate_type)
+            Invalid imputation type %s for %s""" % (impute_rule["type"], aggregate_type)
                 )
             )
 
@@ -340,14 +272,9 @@ class FeatureAggregationsValidator(Validator):
         required_params = valid_types[impute_rule["type"]]
         for param in required_params:
             if param not in impute_rule.keys():
-                raise ValueError(
-                    dedent(
-                        """
+                raise ValueError(dedent("""
                 Section: feature_aggregations -
-                Missing param %s for %s"""
-                        % (param, impute_rule["type"])
-                    )
-                )
+                Missing param %s for %s""" % (param, impute_rule["type"])))
         logger.debug("Validation of imputation rule was successful")
 
     def _validate_imputations(self, aggregation_config):
@@ -404,13 +331,9 @@ class FeatureAggregationsValidator(Validator):
         Raises: ValueError if any part of the config is found to be invalid
         """
         if not feature_aggregation_config:
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
             Section: feature_aggregations -
-            Section not found. You must define feature aggregations."""
-                )
-            )
+            Section not found. You must define feature aggregations."""))
         for aggregation in feature_aggregation_config:
             self._validate_aggregation(aggregation)
 
@@ -418,23 +341,15 @@ class FeatureAggregationsValidator(Validator):
 class LabelConfigValidator(Validator):
     def _validate_query(self, query):
         if "{as_of_date}" not in query:
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
             Section: label_config -
             If 'query' is used as label_config,
-            {as_of_date} must be present"""
-                )
-            )
+            {as_of_date} must be present"""))
         if "{label_timespan}" not in query:
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
             Section: label_config -
             If 'query' is used as label_config,
-            {label_timespan} must be present"""
-                )
-            )
+            {label_timespan} must be present"""))
         bound_query = query.replace("{as_of_date}", "2016-01-01").replace(
             "{label_timespan}", "6month"
         )
@@ -444,17 +359,11 @@ class LabelConfigValidator(Validator):
                 conn.execute(text(f"explain {bound_query}"))
             logger.debug("Validation of label query was successful")
         except Exception as e:
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
                 Section: label_config -
                 given query can not be run with a sample as_of_date and label_timespan.
                 query: "{}"
-                Full error: {}""".format(
-                        query, e
-                    )
-                )
-            )
+                Full error: {}""".format(query, e)))
 
     @staticmethod
     def _validate_include_missing_labels_in_train_as(missing_label_flag):
@@ -476,24 +385,16 @@ class LabelConfigValidator(Validator):
     def _run(self, label_config):
         logger.spam("Validating label configuration")
         if not label_config:
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
             Section: label_config -
-            Section not found. You must define a label config."""
-                )
-            )
+            Section not found. You must define a label config."""))
 
         if len(set(label_config.keys()).intersection({"query", "filepath"})) != 1:
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
             Section: label_config -
             keys ({label_config.keys()}) do not contain exactly one of 'filepath'
             or 'query'. You must pass a filepath to a label query or include one
-            in the config."""
-                )
-            )
+            in the config."""))
         label_config = load_query_if_needed(label_config)
         if "name" in label_config and not string_is_tablesafe(label_config["name"]):
             raise ValueError(
@@ -511,29 +412,23 @@ class CohortConfigValidator(Validator):
     def _run(self, cohort_config):
         logger.spam("Validating of cohort configuration")
         if not cohort_config:
-            logger.debug("No cohort config specified, label config will be used instead")
+            logger.debug(
+                "No cohort config specified, label config will be used instead"
+            )
             return
         if len(set(cohort_config.keys()).intersection({"query", "filepath"})) != 1:
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
             Section: cohort_config -
             keys ({cohort_config.keys()}) do not contain exactly one of 'filepath'
             or 'query'. You must pass a filepath to a cohort query or include one
-            in the config."""
-                )
-            )
+            in the config."""))
         cohort_config = load_query_if_needed(cohort_config)
         query = cohort_config["query"]
         if "{as_of_date}" not in query:
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
             Section: cohort_config -
             If 'query' is used as cohort_config,
-            {as_of_date} must be present"""
-                )
-            )
+            {as_of_date} must be present"""))
         if "name" in cohort_config and not string_is_tablesafe(cohort_config["name"]):
             raise ValueError(
                 "Section: cohort_config - "
@@ -546,15 +441,11 @@ class CohortConfigValidator(Validator):
                 conn.execute(text(f"explain {dated_query}"))
             logger.debug("Validation of cohort query was successful")
         except Exception as e:
-            raise ValueError(
-                dedent(
-                    f"""
+            raise ValueError(dedent(f"""
                 Section: cohort_config -
                 given query can not be run with a sample as_of_date .
                 query: "{query}"
-                Full error: {e}"""
-                )
-            )
+                Full error: {e}"""))
         logger.debug("Validation of cohort configuration was successful")
 
 
@@ -580,40 +471,24 @@ class FeatureGroupDefinitionValidator(Validator):
     def _run(self, feature_group_definition, feature_aggregation_config):
         logger.spam("Validating of feature group definitions")
         if not isinstance(feature_group_definition, dict):
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
             Section: feature_group_definition -
-            feature_group_definition must be a dictionary"""
-                )
-            )
+            feature_group_definition must be a dictionary"""))
 
         available_subsetters = (
             architect.feature_group_creator.FeatureGroupCreator.subsetters
         )
         for subsetter_name, value in feature_group_definition.items():
             if subsetter_name not in available_subsetters:
-                raise ValueError(
-                    dedent(
-                        """
+                raise ValueError(dedent("""
                 Section: feature_group_definition -
                 Unknown feature_group_definition key {} received.
-                Available keys are {}""".format(
-                            subsetter_name, available_subsetters
-                        )
-                    )
-                )
+                Available keys are {}""".format(subsetter_name, available_subsetters)))
             if not hasattr(value, "__iter__") or isinstance(value, (str, bytes)):
-                raise ValueError(
-                    dedent(
-                        """
+                raise ValueError(dedent("""
                 Section: feature_group_definition -
                 feature_group_definition value for {}, {}
-                should be a list""".format(
-                            subsetter_name, value
-                        )
-                    )
-                )
+                should be a list""".format(subsetter_name, value)))
         logger.debug("Validation of feature group definition was successful")
 
         if "prefix" in feature_group_definition:
@@ -622,18 +497,12 @@ class FeatureGroupDefinitionValidator(Validator):
             }
             bad_prefixes = set(feature_group_definition["prefix"]) - available_prefixes
             if bad_prefixes:
-                raise ValueError(
-                    dedent(
-                        """
+                raise ValueError(dedent("""
                 Section: feature_group_definition -
                 The following given feature group prefixes: '{}'
                 are invalid. Available prefixes from this experiment's feature
                 aggregations are: '{}'
-                """.format(
-                            bad_prefixes, available_prefixes
-                        )
-                    )
-                )
+                """.format(bad_prefixes, available_prefixes)))
             self._validate_prefixes(feature_group_definition["prefix"])
 
         if "tables" in feature_group_definition:
@@ -643,48 +512,32 @@ class FeatureGroupDefinitionValidator(Validator):
             }
             bad_tables = set(feature_group_definition["tables"]) - available_tables
             if bad_tables:
-                raise ValueError(
-                    dedent(
-                        """
+                raise ValueError(dedent("""
                 Section: feature_group_definition -
                 The following given feature group tables: '{}'
                 are invalid. Available tables from this experiment's feature
                 aggregations are: '{}'
-                """.format(
-                            bad_tables, available_tables
-                        )
-                    )
-                )
+                """.format(bad_tables, available_tables)))
 
 
 class FeatureGroupStrategyValidator(Validator):
     def _run(self, feature_group_strategies):
         logger.spam("Validating feature group strategies")
         if not isinstance(feature_group_strategies, list):
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
             Section: feature_group_strategies -
-            feature_group_strategies section must be a list"""
-                )
-            )
+            feature_group_strategies section must be a list"""))
         available_strategies = {
             key
             for key in architect.feature_group_mixer.FeatureGroupMixer.strategy_lookup.keys()
         }
         bad_strategies = set(feature_group_strategies) - available_strategies
         if bad_strategies:
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
             Section: feature_group_strategies -
             The following given feature group strategies:
             '{}' are invalid. Available strategies are: '{}'
-            """.format(
-                        bad_strategies, available_strategies
-                    )
-                )
-            )
+            """.format(bad_strategies, available_strategies)))
         logger.debug("Validation of feature group strategies was successful")
 
 
@@ -692,13 +545,9 @@ class UserMetadataValidator(Validator):
     def _run(self, user_metadata):
         logger.spam("Validating user metadata")
         if not isinstance(user_metadata, dict):
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
             Section: user_metadata -
-            user_metadata section must be a dict"""
-                )
-            )
+            user_metadata section must be a dict"""))
         logger.debug("Validation of user metadata was successful")
 
 
@@ -706,13 +555,9 @@ class ModelGroupKeysValidator(Validator):
     def _run(self, model_group_keys, user_metadata):
         logger.spam("Validating model group keys")
         if not isinstance(model_group_keys, list):
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
             Section: model_group_keys -
-            model_group_keys section must be a list"""
-                )
-            )
+            model_group_keys section must be a list"""))
         classifier_keys = ["class_path", "parameters"]
         # planner_keys are defined in architect.Planner.make_metadata
         planner_keys = [
@@ -748,16 +593,10 @@ class ModelGroupKeysValidator(Validator):
         )
         for model_group_key in model_group_keys:
             if model_group_key not in available_keys:
-                raise ValueError(
-                    dedent(
-                        """
+                raise ValueError(dedent("""
                 Section: model_group_keys -
                 unknown entry '{}' received. Available keys are {}
-                """.format(
-                            model_group_key, available_keys
-                        )
-                    )
-                )
+                """.format(model_group_key, available_keys)))
         logger.debug("Validation of model group keys was successful")
 
 
@@ -765,13 +604,9 @@ class GridConfigValidator(Validator):
     def _run(self, grid_config):
         logger.spam("Validating grid configuration")
         if not grid_config:
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
             Section: grid_config -
-            Section not found. You must define a grid_config."""
-                )
-            )
+            Section not found. You must define a grid_config."""))
         for classpath, parameter_config in grid_config.items():
             if classpath == "sklearn.linear_model.LogisticRegression":
                 logger.warning(
@@ -788,27 +623,15 @@ class GridConfigValidator(Validator):
                     try:
                         cls(**parameters)
                     except Exception as e:
-                        raise ValueError(
-                            dedent(
-                                """
+                        raise ValueError(dedent("""
                         Section: grid_config -
                         Unable to instantiate classifier {} with parameters {}, error thrown: {}
-                        """.format(
-                                    classpath, parameters, e
-                                )
-                            )
-                        )
+                        """.format(classpath, parameters, e)))
             except Exception as e:
-                raise ValueError(
-                    dedent(
-                        """
+                raise ValueError(dedent("""
                 Section: grid_config -
                 Unable to import classifier {}, error thrown: {}
-                """.format(
-                            classpath, e
-                        )
-                    )
-                )
+                """.format(classpath, e)))
 
         logger.debug("Validation of grid configuration was successful")
 
@@ -850,84 +673,54 @@ class ScoringConfigValidator(Validator):
                 given_metrics = set(metric_group["metrics"])
                 bad_metrics = given_metrics - available_metrics
                 if bad_metrics:
-                    raise ValueError(
-                        dedent(
-                            """Section: scoring -
+                    raise ValueError(dedent("""Section: scoring -
                         The following given metrics '{}' are unavailable.
                         Available metrics are: '{}'
-                        """.format(
-                                bad_metrics, available_metrics
-                            )
-                        )
-                    )
+                        """.format(bad_metrics, available_metrics)))
                 for given_metric in given_metrics:
                     metric_function = metric_lookup[given_metric]
                     if not hasattr(metric_function, "greater_is_better"):
-                        raise ValueError(
-                            dedent(
-                                """Section: scoring -
+                        raise ValueError(dedent("""Section: scoring -
                         The metric {} does not define the attribute
                         'greater_is_better'. This can only be fixed in the catwalk.metrics
                         module. If you still would like to use this metric, consider
-                        submitting a pull request""".format(
-                                    given_metric
-                                )
-                            )
-                        )
+                        submitting a pull request""".format(given_metric)))
 
             if "subsets" in scoring_config:
                 for subset in scoring_config["subsets"]:
                     # 1. Validate that all required keys are present
                     if "query" not in subset:
-                        raise ValueError(
-                            dedent(
-                                f"""Section: subsets -
+                        raise ValueError(dedent(f"""Section: subsets -
                                 The subset {subset} does not have a query key.
                                 To run evaluations on a subset, you must
                                 include a query that returns a list of distinct
                                 entity_ids and has a placeholder for an
                                 as_of_date
-                                """
-                            )
-                        )
+                                """))
                     if "name" not in subset:
-                        raise ValueError(
-                            dedent(
-                                f"""Section: subsets -
+                        raise ValueError(dedent(f"""Section: subsets -
                                 The subset {subset} does not have a name key.
                                 Please give a name to your subset. This is used
                                 in the namespacing of subset tables created by
                                 triage.
-                                """
-                            )
-                        )
+                                """))
                     if not string_is_tablesafe(subset["name"]):
-                        raise ValueError(
-                            dedent(
-                                f"""Section: subsets -
+                        raise ValueError(dedent(f"""Section: subsets -
                                 The subset {subset} name should only contain
                                 lowercase letters, numbers, and underscores
-                                """
-                            )
-                        )
+                                """))
 
                     # 2. Validate that query conforms to the expectations
                     if "{as_of_date}" not in subset["query"]:
-                        raise ValueError(
-                            dedent(
-                                f"""Section: subsets -
+                        raise ValueError(dedent(f"""Section: subsets -
                                 The subset query {subset["query"]} must
                                 include a placeholder for the as_of_date
-                                """
-                            )
-                        )
+                                """))
                     if "entity_id" not in subset["query"]:
                         raise ValueError(
-                            dedent(
-                                f"""The subset qeury {subset["query"]} must
+                            dedent(f"""The subset qeury {subset["query"]} must
                                 return a list of distinct entity_ids
-                                """
-                            )
+                                """)
                         )
 
         logger.debug("Validation of scoring configuration was successful")
@@ -943,26 +736,18 @@ class BiasAuditConfigValidator(Validator):
             "from_obj_query" in bias_audit_config
             and "from_obj_table" in bias_audit_config
         ):
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
                     Section: bias_audit_config -
                     Both 'from_obj_query' and 'from_obj_table' specified .
-                    Please only specify one."""
-                )
-            )
+                    Please only specify one."""))
         if (
             "from_obj_query" not in bias_audit_config
             and "from_obj_table" not in bias_audit_config
         ):
-            raise ValueError(
-                dedent(
-                    """
+            raise ValueError(dedent("""
                     Section: bias_audit_config -
                     Neither 'from_obj_query' and 'from_obj_table' specified .
-                    Please specify one."""
-                )
-            )
+                    Please specify one."""))
         for key in [
             "attribute_columns",
             "knowledge_date_column",

@@ -1,14 +1,14 @@
-import verboselogs, logging
+from triage.logging import get_logger
 
-logger = verboselogs.VerboseLogger(__name__)
+logger = get_logger(__name__)
 
 import copy
 import os
 import re
-import yaml
-
-from dateutil.relativedelta import relativedelta
 from datetime import datetime
+
+import yaml
+from dateutil.relativedelta import relativedelta
 
 
 def parse_from_obj(config, alias):
@@ -57,7 +57,7 @@ def parse_delta_string(delta_string):
     """
     match = parse_delta_string.pattern.search(delta_string)
     if match:
-        (pre_value, units) = match.groups()
+        pre_value, units = match.groups()
         return (units, int(pre_value))
 
     raise ValueError(
@@ -114,7 +114,7 @@ def convert_str_to_relativedelta(delta_string):
     :raises: ValueError if the delta_string is not in the expected format
 
     """
-    (units, value) = parse_delta_string(delta_string)
+    units, value = parse_delta_string(delta_string)
 
     verbose_match = convert_str_to_relativedelta.pattern_verbose.search(units)
     if verbose_match:

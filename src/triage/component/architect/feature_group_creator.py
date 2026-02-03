@@ -1,5 +1,6 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 
 from triage.util.structs import FeatureNameList
 
@@ -41,12 +42,12 @@ def prefix_subsetter(config_item, table, features):
 def metric_subsetter(config_item, table, features):
     "Return features that implements the given metric"
     # The metric is represented at the end of the feature name
-    return [feature for feature in features if feature.endswith("_"+config_item)] 
+    return [feature for feature in features if feature.endswith("_" + config_item)]
 
 
 def interval_subsetter(config_item, table, features):
     "Return features that use data from a specific time interval"
-    
+
     search_str = f"_{config_item}_"
     return [feature for feature in features if search_str in feature]
 
@@ -63,7 +64,7 @@ class FeatureGroupCreator:
         "prefix": prefix_subsetter,
         "metric": metric_subsetter,
         "interval": interval_subsetter,
-        "all": all_subsetter
+        "all": all_subsetter,
     }
 
     def __init__(self, definition):
@@ -76,9 +77,7 @@ class FeatureGroupCreator:
         self.definition = definition
 
     def validate(self):
-        """Validate the object's configuration
-
-        """
+        """Validate the object's configuration"""
         if not isinstance(self.definition, dict):
             raise ValueError("Feature Group Definition must be a dictionary")
 
@@ -115,7 +114,9 @@ class FeatureGroupCreator:
             logger.spam(f"Parsing config grouping method {name}, items {config}")
             for config_item in config:
                 subset = FeatureGroup(name=f"{name}: {config_item}")
-                logger.spam(f"Finding columns that might belong in [{name}: {config_item}]")
+                logger.spam(
+                    f"Finding columns that might belong in [{name}: {config_item}]"
+                )
                 for table, features in feature_dictionary.items():
                     logger.spam(
                         f"Searching features in table {table} that match group {subset}"
@@ -134,7 +135,7 @@ class FeatureGroupCreator:
         if not any(subset for subset in subsets if any(subset)):
             raise ValueError(
                 f"Problem! The feature group definition {self.definition} did not find any matches",
-                f"in feature dictionary {feature_dictionary}"
+                f"in feature dictionary {feature_dictionary}",
             )
         logger.verbose(f"Found {len(subsets)} total feature subsets")
         return subsets

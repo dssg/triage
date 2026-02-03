@@ -1,10 +1,12 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 import numpy as np
 import sklearn.linear_model
 from sklearn.svm import SVC
+
 from triage.component.catwalk.estimators.classifiers import ScaledLogisticRegression
 
 
@@ -25,8 +27,9 @@ def _ad_hoc_feature_importances(model):
     """
     feature_importances = None
 
-    if (isinstance(model, (sklearn.linear_model.LogisticRegression)) or
-        isinstance(model, (ScaledLogisticRegression))):
+    if isinstance(model, (sklearn.linear_model.LogisticRegression)) or isinstance(
+        model, (ScaledLogisticRegression)
+    ):
         coef_odds_ratio = np.exp(model.coef_)
         # intercept_odds_ratio = np.exp(model.intercept_[:,np.newaxis])
         # We are ignoring the intercept

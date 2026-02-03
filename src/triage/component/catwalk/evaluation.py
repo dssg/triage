@@ -1,33 +1,36 @@
 import functools
 import itertools
-import verboselogs, logging
 
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 import math
+import statistics
+import typing
+from collections import defaultdict
 
 import numpy as np
 import ohio.ext.pandas
 import pandas as pd
-import statistics
-import typing
-from collections import defaultdict
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import delete
 from aequitas.bias import Bias
 from aequitas.fairness import Fairness
 from aequitas.group import Group
 from aequitas.preprocessing import preprocess_input_df
+from sqlalchemy import cast, delete
+from sqlalchemy.dialects.postgresql import INTERVAL as Interval
+from sqlalchemy.orm import sessionmaker
+
+from triage.component.catwalk.storage import MatrixStore
+from triage.util.db import scoped_session
+from triage.util.random import generate_python_random_seed
 
 from . import metrics
 from .utils import (
     db_retry,
-    sort_predictions_and_labels,
-    get_subset_table_name,
     filename_friendly_hash,
+    get_subset_table_name,
+    sort_predictions_and_labels,
 )
-from triage.util.db import scoped_session
-from triage.util.random import generate_python_random_seed
-from triage.component.catwalk.storage import MatrixStore
 
 RELATIVE_TOLERANCE = 0.01
 SORT_TRIALS = 30
@@ -99,9 +102,10 @@ def query_subset_table(db_engine, as_of_dates, subset_table_name):
         join dates using(as_of_date)
     """
     logger.spam(f"Subset table query to execute: {query_string}")
-    df = pd.DataFrame.pg_copy_from(
+    # Use standard pd.read_sql instead of Ohio's pg_copy_from (psycopg3 compatible)
+    df = pd.read_sql(
         query_string,
-        connectable=db_engine,
+        con=db_engine,
         parse_dates=["as_of_date"],
         index_col=MatrixStore.indices,
     )
@@ -425,14 +429,16 @@ class ModelEvaluator:
         # assemble a list of evaluation objects from the database
         # by querying the unique metrics and parameters relevant to the passed-in matrix
         with scoped_session(self.db_engine) as session:
+            # Use filter() with explicit cast for as_of_date_frequency (Interval type)
             evaluation_objects_in_db = (
                 session.query(eval_obj)
-                .filter_by(
-                    model_id=model_id,
-                    evaluation_start_time=matrix_store.as_of_dates[0],
-                    evaluation_end_time=matrix_store.as_of_dates[-1],
-                    as_of_date_frequency=matrix_store.metadata["as_of_date_frequency"],
-                    subset_hash=subset_hash,
+                .filter(
+                    eval_obj.model_id == model_id,
+                    eval_obj.evaluation_start_time == matrix_store.as_of_dates[0],
+                    eval_obj.evaluation_end_time == matrix_store.as_of_dates[-1],
+                    eval_obj.as_of_date_frequency
+                    == cast(matrix_store.metadata["as_of_date_frequency"], Interval),
+                    eval_obj.subset_hash == subset_hash,
                 )
                 .distinct(eval_obj.metric, eval_obj.parameter)
                 .all()
@@ -461,7 +467,6 @@ class ModelEvaluator:
         # if we do have bias config, return True. Too complicated with aequitas' visibility
         # at present to check whether all the needed records are needed.
         return True
-
 
     def _compute_evaluations(self, predictions_proba, labels, metric_definitions):
         """Compute evaluations for a set of predictions and labels
@@ -565,27 +570,33 @@ class ModelEvaluator:
             )
             labels = matrix_store.labels
             subset_hash = ""
-        
-        logger.spam(f"labels df index type {type(labels.index)}, labels df index shape: {labels.shape}, labels df shape: {labels.shape}")
+
+        logger.spam(
+            f"labels df index type {type(labels.index)}, labels df index shape: {labels.shape}, labels df shape: {labels.shape}"
+        )
         # confirm protected_df and labels have same set and count of values
         if (protected_df is not None) and (not protected_df.empty):
-            logger.spam(f"protected_df index type {type(protected_df.index)}, protected_df index shape: {protected_df.index.shape}, protected_df shape: {protected_df.shape}")
+            logger.spam(
+                f"protected_df index type {type(protected_df.index)}, protected_df index shape: {protected_df.index.shape}, protected_df shape: {protected_df.shape}"
+            )
             # Checking whether there are indexes (entity-date pairs) that appear in either the matrix or the protected df, but not in both
             symmetric_diff = protected_df.index.symmetric_difference(labels.index)
-            logger.spam(f"Evaluation with protected_df, bias configuration in yaml. Symmetric difference: {symmetric_diff}")
+            logger.spam(
+                f"Evaluation with protected_df, bias configuration in yaml. Symmetric difference: {symmetric_diff}"
+            )
             if (protected_df.index.shape != labels.index.shape) or (
                 not symmetric_diff.empty
             ):
                 only_in_protected_groups = protected_df.index.difference(labels.index)
                 only_in_matrix = labels.index.difference(protected_df.index)
-                
-                logging.error(
-                f'''The protected groups and the cohort (matrix) tables have diverged! 
+
+                logger.error(
+                    f"""The protected groups and the cohort (matrix) tables have diverged!
                     {len(only_in_protected_groups)} entity-date pairs appear only in the protected groups
-                    {len(only_in_matrix)} entity-date pairs appear only in the matrix. 
-                    Try rerunning the experiment with replace flag set to True'''
+                    {len(only_in_matrix)} entity-date pairs appear only in the matrix.
+                    Try rerunning the experiment with replace flag set to True"""
                 )
-                                
+
                 raise ValueError("Mismatch between protected_df and labels indices")
 
         df_index = labels.index
@@ -653,9 +664,9 @@ class ModelEvaluator:
                     worst_eval.value, best_eval.value, rel_tol=RELATIVE_TOLERANCE
                 )
             ):
-                evals_without_trials[
-                    (worst_eval.metric, worst_eval.parameter)
-                ] = worst_eval.value
+                evals_without_trials[(worst_eval.metric, worst_eval.parameter)] = (
+                    worst_eval.value
+                )
             else:
                 metric_defs_to_trial.append(metric_def)
 
@@ -700,15 +711,22 @@ class ModelEvaluator:
                 standard_deviation = 0
                 num_sort_trials = 0
             else:
-                trial_results = [
-                    value
-                    for value in random_eval_accumulator[metric_key]
-                    if value is not None
-                ]
-                stochastic_value = statistics.mean(trial_results)
+                # Convert to numpy array for numeric computation
+                trial_results = np.array(
+                    [
+                        value
+                        for value in random_eval_accumulator[metric_key]
+                        if value is not None
+                    ]
+                )
+                stochastic_value = float(np.mean(trial_results))
                 try:
-                    standard_deviation = statistics.stdev(trial_results)
-                except ValueError:
+                    # Use numpy for stdev (ddof=1 for sample standard deviation)
+                    if len(trial_results) < 2:
+                        standard_deviation = 0.0
+                    else:
+                        standard_deviation = float(np.std(trial_results, ddof=1))
+                except (ValueError, statistics.StatisticsError):
                     logger.warning(
                         f"{metric_def.metric} not defined for parameter {metric_def.parameter_combination} because all values "
                         "are NaN. Inserting NULL for value."
@@ -851,13 +869,11 @@ class ModelEvaluator:
             index=str, columns={"score_threshold": "parameter", "for": "for_"}
         )
         if group_value_df.empty:
-            raise ValueError(
-                f"""
+            raise ValueError(f"""
             Bias audit: aequitas_audit() failed.
             Returned empty dataframe for model_id = {model_id}, and subset_hash = {subset_hash}
-            and matrix_type = {matrix_type}"""
-            )
-        
+            and matrix_type = {matrix_type}""")
+
         with scoped_session(self.db_engine) as session:
             for index, row in group_value_df.iterrows():
                 session.query(matrix_type.aequitas_obj).filter_by(
@@ -873,8 +889,7 @@ class ModelEvaluator:
                 ).delete()
 
             session.bulk_insert_mappings(
-                matrix_type.aequitas_obj, 
-                group_value_df.to_dict(orient="records")
+                matrix_type.aequitas_obj, group_value_df.to_dict(orient="records")
             )
 
     @db_retry
@@ -907,16 +922,15 @@ class ModelEvaluator:
             evaluation_table_obj (schema.TestEvaluation or TrainEvaluation)
                 specifies to which table to add the evaluations
         """
-        with scoped_session(self.db_engine) as session: 
-            stmt = (
-                delete(evaluation_table_obj)
-                .where(
-                    evaluation_table_obj.model_id == model_id,
-                    evaluation_table_obj.evaluation_start_time == evaluation_start_time, 
-                    evaluation_table_obj.evaluation_end_time == evaluation_end_time, 
-                    evaluation_table_obj.as_of_date_frequency == as_of_date_frequency,
-                    evaluation_table_obj.subset_hash == subset_hash,
-                )
+        with scoped_session(self.db_engine) as session:
+            # Use filter() with explicit cast for as_of_date_frequency (Interval type)
+            stmt = delete(evaluation_table_obj).where(
+                evaluation_table_obj.model_id == model_id,
+                evaluation_table_obj.evaluation_start_time == evaluation_start_time,
+                evaluation_table_obj.evaluation_end_time == evaluation_end_time,
+                evaluation_table_obj.as_of_date_frequency
+                == cast(as_of_date_frequency, Interval),
+                evaluation_table_obj.subset_hash == subset_hash,
             )
             session.execute(stmt)
 

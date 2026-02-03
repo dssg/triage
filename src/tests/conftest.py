@@ -1,58 +1,69 @@
-import pytest
-import testing.postgresql
 import tempfile
 from unittest import mock
 
-from tests.utils import sample_config, populate_source_data, open_side_effect
+import pytest
+from pytest_postgresql import factories
+
+from tests.results_tests.factories import init_engine
+from tests.utils import open_side_effect, populate_source_data, sample_config
 from triage import create_engine
-from triage.component.catwalk.storage import ProjectStorage
 from triage.component.catwalk.db import ensure_db
+from triage.component.catwalk.storage import ProjectStorage
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader
 from triage.experiments import SingleThreadedExperiment
-from sqlalchemy.orm import sessionmaker, Session
+
+# Create postgresql process fixture (session-scoped, starts PostgreSQL once)
+postgresql_proc = factories.postgresql_proc(port=None)
+
+# Create postgresql client fixture (function-scoped, creates fresh db per test)
+postgresql = factories.postgresql("postgresql_proc")
 
 
 @pytest.fixture(name="db_engine", scope="function")
-def fixture_db_engine():
-    """pytest fixture provider to set up and teardown a test database
+def fixture_db_engine(postgresql):
+    """pytest fixture provider to set up and teardown a "test" database
     and provide the test function a connection engine with which to
     query that database.
+
     """
-    with testing.postgresql.Postgresql() as postgresql:
-        engine = create_engine(postgresql.url())
-        yield engine
-        engine.dispose()
+    # Build connection URL from pytest-postgresql fixture
+    connection_url = f"postgresql+psycopg://{postgresql.info.user}@{postgresql.info.host}:{postgresql.info.port}/{postgresql.info.dbname}"
+    engine = create_engine(connection_url)
+    yield engine
+    # Clean up factory session before disposing engine.
+    # This prevents "AdminShutdown" errors when the session tries to rollback
+    # on a connection to a database that's about to be dropped by pytest-postgresql.
+    try:
+        from tests.results_tests.factories import ScopedSession
+
+        ScopedSession.remove()
+    except Exception:
+        pass  # Session might not be initialized yet, or already cleaned up
+    engine.dispose()
 
 
 @pytest.fixture(scope="function")
 def db_engine_with_results_schema(db_engine):
-    """Database engine with results schema initialized"""
+    from tests.results_tests.factories import ScopedSession
+
     ensure_db(db_engine)
+    init_engine(db_engine)
     yield db_engine
-    
+    # Clean up the factory session to prevent stale connections
+    ScopedSession.remove()
+
 
 @pytest.fixture(scope="function")
 def db_session(db_engine_with_results_schema):
-    """Provides a SQLAlchemy session for each test.
-    
-    The session is automatically rolled back after each test to ensure isolation.
+    """Provide the ScopedSession for tests that use factory_boy factories.
+
+    This fixture depends on db_engine_with_results_schema to ensure the
+    session is properly configured before use.
     """
-    from tests.results_tests.factories import set_session, clear_session
+    from tests.results_tests.factories import ScopedSession
 
-    SessionLocal = sessionmaker(bind=db_engine_with_results_schema)
-    session = SessionLocal()
-
-    set_session(session)
-    
-    try:
-        yield session
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        clear_session()
-        session.close()
+    yield ScopedSession()
+    # The ScopedSession is cleaned up by db_engine_with_results_schema
 
 
 @pytest.fixture(scope="function")
@@ -71,19 +82,48 @@ def project_storage(project_path):
 
 
 @pytest.fixture(scope="function")
-def shared_db_engine():
+def rig_engines(db_engine, project_storage):
+    """Set up a db engine and project storage engine with results schema.
+
+    Yields (tuple) (database engine, project storage engine)
+
+    This replaces the context manager in utils.py for pytest compatibility.
+    """
+    ensure_db(db_engine)
+    init_engine(db_engine)
+    yield db_engine, project_storage
+
+
+@pytest.fixture(scope="module")
+def shared_db_engine(postgresql_proc):
     """pytest fixture provider to set up and teardown a "test" database
     and provide a test module a connection engine with which to
     query that database.
 
+    Uses pytest-postgresql's DatabaseJanitor for module-scoped database management.
     """
-    with testing.postgresql.Postgresql() as postgresql:
-        engine = create_engine(postgresql.url())
+    import uuid
+
+    from pytest_postgresql.janitor import DatabaseJanitor
+
+    # Create a unique database name for this module
+    db_name = f"test_module_{uuid.uuid4().hex[:8]}"
+
+    with DatabaseJanitor(
+        user=postgresql_proc.user,
+        host=postgresql_proc.host,
+        port=postgresql_proc.port,
+        dbname=db_name,
+        version=postgresql_proc.version,
+        password=postgresql_proc.password or "",
+    ):
+        connection_url = f"postgresql+psycopg://{postgresql_proc.user}@{postgresql_proc.host}:{postgresql_proc.port}/{db_name}"
+        engine = create_engine(connection_url)
         yield engine
         engine.dispose()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def shared_project_storage():
     """Set up a temporary project storage engine on the filesystem at module scope
 
@@ -94,7 +134,7 @@ def shared_project_storage():
         yield project_storage
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def finished_experiment(shared_db_engine, shared_project_storage):
     """A successfully-run experiment. Its database schemas and project storage can be queried.
 
@@ -112,7 +152,7 @@ def finished_experiment(shared_db_engine, shared_project_storage):
     return experiment
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def finished_experiment_without_predictions(shared_db_engine, shared_project_storage):
     """A successfully-run experiment. Its database schemas and project storage can be queried.
 
@@ -131,7 +171,7 @@ def finished_experiment_without_predictions(shared_db_engine, shared_project_sto
     return experiment
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def crosstabs_config():
     """Example crosstabs config.
 
@@ -173,7 +213,7 @@ select model_id,
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def sample_timechop_splits():
     return [
         {
@@ -251,7 +291,7 @@ def sample_timechop_splits():
     ]
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def sample_grid_config():
     return {
         "sklearn.tree.DecisionTreeClassifier": {

@@ -2,44 +2,42 @@
 
 import itertools
 
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
 
-import os
-import pathlib
-from contextlib import contextmanager
-from os.path import dirname
-from urllib.parse import urlparse
-from pathlib import Path
+logger = get_logger(__name__)
 
 import gzip
+import io
+import os
+import pathlib
+import shutil
+import subprocess
+import time
+from contextlib import contextmanager
+from os.path import dirname
+from pathlib import Path
+from urllib.parse import urlparse
+
+import joblib
 import pandas as pd
+import polars as pl
+import pyarrow
 import s3fs
 import wrapt
 import yaml
-import joblib
-import shutil
-import subprocess
-import io
-import time
-import polars as pl
-import pyarrow
 
 from triage.component.results_schema import (
-    TestEvaluation,
-    TrainEvaluation,
-    TestPrediction,
-    TrainPrediction,
     ListPrediction,
-    TestPredictionMetadata,
-    TrainPredictionMetadata,
     ListPredictionMetadata,
     TestAequitas,
-    TrainAequitas
+    TestEvaluation,
+    TestPrediction,
+    TestPredictionMetadata,
+    TrainAequitas,
+    TrainEvaluation,
+    TrainPrediction,
+    TrainPredictionMetadata,
 )
-import polars as pl
-import pyarrow
-import time
 from triage.util.pandas import downcast_matrix
 
 
@@ -109,6 +107,7 @@ class S3Store(Store):
         **config: arguments to be passed to the S3Fs client constructor.
 
     """
+
     class S3FileWrapper(wrapt.ObjectProxy):
 
         # don't allow wrapped object to take wrapper's place
@@ -116,11 +115,11 @@ class S3Store(Store):
         def __enter__(self):
             return self
 
-        def write(self, data, block_size=(5 * 2 ** 20)):
+        def write(self, data, block_size=(5 * 2**20)):
             out = 0
 
             for offset in itertools.count(0, block_size):
-                chunk = data[offset:(offset + block_size)]
+                chunk = data[offset : (offset + block_size)]
 
                 if not chunk:
                     return out
@@ -129,8 +128,7 @@ class S3Store(Store):
 
     def __init__(self, path_head, *path_parts, **config):
         self.path = str(
-            pathlib.PurePosixPath(path_head.replace('s3://', ''),
-                                  *path_parts)
+            pathlib.PurePosixPath(path_head.replace("s3://", ""), *path_parts)
         )
         self.config = config
 
@@ -150,10 +148,10 @@ class S3Store(Store):
         # NOTE: see also: tests.catwalk_tests.test_storage.test_S3Store_large
         s3file = self.client.open(self.path, *args, **kwargs)
         return self.S3FileWrapper(s3file)
-    
+
     def download(self, *args, **kwargs):
-        """Download the file from S3 to the local filesystem.""" 
-        user_id = os.getenv('USER')
+        """Download the file from S3 to the local filesystem."""
+        user_id = os.getenv("USER")
         filepath_ = f"/tmp/{user_id}"
         self.client.download(self.path, filepath_)
         logger.debug(f"File {self.path} downloaded from S3 to {filepath_}")
@@ -244,6 +242,7 @@ class ModelStorageEngine:
         model_directory (string, optional) A directory name for models.
             Defaults to 'trained_models'
     """
+
     def __init__(self, project_storage, model_directory=None):
         self.project_storage = project_storage
         self.directories = [model_directory or "trained_models"]
@@ -362,8 +361,9 @@ class MatrixStore:
         metadata (dict, optional). The matrix' metadata.
             Defaults to None, which means it will be loaded from storage on demand.
     """
+
     _matrix_label_tuple = None
-    indices = ['entity_id', 'as_of_date']
+    indices = ["entity_id", "as_of_date"]
 
     def __init__(
         self, project_storage, directories, matrix_uuid, matrix=None, metadata=None
@@ -403,11 +403,13 @@ class MatrixStore:
         """
         if matrix_with_labels.index.names != self.indices:
             matrix_with_labels.set_index(self.indices, inplace=True)
-        index_of_date = matrix_with_labels.index.names.index('as_of_date')
+        index_of_date = matrix_with_labels.index.names.index("as_of_date")
         if matrix_with_labels.index.levels[index_of_date].dtype != "datetime64[ns]":
-            raise ValueError(f"Woah is {matrix_with_labels.index.levels[index_of_date].dtype}")
+            raise ValueError(
+                f"Woah is {matrix_with_labels.index.levels[index_of_date].dtype}"
+            )
         # we no longer need to downcast to float32 since polars already have done it at this point
-        #matrix_with_labels = downcast_matrix(matrix_with_labels)
+        # matrix_with_labels = downcast_matrix(matrix_with_labels)
         labels = matrix_with_labels.pop(self.label_column_name)
         design_matrix = matrix_with_labels
         return design_matrix, labels
@@ -474,7 +476,9 @@ class MatrixStore:
         if include_label:
             return columns
         else:
-            return [col for col in columns if col != self.metadata.get("label_name", None)]
+            return [
+                col for col in columns if col != self.metadata.get("label_name", None)
+            ]
 
     @property
     def label_column_name(self):
@@ -482,7 +486,7 @@ class MatrixStore:
 
     @property
     def index(self):
-        if self.metadata['indices'] != self.indices:
+        if self.metadata["indices"] != self.indices:
             raise ValueError(f"Indices must be {self.indices}")
         return self.design_matrix.index
 
@@ -494,25 +498,29 @@ class MatrixStore:
     @property
     def as_of_dates(self):
         """All as-of-dates in the matrix. Will be converted to datetime.date"""
-        return sorted(set(
-            as_of_date.date() if hasattr(as_of_date, 'date') else as_of_date
-            for entity_id, as_of_date in self.design_matrix.index
-        ))
+        return sorted(
+            set(
+                as_of_date.date() if hasattr(as_of_date, "date") else as_of_date
+                for entity_id, as_of_date in self.design_matrix.index
+            )
+        )
 
     @property
     def num_entities(self):
         """The number of entities in the matrix"""
         return len(
-            self.design_matrix.index.levels[self.design_matrix.index.names.index("entity_id")]
+            self.design_matrix.index.levels[
+                self.design_matrix.index.names.index("entity_id")
+            ]
         )
 
     @property
     def matrix_type(self):
         """The MatrixType (train or test). Returns an object with:
-            a string name,
-            evaluation ORM class
-            prediction ORM class
-            a boolean `is_test`
+        a string name,
+        evaluation ORM class
+        prediction ORM class
+        a boolean `is_test`
         """
         if self.metadata["matrix_type"] == "train":
             return TrainMatrixType
@@ -521,12 +529,8 @@ class MatrixStore:
         elif self.metadata["matrix_type"] == "production":
             return ProductionMatrixType
         else:
-            raise Exception(
-                """matrix metadata for matrix {} must contain 'matrix_type'
-             = "train" or "test" """.format(
-                    self.uuid
-                )
-            )
+            raise Exception("""matrix metadata for matrix {} must contain 'matrix_type'
+             = "train" or "test" """.format(self.uuid))
 
     def matrix_with_sorted_columns(self, columns):
         """Return the matrix with columns sorted in the given column order
@@ -588,7 +592,7 @@ class MatrixStore:
         This helps in a multiprocessing context.
         """
         state = self.__dict__.copy()
-        state['_matrix_label_tuple'] = None
+        state["_matrix_label_tuple"] = None
         return state
 
 
@@ -618,57 +622,59 @@ class CSVMatrixStore(MatrixStore):
             path_ = Path("/" + "/".join(parts_path))
         # if it is a S3 storage type
         else:
-            user_id = os.getenv('USER')
+            user_id = os.getenv("USER")
             path_ = Path(f"/tmp/{user_id}")
             # create directory if it doesn't exist
             os.makedirs(path_, exist_ok=True)
-        
+
         logger.debug(f"get storage directory path: {path_}")
-        
+
         return path_
-    
 
     def _load(self):
         """
-            Loads a CSV file as a polars data frame while downcasting then creates a pandas data frame.
-            If the CSV file is stored on S3 we downloaded to /tmp and then read it with polars (as a gzip),
-            after reading it we delete the file. 
-            If the CSV file is stored on FSystem we read it directly with polars (as a gzip).
+        Loads a CSV file as a polars data frame while downcasting then creates a pandas data frame.
+        If the CSV file is stored on S3 we downloaded to /tmp and then read it with polars (as a gzip),
+        after reading it we delete the file.
+        If the CSV file is stored on FSystem we read it directly with polars (as a gzip).
         """
-        # if S3FileSystem then download the CSV.gzip to FileSystem, then ser 
+        # if S3FileSystem then download the CSV.gzip to FileSystem, then ser
         file_in_tmp = False
         if isinstance(self.matrix_base_store, S3Store):
-            logging.info("file in S3")
+            logger.info("file in S3")
             self.matrix_base_store.download()
             file_in_tmp = True
-            user_id = os.getenv('USER')
+            user_id = os.getenv("USER")
             filename = self.matrix_base_store.path.split("/")[-1]
             filename_ = f"/tmp/{user_id}/{filename}"
         else:
-            logging.info("file in FS")
-            filename_ = str(self.matrix_base_store.path) 
-        
+            logger.info("file in FS")
+            filename_ = str(self.matrix_base_store.path)
+
         start = time.time()
         logger.debug(f"load matrix with polars {filename_}")
-        df_pl = pl.read_csv(filename_, infer_schema_length=0).with_columns(pl.all().exclude(
-            ['entity_id', 'as_of_date']).cast(pl.Float32, strict=False))
+        df_pl = pl.read_csv(filename_, infer_schema_length=0).with_columns(
+            pl.all().exclude(["entity_id", "as_of_date"]).cast(pl.Float32, strict=False)
+        )
         end = time.time()
 
         logger.debug(f"time for loading matrix as polar df (sec): {(end-start)/60}")
 
-        # casting entity_id and as_of_date 
+        # casting entity_id and as_of_date
         logger.debug(f"casting entity_id and as_of_date")
         start = time.time()
         # define if as_of_date is date or datetime for correct cast
-        if len(df_pl.get_column('as_of_date').head(1)[0].split()) > 1: 
+        if len(df_pl.get_column("as_of_date").head(1)[0].split()) > 1:
             format = "%Y-%m-%d %H:%M:%S"
-        else: 
+        else:
             format = "%Y-%m-%d"
 
         df_pl = df_pl.with_columns(pl.col("as_of_date").str.to_datetime(format))
         df_pl = df_pl.with_columns(pl.col("entity_id").cast(pl.Int32, strict=False))
         end = time.time()
-        logger.debug(f"time casting entity_id and as_of_date of matrix with uuid {self.matrix_uuid} (sec): {(end-start)/60}")
+        logger.debug(
+            f"time casting entity_id and as_of_date of matrix with uuid {self.matrix_uuid} (sec): {(end-start)/60}"
+        )
         # converting from polars to pandas
         logger.debug(f"about to convert polars df into pandas df")
         start = time.time()
@@ -677,46 +683,52 @@ class CSVMatrixStore(MatrixStore):
         logger.debug(f"Time converting from polars to pandas (sec): {(end-start)/60}")
         # on pandas 2 the default unit for datetime is micro sec but we need ns
         # so we change it before make it part of the index
-        df['as_of_date'] = df.as_of_date.astype('datetime64[ns]')
+        df["as_of_date"] = df.as_of_date.astype("datetime64[ns]")
         df.set_index(["entity_id", "as_of_date"], inplace=True)
         logger.debug(f"df index data types:\n{df.index.dtypes}")
-        logger.spam(f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
+        logger.spam(
+            f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB"
+        )
 
-        # if the file was downloaded from S3 we delete it! 
+        # if the file was downloaded from S3 we delete it!
         if file_in_tmp:
             logger.debug(f"About to delete downloaded file from S3 {filename_}")
             try:
                 os.remove(filename_)
                 logger.debug(f"Downloaded file from S3 {filename_} deleted")
             except OSError as e:
-                logger.debug(f"Unexpected error deleting download file from S3 in {filename_}: {e}")
+                logger.debug(
+                    f"Unexpected error deleting download file from S3 in {filename_}: {e}"
+                )
 
         return df
 
     def _load_as_df(self):
         with self.matrix_base_store.open("rb") as fd:
-           return pd.read_csv(fd, compression="gzip", parse_dates=["as_of_date"])
+            return pd.read_csv(fd, compression="gzip", parse_dates=["as_of_date"])
 
     def save_matrix_metadata(self):
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
-    
+
     def _save(self, local_path, remote_path):
         local_path += "/" + remote_path.split("/")[-1]
         logger.debug(f"_save file {local_path} on S3 bucket path {remote_path}")
-        self.matrix_base_store.client.put_file(lpath=local_path , rpath=remote_path)
+        self.matrix_base_store.client.put_file(lpath=local_path, rpath=remote_path)
 
     def save(self):
-        logging.debug('About to compress')
-        self.matrix_base_store.write(gzip.compress(self.full_matrix_for_saving.to_csv(None).encode("utf-8")))
-        logging.debug(f'Compression done! Matrix written')
-        
+        logger.debug("About to compress")
+        self.matrix_base_store.write(
+            gzip.compress(self.full_matrix_for_saving.to_csv(None).encode("utf-8"))
+        )
+        logger.debug(f"Compression done! Matrix written")
+
         with self.metadata_base_store.open("wb") as fd:
             yaml.dump(self.metadata, fd, encoding="utf-8")
 
     def save_tmp_csv(self, output, path_, matrix_uuid, suffix):
         logger.debug(f"saving temporal csv for matrix {matrix_uuid + suffix} ")
-        with open(f"{path_}/{matrix_uuid}{suffix}", "wb") as fd:  
+        with open(f"{path_}/{matrix_uuid}{suffix}", "wb") as fd:
             return fd.write(output)
 
 
@@ -742,4 +754,3 @@ class ProductionMatrixType(object):
     string_name = "production"
     prediction_obj = ListPrediction
     prediction_metadata_obj = ListPredictionMetadata
-
