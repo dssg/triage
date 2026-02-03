@@ -70,7 +70,7 @@ def project_storage(project_path):
     yield ProjectStorage(project_path)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def shared_db_engine():
     """pytest fixture provider to set up and teardown a "test" database
     and provide a test module a connection engine with which to
@@ -83,7 +83,7 @@ def shared_db_engine():
         engine.dispose()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def shared_project_storage():
     """Set up a temporary project storage engine on the filesystem at module scope
 
@@ -94,7 +94,7 @@ def shared_project_storage():
         yield project_storage
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def finished_experiment(shared_db_engine, shared_project_storage):
     """A successfully-run experiment. Its database schemas and project storage can be queried.
 
@@ -112,7 +112,7 @@ def finished_experiment(shared_db_engine, shared_project_storage):
     return experiment
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def finished_experiment_without_predictions(shared_db_engine, shared_project_storage):
     """A successfully-run experiment. Its database schemas and project storage can be queried.
 
@@ -131,7 +131,7 @@ def finished_experiment_without_predictions(shared_db_engine, shared_project_sto
     return experiment
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def crosstabs_config():
     """Example crosstabs config.
 
@@ -173,7 +173,7 @@ select model_id,
     )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def sample_timechop_splits():
     return [
         {
@@ -251,7 +251,7 @@ def sample_timechop_splits():
     ]
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def sample_grid_config():
     return {
         "sklearn.tree.DecisionTreeClassifier": {
