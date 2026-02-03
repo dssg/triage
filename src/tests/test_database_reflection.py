@@ -1,4 +1,5 @@
-from sqlalchemy import Table, create_engine, text
+from sqlalchemy import Table, text
+from triage import create_engine
 from sqlalchemy.types import VARCHAR
 from testing.postgresql import Postgresql
 from unittest import TestCase
@@ -26,9 +27,9 @@ class TestDatabaseReflection(TestCase):
     def test_reflected_table(self):
         with self.engine.begin() as conn:
             conn.execute(text("create table incidents (col1 varchar)"))
-        # if table was successfully reflected, it should have metadata.
-        table_ = dbreflect.reflected_table("incidents", self.engine)
-        assert table_.metadata is not None
+            # if table was successfully reflected, it should have metadata.
+            table_ = dbreflect.reflected_table("incidents", self.engine)
+            assert table_.metadata is not None
 
     def test_table_exists(self):
         with self.engine.begin() as conn:
