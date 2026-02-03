@@ -17,15 +17,17 @@ def experiment_config_from_model_id(db_engine, model_id):
 
     Returns: (dict) experiment config
     """
-    get_experiment_query = '''select experiments.config
-    from triage_metadata.triage_runs
-    join triage_metadata.models on (triage_runs.id = models.built_in_triage_run)
-    join triage_metadata.experiments 
-        on (experiments.experiment_hash = triage_runs.run_hash and triage_runs.run_type='experiment')
-    where model_id = %s
-    '''
-    (config,) = db_engine.execute(text(get_experiment_query), model_id).first()
-    return config
+    get_experiment_query = """
+        select experiments.config
+        from triage_metadata.triage_runs
+        join triage_metadata.models on (triage_runs.id = models.built_in_triage_run)
+        join triage_metadata.experiments 
+            on (experiments.experiment_hash = triage_runs.run_hash and triage_runs.run_type='experiment')
+        where model_id = :model_id
+    """
+    with db_engine.connect() as conn:
+        config = conn.execute(text(get_experiment_query), {"model_id": model_id}).first()
+    return config[0]
 
 
 def experiment_config_from_model_group_id(db_engine, model_group_id):
@@ -43,22 +45,24 @@ def experiment_config_from_model_group_id(db_engine, model_group_id):
     on (triage_runs.id = models.built_in_triage_run)
     join triage_metadata.experiments
     on (experiments.experiment_hash = triage_runs.run_hash and triage_runs.run_type='experiment')
-    where model_group_id = %s
+    where model_group_id = :model_group_id
     order by triage_runs.start_time desc
     '''
-    (run_id, config) = db_engine.execute(text(get_experiment_query), model_group_id).first()
-    return run_id, config
+    with db_engine.connect() as conn:
+        config = conn.execute(text(get_experiment_query), {"model_group_id": model_group_id}).first()
+    return config[0], config[1]
 
 
 def get_model_group_info(db_engine, model_group_id):
     query = """
     SELECT model_group_id, model_type, hyperparameters, model_id as model_id_last_split
     FROM triage_metadata.models
-    WHERE model_group_id = %s
+    WHERE model_group_id = :model_group_id
     ORDER BY train_end_time DESC
     """
-    model_group_info = db_engine.execute(text(query), model_group_id).fetchone()
-    return dict(model_group_info)
+    with db_engine.connect() as conn:
+        model_group_info = conn.execute(text(query), {"model_group_id": model_group_id}).first()._mapping
+    return model_group_info
 
 
 def train_matrix_info_from_model_id(db_engine, model_id):
@@ -73,9 +77,12 @@ def train_matrix_info_from_model_id(db_engine, model_id):
         select matrix_uuid, matrices.matrix_metadata
         from triage_metadata.matrices
         join triage_metadata.models on (models.train_matrix_uuid = matrices.matrix_uuid)
-        where model_id = %s
+        where model_id = :model_id
     """
-    return db_engine.execute(text(get_train_matrix_query), model_id).first()
+    with db_engine.connect() as conn:
+        result = conn.execute(text(get_train_matrix_query), {"model_id": model_id}).first()
+    # result is a Row object (tuple-like) 
+    return result[0], result[1]
 
 
 def test_matrix_info_from_model_id(db_engine, model_id):
@@ -99,12 +106,14 @@ def test_matrix_info_from_model_id(db_engine, model_id):
         join test_results.prediction_metadata pm on (pm.matrix_uuid = mat.matrix_uuid)
         join triage_metadata.triage_runs tr
             on (mat.built_by_experiment = tr.run_hash AND tr.run_type='experiment')
-        where pm.model_id = %s
+        where pm.model_id = :model_id
         order by start_time DESC, RANDOM()
         limit 1
     """
-    return db_engine.execute(text(get_test_matrix_query), model_id).first()
-
+    with db_engine.begin() as conn:
+        result = conn.execute(text(get_test_matrix_query), {"model_id": model_id}).first()
+    # result is now a Row object (tuple-like), so we need to extract values by position
+    return result[0], result[1]
 
 
 def temporal_params_from_matrix_metadata(db_engine, model_id):
@@ -121,7 +130,8 @@ def temporal_params_from_matrix_metadata(db_engine, model_id):
     """
     train_uuid, train_metadata = train_matrix_info_from_model_id(db_engine, model_id)
     test_uuid, test_metadata = test_matrix_info_from_model_id(db_engine, model_id)
-
+    logger.spam(f"predictlist train_metadata {train_metadata}")
+    logger.spam(f"predictlist test_metadata {test_metadata}")
     temporal_params = {}
 
     temporal_params['training_as_of_date_frequencies'] = train_metadata['training_as_of_date_frequency']
@@ -169,7 +179,7 @@ def get_feature_needs_imputation_in_production(aggregation, db_engine):
     with db_engine.begin() as conn:
         nulls_results = conn.execute(text(aggregation.find_nulls()))
     
-    null_counts = nulls_results.first().items()
+    null_counts = nulls_results.first()._mapping.items()
     features_imputed_in_production = [col for (col, val) in null_counts if val is not None and val > 0]
     
     return features_imputed_in_production
@@ -182,26 +192,32 @@ def get_retrain_config_from_model_id(db_engine, model_id):
         ON m.built_in_triage_run = r.id 
     LEFT JOIN triage_metadata.retrain re 
         ON (re.retrain_hash = r.run_hash and r.run_type='retrain')
-    WHERE m.model_id = %s;
+    WHERE m.model_id = :model_id;
     """
 
-    (config,) = db_engine.execute(text(query), model_id).first()
-    return config
+    with db_engine.connect() as conn:
+        result = conn.execute(text(query), {"model_id": model_id}).first()[0]
+    return result
 
 
 @db_retry
 def associate_models_with_retrain(retrain_hash, model_hashes, db_engine):
-    session = sessionmaker(bind=db_engine)()
-    for model_hash in model_hashes:
-        session.merge(RetrainModel(retrain_hash=retrain_hash, model_hash=model_hash))
-    session.commit()
-    session.close()
-    logger.spam("Associated models with retrain in database")
+    SessionLocal = sessionmaker(bind=db_engine)
+    session = SessionLocal()
+    try: 
+        for model_hash in model_hashes:
+            session.merge(RetrainModel(retrain_hash=retrain_hash, model_hash=model_hash))
+        session.commit()
+    finally:
+        session.close()
+        logger.spam("Associated models with retrain in database")
 
 @db_retry
 def save_retrain_and_get_hash(config, db_engine):
     retrain_hash = filename_friendly_hash(config)
-    session = sessionmaker(bind=db_engine)()
+    logger.spam(f"Saving retrain config to database with retrain hash {retrain_hash}")
+    LocalSession = sessionmaker(bind=db_engine, future=True)
+    session = LocalSession()
     session.merge(Retrain(retrain_hash=retrain_hash, config=config))
     session.commit()
     session.close()
@@ -225,5 +241,6 @@ def cohort_config_from_label_config(label_config):
             entity_id
         from ({label_query}) as lq
     """
+    logger.debug(f"Generated cohort query from label query: {cohort_config['query']}")
 
     return cohort_config
