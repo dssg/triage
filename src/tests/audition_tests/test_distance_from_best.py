@@ -6,7 +6,7 @@ import numpy as np
 import testing.postgresql
 from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
-from triage import create_engine
+from sqlalchemy import create_engine
 
 from triage.component.audition.distance_from_best import (
     DistanceFromBestTable,
@@ -26,7 +26,6 @@ from .utils import create_sample_distance_table
 
 
 def _sql_add_days(sql_date, days):
-    print(f"DELETE ME! {type(sql_date)}, {sql_date}")
     return datetime.strftime(
         sql_date + timedelta(days=days), "%Y-%m-%d"
     )
@@ -160,13 +159,13 @@ def test_DistanceFromBestTable():
                         "threshold": "100_abs", 
                         "train_end_time": "2014-01-01"}
                     )
-            assert [row for row in prec_3y_ago] == [
-                (models["spiky_3y_ago"].model_group_id, 0.8, 0, 0.17),
-                (models["stable_3y_ago"].model_group_id, 0.6, 0.2, 0),
-                (models["bad_3y_ago"].model_group_id, 0.4, 0.4, 0.18),
-            ]
+                assert [row for row in prec_3y_ago] == [
+                    (models["spiky_3y_ago"].model_group_id, 0.8, 0, 0.17),
+                    (models["stable_3y_ago"].model_group_id, 0.6, 0.2, 0),
+                    (models["bad_3y_ago"].model_group_id, 0.4, 0.4, 0.18),
+                ]
 
-            with engine.connect() as conn:
+           
                 recall_2y_ago = conn.execute(
                     text(query), 
                     {
@@ -174,16 +173,16 @@ def test_DistanceFromBestTable():
                         "threshold": "100_abs", 
                         "train_end_time": "2015-01-01"}
                 )
-            assert [row for row in recall_2y_ago] == [
-                (models["spiky_2y_ago"].model_group_id, 0.8, 0, 0.19),
-                (models["stable_2y_ago"].model_group_id, 0.56, 0.24, 0),
-                (models["bad_2y_ago"].model_group_id, 0.34, 0.46, 0.19),
-            ]
+                assert [row for row in recall_2y_ago] == [
+                    (models["spiky_2y_ago"].model_group_id, 0.8, 0, 0.19),
+                    (models["stable_2y_ago"].model_group_id, 0.56, 0.24, 0),
+                    (models["bad_2y_ago"].model_group_id, 0.34, 0.46, 0.19),
+                ]
 
-            assert distance_table.observed_bounds == {
-                ("precision@", "100_abs"): (0.39, 0.8),
-                ("recall@", "100_abs"): (0.34, 0.8),
-            }
+                assert distance_table.observed_bounds == {
+                    ("precision@", "100_abs"): (0.39, 0.8),
+                    ("recall@", "100_abs"): (0.34, 0.8),
+                }
 
         finally:
             clear_session()
