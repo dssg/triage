@@ -394,6 +394,7 @@ class Retrainer:
             'max_training_history': chops_train_matrix['max_training_history'],
             'training_as_of_date_frequency': chops_train_matrix['training_as_of_date_frequency'],
         }
+        logger.debug(f"Retrain definition: {retrain_definition}")
 
         # Set ExperimentRun
         run = TriageRun(
@@ -432,6 +433,8 @@ class Retrainer:
 
         # 2. Generate cohort
         cohort_table_name = f"triage_production.cohort_{self.cohort_name}_retrain"
+        logger.spam(f"cohort table name for retrain: {cohort_table_name}")
+        logger.debug(f"Cohort query on retrainer: {self.experiment_config.get('cohort_config', {}).get('query')}")
         self.generate_entity_date_table(as_of_date, cohort_table_name)
         record_cohort_table_name(run_id, self.db_engine, cohort_table_name)
 
