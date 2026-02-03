@@ -14,7 +14,8 @@ from tests.results_tests.factories import (
     EvaluationFactory,
     ModelFactory,
     ModelGroupFactory,
-    set_session
+    set_session,
+    clear_session,
 )
 
 config = {
@@ -121,6 +122,7 @@ def test_Audition():
                     ).run()
                     assert len(os.listdir(os.getcwd())) == 6
         finally: 
+            clear_session()
             session.close()
 
 
@@ -287,4 +289,5 @@ def test_Auditioner():
                 [rule.descriptive_name for rule in auditioner.selection_rules]
             )
         finally:
+            clear_session()
             session.close()
