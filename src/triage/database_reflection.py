@@ -50,7 +50,11 @@ def reflected_table(table_name, db_engine):
     """
     schema, table = split_table(table_name)
     meta = MetaData(schema=schema)
-    return Table(table, meta, autoload_with=db_engine)
+
+    # Unwrap if it's a SerializableDbEngine
+    engine = getattr(db_engine, '__wrapped__', db_engine)
+
+    return Table(table, meta, autoload_with=engine)
 
 
 def table_exists(table_name, db_engine):
@@ -126,7 +130,7 @@ def table_has_duplicates(table_name, column_list, db_engine):
         )
         SELECT MAX(num_records) FROM counts
     """)
-
+ 
     with db_engine.connect() as conn: 
         return conn.execute(sql).scalar_one() > 1
     
