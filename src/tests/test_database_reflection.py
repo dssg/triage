@@ -31,9 +31,9 @@ def test_reflected_table(db_engine):
     with db_engine.connect() as conn:
         conn.execute(text("create table incidents (col1 varchar)"))
         conn.commit()
-        # if table was successfully reflected, it should have metadata.
+    # if table was successfully reflected, it should have metadata.
     table_ = reflected_table("incidents", db_engine)
-    print(table_)
+
     assert table_.metadata is not None
 
 
