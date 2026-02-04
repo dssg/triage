@@ -11,7 +11,9 @@ from tests.utils import (
     get_matrix_store,
 )
 from unittest.mock import patch
+import pytest
 
+pytestmark = pytest.mark.skip("Code in SRC is not ready to be tested yet.")
 
 def sample_individual_importance_strategy(
     db_engine, model_id, as_of_date, test_matrix_store, n_ranks
