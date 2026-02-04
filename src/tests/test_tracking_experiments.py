@@ -1,8 +1,8 @@
-from sqlalchemy.orm import Session
+#from sqlalchemy.orm import Session
 import pytest
 import datetime
 from unittest import mock
-
+from sqlalchemy.orm import sessionmaker 
 from triage.tracking import (
     initialize_tracking_and_get_run_id,
     get_run_for_update,
@@ -14,12 +14,13 @@ from triage.component.results_schema import TriageRun, TriageRunStatus
 from tests.results_tests.factories import (
     ExperimentFactory,
     TriageRunFactory,
-    session as factory_session,
+    set_session,
+    clear_session,
 )
 from tests.utils import sample_config, populate_source_data, open_side_effect
 
 
-@pytest.fixture(name="test_engine", scope="module")
+@pytest.fixture(name="test_engine", scope="function")
 def shared_db_engine_with_source_data(shared_db_engine):
     """A successfully-run experiment. Its database schemas and project storage can be queried.
 
@@ -30,6 +31,9 @@ def shared_db_engine_with_source_data(shared_db_engine):
 
 
 def test_experiment_tracker(test_engine, project_path):
+    SessionLocal = sessionmaker(bind=test_engine, future=True)
+    session = SessionLocal()
+    
     with mock.patch("triage.util.conf.open", side_effect=open_side_effect) as mock_file:
         experiment = MultiCoreExperiment(
             config=sample_config(),
@@ -38,7 +42,9 @@ def test_experiment_tracker(test_engine, project_path):
             n_processes=4,
         )
     
-    with Session(test_engine) as session:
+    try:
+        set_session(session)
+    #with Session(test_engine) as session:
         experiment_run = session.get(TriageRun, experiment.run_id)
         assert experiment_run.current_status == TriageRunStatus.started
         assert experiment_run.run_hash == experiment.experiment_hash
@@ -57,9 +63,14 @@ def test_experiment_tracker(test_engine, project_path):
         assert experiment_run.models_errored == 0
         assert experiment_run.models_made == 0
 
-    experiment.run()
+        experiment.run()
+    finally:
+        clear_session()
+        session.close()
 
-    with Session(test_engine) as session:
+    try:
+        set_session(session)
+    #with Session(test_engine) as session:
         experiment_run = session.get(TriageRun, experiment.run_id)
         assert experiment_run.start_method == "run"
         assert experiment_run.matrices_made == len(experiment.matrix_build_tasks)
@@ -79,91 +90,137 @@ def test_experiment_tracker(test_engine, project_path):
         assert isinstance(experiment_run.last_updated_time, datetime.datetime)
         assert not experiment_run.stacktrace
         assert experiment_run.current_status == TriageRunStatus.completed
+    finally:
+        clear_session()
+        session.close()
 
 
 def test_experiment_tracker_exception(db_engine, project_path):
-    with mock.patch("triage.util.conf.open", side_effect=open_side_effect) as mock_file:
-        experiment = SingleThreadedExperiment(
-            config=sample_config(),
-            db_engine=db_engine,
-            project_path=project_path,
-        )
-    # no source data means this should blow up
-    with pytest.raises(Exception):
-        experiment.run()
+    SessionLocal = sessionmaker(bind=db_engine, future=True)
+    session = SessionLocal()
 
-    with scoped_session(db_engine) as session:
+    try:
+        set_session(session)
+        with mock.patch("triage.util.conf.open", side_effect=open_side_effect) as mock_file:
+            experiment = SingleThreadedExperiment(
+                config=sample_config(),
+                db_engine=db_engine,
+                project_path=project_path,
+            )
+        # no source data means this should blow up
+        with pytest.raises(Exception):
+            experiment.run()
+    
         experiment_run = session.get(TriageRun, experiment.run_id)
         assert experiment_run.current_status == TriageRunStatus.failed
         assert isinstance(experiment_run.last_updated_time, datetime.datetime)
         assert experiment_run.stacktrace
+    finally:
+        clear_session()
+        session.close() 
 
 
 def test_experiment_tracker_in_parts(test_engine, project_path):
+    SessionLocal = sessionmaker(bind=test_engine, future=True)
+    session = SessionLocal()
+
     with mock.patch("triage.util.conf.open", side_effect=open_side_effect) as mock_file:
-        experiment = SingleThreadedExperiment(
-            config=sample_config(),
-            db_engine=test_engine,
-            project_path=project_path,
-        )
-    experiment.generate_matrices()
-    experiment.train_and_test_models()
-    with scoped_session(test_engine) as session:
-        experiment_run = session.get(TriageRun, experiment.run_id)
-        assert experiment_run.start_method == "generate_matrices"
+            experiment = SingleThreadedExperiment(
+                config=sample_config(),
+                db_engine=test_engine,
+                project_path=project_path,
+            )
+
+    try:
+        set_session(session)
+
+        experiment.generate_matrices()
+            
+        with scoped_session(test_engine) as session:
+            experiment_run = session.get(TriageRun, experiment.run_id)
+            assert experiment_run.start_method == "generate_matrices"
+    finally:
+        clear_session()
+        session.close()
 
 
 def test_initialize_tracking_and_get_run_id(db_engine_with_results_schema):
-    experiment = ExperimentFactory()
-    factory_session.commit()
-    experiment_hash = experiment.experiment_hash
-    run_id = initialize_tracking_and_get_run_id(
-        experiment_hash=experiment_hash,
-        experiment_class_path="mymodule.MyClassName",
-        random_seed=1234,
-        experiment_kwargs={"key": "value"},
-        db_engine=db_engine_with_results_schema,
-    )
-    assert run_id
-    with scoped_session(db_engine_with_results_schema) as session:
+    SessionLocal = sessionmaker(bind=db_engine_with_results_schema, future=True)
+    session = SessionLocal()
+
+    try: 
+        set_session(session)
+
+        experiment = ExperimentFactory()
+        session.commit()
+        experiment_hash = experiment.experiment_hash
+        run_id = initialize_tracking_and_get_run_id(
+            experiment_hash=experiment_hash,
+            experiment_class_path="mymodule.MyClassName",
+            random_seed=1234,
+            experiment_kwargs={"key": "value"},
+            db_engine=db_engine_with_results_schema,
+        )
+        assert run_id 
+
+    #with scoped_session(db_engine_with_results_schema) as session:
         experiment_run = session.get(TriageRun, run_id)
         assert experiment_run.run_hash == experiment_hash
         assert experiment_run.experiment_class_path == "mymodule.MyClassName"
         assert experiment_run.random_seed == 1234
         assert experiment_run.experiment_kwargs == {"key": "value"}
-    new_run_id = initialize_tracking_and_get_run_id(
-        experiment_hash=experiment_hash,
-        experiment_class_path="mymodule.MyClassName",
-        random_seed=5432,
-        experiment_kwargs={"key": "value"},
-        db_engine=db_engine_with_results_schema,
-    )
-    assert new_run_id > run_id
+        new_run_id = initialize_tracking_and_get_run_id(
+            experiment_hash=experiment_hash,
+            experiment_class_path="mymodule.MyClassName",
+            random_seed=5432,
+            experiment_kwargs={"key": "value"},
+            db_engine=db_engine_with_results_schema,
+        )
+        assert new_run_id > run_id
+    finally:
+        clear_session()
+        session.close()
 
 
 def test_get_run_for_update(db_engine_with_results_schema):
-    experiment_run = TriageRunFactory()
-    factory_session.commit()
-    with get_run_for_update(
-        db_engine=db_engine_with_results_schema, run_id=experiment_run.run_id
-    ) as run_obj:
-        run_obj.stacktrace = "My stacktrace"
+    SessionLocal = sessionmaker(bind=db_engine_with_results_schema, future=True)
+    session = SessionLocal()    
 
-    with scoped_session(db_engine_with_results_schema) as session:
+    try:
+        set_session(session)
+    
+        experiment_run = TriageRunFactory()
+        session.commit()
+        with get_run_for_update(
+            db_engine=db_engine_with_results_schema, run_id=experiment_run.run_id
+        ) as run_obj:
+            run_obj.stacktrace = "My stacktrace"
+
         experiment_run_from_db = session.get(TriageRun, experiment_run.run_id)
         assert experiment_run_from_db.stacktrace == "My stacktrace"
+    finally:
+        clear_session()
+        session.close() 
 
 
 def test_increment_field(db_engine_with_results_schema):
-    experiment_run = TriageRunFactory()
-    factory_session.commit()
-    increment_field(
-        "matrices_made", experiment_run.run_id, db_engine_with_results_schema
-    )
-    increment_field(
-        "matrices_made", experiment_run.run_id, db_engine_with_results_schema
-    )
+    SessionLocal = sessionmaker(bind=db_engine_with_results_schema, future=True)
+    session = SessionLocal()
 
-    with scoped_session(db_engine_with_results_schema) as session:
+    try:
+        set_session(session)
+
+        experiment_run = TriageRunFactory()
+        session.commit()
+        increment_field(
+            "matrices_made", experiment_run.run_id, db_engine_with_results_schema
+        )
+        increment_field(
+            "matrices_made", experiment_run.run_id, db_engine_with_results_schema
+        )
+
         experiment_run_from_db = session.get(TriageRun, experiment_run.run_id)
         assert experiment_run_from_db.matrices_made == 2
+    finally:
+        clear_session()
+        session.close() 
