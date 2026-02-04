@@ -51,8 +51,10 @@ def reflected_table(table_name, db_engine):
     """
     schema, table = split_table(table_name)
     meta = MetaData(schema=schema)
-    # Get the underlying engine if wrapped (e.g., SerializableDbEngine)
+
+    # Unwrap if it's a SerializableDbEngine
     engine = getattr(db_engine, "__wrapped__", db_engine)
+
     return Table(table, meta, autoload_with=engine)
 
 
@@ -121,8 +123,8 @@ def table_has_duplicates(table_name, column_list, db_engine):
     cols = ", ".join(str(quoted_name(c, quote=True)) for c in column_list)
     sql = text(f"""
         WITH counts AS (
-            SELECT 
-               {cols}, 
+            SELECT
+               {cols},
                COUNT(*) AS num_records
             FROM {quoted_name(table_name, quote=True)}
             GROUP BY {cols}
