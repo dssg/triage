@@ -6,7 +6,6 @@ from unittest import mock
 import pytest
 
 from tests.utils import open_side_effect, populate_source_data, sample_config
-from triage import create_engine
 from triage.database_reflection import schema_tables
 from triage.experiments import SingleThreadedExperiment
 from triage.validation_primitives import table_should_have_data
@@ -74,7 +73,8 @@ class TestGetSplits:
 class TestCohort:
     config = {
         "temporal_config": sample_config()["temporal_config"],
-        "cohort_config": sample_config()["cohort_config"],
+        # "cohort_config": sample_config()["cohort_config"],
+        "label_config": sample_config()["label_config"],
         "config_version": sample_config()["config_version"],
         "random_seed": sample_config()["random_seed"],
     }
@@ -202,11 +202,12 @@ class TestPreimputationFeatures:
                     partial_run=True,
                 )
                 experiment.run()
+                # schema_tables returns a list, not a dict
                 generated_tables = [
                     table
                     for table in schema_tables(
                         experiment.features_schema_name, experiment.db_engine
-                    ).keys()
+                    )
                     if "_aggregation" in table
                 ]
 
@@ -214,7 +215,11 @@ class TestPreimputationFeatures:
                     sample_config()["feature_aggregations"]
                 )
                 for table in generated_tables:
-                    table_should_have_data(table, experiment.db_engine)
+                    # Need schema prefix for table_should_have_data
+                    table_should_have_data(
+                        f"{experiment.features_schema_name}.{table}",
+                        experiment.db_engine,
+                    )
 
     def test_validate_nonstrict(self, experiment_engine):
         with TemporaryDirectory() as temp_dir:
@@ -250,7 +255,8 @@ class TestPostimputationFeatures:
     config = {
         "temporal_config": sample_config()["temporal_config"],
         "feature_aggregations": sample_config()["feature_aggregations"],
-        "cohort_config": sample_config()["cohort_config"],
+        # "cohort_config": sample_config()["cohort_config"],
+        "label_config": sample_config()["label_config"],
         "config_version": sample_config()["config_version"],
         "random_seed": sample_config()["random_seed"],
     }
@@ -268,11 +274,12 @@ class TestPostimputationFeatures:
                     partial_run=True,
                 )
                 experiment.run()
+                # schema_tables returns a list, not a dict
                 generated_tables = [
                     table
                     for table in schema_tables(
                         experiment.features_schema_name, experiment.db_engine
-                    ).keys()
+                    )
                     if "_aggregation_imputed" in table
                 ]
 
@@ -280,7 +287,11 @@ class TestPostimputationFeatures:
                     sample_config()["feature_aggregations"]
                 )
                 for table in generated_tables:
-                    table_should_have_data(table, experiment.db_engine)
+                    # Need schema prefix for table_should_have_data
+                    table_should_have_data(
+                        f"{experiment.features_schema_name}.{table}",
+                        experiment.db_engine,
+                    )
 
     def test_validate_nonstrict(self, experiment_engine):
         with TemporaryDirectory() as temp_dir:
@@ -316,7 +327,7 @@ class TestMatrices:
     config = {
         "temporal_config": sample_config()["temporal_config"],
         "feature_aggregations": sample_config()["feature_aggregations"],
-        "cohort_config": sample_config()["cohort_config"],
+        # "cohort_config": sample_config()["cohort_config"],
         "label_config": sample_config()["label_config"],
         "config_version": sample_config()["config_version"],
         "random_seed": sample_config()["random_seed"],
