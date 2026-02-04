@@ -50,7 +50,11 @@ def reflected_table(table_name, db_engine):
     """
     schema, table = split_table(table_name)
     meta = MetaData(schema=schema, bind=db_engine)
-    return Table(table, meta, autoload=True, autoload_from=db_engine)
+
+    # Unwrap if it's a SerializableDbEngine
+    engine = getattr(db_engine, '__wrapped__', db_engine)
+
+    return Table(table, meta, autoload=True, autoload_from=engine)
 
 
 def table_exists(table_name, db_engine):
