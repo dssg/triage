@@ -16,7 +16,7 @@ from contextlib import contextmanager
 
 @contextmanager
 def prepare_experiment(config):
-    with testing.postgresql.Postgresql() as postgresql:
+     with testing.postgresql.Postgresql() as postgresql:
         db_engine = create_engine(postgresql.url())
         populate_source_data(db_engine)
         with TemporaryDirectory() as temp_dir:
@@ -58,7 +58,8 @@ class GetSplits(TestCase):
 class Cohort(TestCase):
     config = {
         "temporal_config": sample_config()["temporal_config"],
-        "cohort_config": sample_config()["cohort_config"],
+        #"cohort_config": sample_config()["cohort_config"],
+        "label_config": sample_config()["label_config"],
         "config_version": sample_config()["config_version"],
         "random_seed": sample_config()["random_seed"],
     }
@@ -112,17 +113,18 @@ class PreimputationFeatures(TestCase):
     def test_run(self):
         with prepare_experiment(self.config) as experiment:
             experiment.run()
+            
             generated_tables = [
                 table
                 for table in schema_tables(
                     experiment.features_schema_name, experiment.db_engine
-                ).keys()
+                )
                 if "_aggregation" in table
             ]
-
+            
             assert len(generated_tables) == len(sample_config()["feature_aggregations"])
             for table in generated_tables:
-                table_should_have_data(table, experiment.db_engine)
+                table_should_have_data(f"features.{table}", experiment.db_engine)
 
     def test_validate_nonstrict(self):
         with prepare_experiment(self.config) as experiment:
@@ -138,7 +140,8 @@ class PostimputationFeatures(TestCase):
     config = {
         "temporal_config": sample_config()["temporal_config"],
         "feature_aggregations": sample_config()["feature_aggregations"],
-        "cohort_config": sample_config()["cohort_config"],
+        # "cohort_config": sample_config()["cohort_config"],
+        "label_config": sample_config()["label_config"],
         "config_version": sample_config()["config_version"],
         "random_seed": sample_config()["random_seed"],
     }
@@ -150,13 +153,13 @@ class PostimputationFeatures(TestCase):
                 table
                 for table in schema_tables(
                     experiment.features_schema_name, experiment.db_engine
-                ).keys()
+                )
                 if "_aggregation_imputed" in table
             ]
 
             assert len(generated_tables) == len(sample_config()["feature_aggregations"])
             for table in generated_tables:
-                table_should_have_data(table, experiment.db_engine)
+                table_should_have_data(f"features.{table}", experiment.db_engine)
 
     def test_validate_nonstrict(self):
         with prepare_experiment(self.config) as experiment:
@@ -172,7 +175,7 @@ class Matrices(TestCase):
     config = {
         "temporal_config": sample_config()["temporal_config"],
         "feature_aggregations": sample_config()["feature_aggregations"],
-        "cohort_config": sample_config()["cohort_config"],
+        # "cohort_config": sample_config()["cohort_config"],
         "label_config": sample_config()["label_config"],
         "config_version": sample_config()["config_version"],
         "random_seed": sample_config()["random_seed"],
