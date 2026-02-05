@@ -1027,15 +1027,6 @@ wheels = [
 ]
 
 [[package]]
-name = "inflection"
-version = "0.5.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e1/7e/691d061b7329bc8d54edbf0ec22fbfb2afe61facb681f9aaa9bff7a27d04/inflection-0.5.1.tar.gz", hash = "sha256:1a29730d366e996aaacffb2f1f1cb9593dc38e2ddd30c91250c6dde09ea9b417", size = 15091, upload-time = "2020-08-22T08:16:29.139Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/59/91/aa6bde563e0085a02a435aa99b49ef75b0a4b062635e606dab23ce18d720/inflection-0.5.1-py2.py3-none-any.whl", hash = "sha256:f38b2b640938a4f35ade69ac3d053042959b62a0f1076a5bbaa1b9526605a8a2", size = 9454, upload-time = "2020-08-22T08:16:27.816Z" },
-]
-
-[[package]]
 name = "iniconfig"
 version = "2.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3250,17 +3241,15 @@ wheels = [
 
 [[package]]
 name = "triage"
-version = "5.5.3"
+version = "5.5.6"
 source = { editable = "." }
 dependencies = [
     { name = "aequitas" },
     { name = "alembic" },
     { name = "boto3" },
-    { name = "click" },
     { name = "dickens" },
     { name = "graphviz" },
     { name = "icecream" },
-    { name = "inflection" },
     { name = "loguru" },
     { name = "matplotlib" },
     { name = "numpy" },
@@ -3339,7 +3328,6 @@ requires-dist = [
     { name = "basedpyright", marker = "extra == 'dev'", specifier = ">=1.31.7" },
     { name = "boto3", specifier = ">=1.22.4" },
     { name = "bumpversion", marker = "extra == 'dev'", specifier = "==0.6.0" },
-    { name = "click", specifier = ">=8.1.3" },
     { name = "codecov", marker = "extra == 'dev'", specifier = "==2.1.13" },
     { name = "coverage", marker = "extra == 'dev'", specifier = ">=4.4" },
     { name = "dickens", specifier = ">=2.1.1" },
@@ -3348,7 +3336,6 @@ requires-dist = [
     { name = "graphviz", specifier = ">=0.21" },
     { name = "hypothesis", marker = "extra == 'dev'", specifier = "==6.46.1" },
     { name = "icecream", specifier = ">=2.1.8" },
-    { name = "inflection", specifier = ">=0.5.1" },
     { name = "jupyter-console", marker = "extra == 'dev'", specifier = ">=6.6.3" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "matplotlib", specifier = ">=3.10.7" },
