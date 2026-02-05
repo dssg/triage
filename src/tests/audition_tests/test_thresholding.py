@@ -1,27 +1,31 @@
-from unittest import TestCase
 from datetime import datetime
-import testing.postgresql
-from sqlalchemy import create_engine
 
-from triage.component.audition.distance_from_best import DistanceFromBestTable
-from triage.component.audition.thresholding import (
-    model_groups_filter,
-    ModelGroupThresholder,
-)
-from triage.component.catwalk.db import ensure_db
+import pytest
+from sqlalchemy import text
+from sqlalchemy.orm import sessionmaker
 
 from tests.results_tests.factories import (
     ModelFactory,
     ModelGroupFactory,
-    init_engine,
-    session,
+    clear_session,
+    set_session,
 )
+from triage.component.audition.distance_from_best import DistanceFromBestTable
+from triage.component.audition.thresholding import (
+    ModelGroupThresholder,
+    model_groups_filter,
+)
+from triage.component.catwalk.db import ensure_db
 
 
-class ModelGroupFilterTest(TestCase):
-    def filter_train_end_times(self, engine, train_end_times):
-        ensure_db(engine)
-        init_engine(engine)
+def filter_train_end_times(engine, train_end_times):
+    ensure_db(engine)
+
+    SessionLocal = sessionmaker(bind=engine)
+    session = SessionLocal()
+
+    try:
+        set_session(session)
         mg1 = ModelGroupFactory(model_group_id=1, model_type="modelType1")
         mg2 = ModelGroupFactory(model_group_id=2, model_type="modelType2")
         mg3 = ModelGroupFactory(model_group_id=3, model_type="modelType3")
@@ -47,8 +51,6 @@ class ModelGroupFilterTest(TestCase):
         ModelFactory(model_group_rel=mg5, train_end_time=datetime(2015, 1, 1))
         ModelFactory(model_group_rel=mg5, train_end_time=datetime(2016, 1, 1))
 
-
-
         session.commit()
         model_groups = [1, 2, 3, 4, 5]
         model_group_ids = model_groups_filter(
@@ -59,55 +61,61 @@ class ModelGroupFilterTest(TestCase):
         )
 
         return model_group_ids
+    finally:
+        clear_session()
+        session.close()
 
-    def test_have_same_train_end_times(self):
-        with testing.postgresql.Postgresql() as postgresql:
-            custom_train_end_times = ["2014-01-01", "2015-01-01", "2016-01-01", "2017-01-01"]
-            engine = create_engine(postgresql.url())
-            # The filter will only let those models pass only if the model's train end times
-            # contain the custom train end times
-            pass_model_groups = self.filter_train_end_times(engine, custom_train_end_times)
-            assert pass_model_groups == {1, 3}
 
-    def test_have_partial_train_end_times(self):
-        with testing.postgresql.Postgresql() as postgresql:
-            custom_train_end_times = ["2014-01-01", "2015-01-01", "2016-01-01"]
-            engine = create_engine(postgresql.url())
-            pass_model_groups = self.filter_train_end_times(engine, custom_train_end_times)
-            assert pass_model_groups == {1, 3, 5}
+def test_have_same_train_end_times(db_engine):
+    custom_train_end_times = ["2014-01-01", "2015-01-01", "2016-01-01", "2017-01-01"]
+    # The filter will only let those models pass only if the model's train end times
+    # contain the custom train end times
+    pass_model_groups = filter_train_end_times(db_engine, custom_train_end_times)
+    assert pass_model_groups == {1, 3}
 
-    def test_have_unmatched_train_end_times(self):
-        with testing.postgresql.Postgresql() as postgresql:
-            custom_train_end_times = ["2014-01-01", "2019-01-01"]
-            engine = create_engine(postgresql.url())
-            self.assertRaises(ValueError, lambda: self.filter_train_end_times(engine, custom_train_end_times))
 
-class ModelGroupThresholderTest(TestCase):
+def test_have_partial_train_end_times(db_engine):
+    custom_train_end_times = ["2014-01-01", "2015-01-01", "2016-01-01"]
+    pass_model_groups = filter_train_end_times(db_engine, custom_train_end_times)
+    assert pass_model_groups == {1, 3, 5}
 
-    metric_filters = [
-        {
-            "metric": "precision@",
-            "parameter": "100_abs",
-            "max_from_best": 0.2,
-            "threshold_value": 0.4,
-        },
-        {
-            "metric": "recall@",
-            "parameter": "100_abs",
-            "max_from_best": 0.2,
-            "threshold_value": 0.4,
-        },
-        {
-            "metric": "false positives@",
-            "parameter": "100_abs",
-            "max_from_best": 30,
-            "threshold_value": 50,
-        },
-    ]
 
-    def setup_data(self, engine):
-        ensure_db(engine)
-        init_engine(engine)
+def test_have_unmatched_train_end_times(db_engine):
+    custom_train_end_times = ["2014-01-01", "2019-01-01"]
+    with pytest.raises(ValueError):
+        filter_train_end_times(db_engine, custom_train_end_times)
+
+
+METRIC_FILTERS = [
+    {
+        "metric": "precision@",
+        "parameter": "100_abs",
+        "max_from_best": 0.2,
+        "threshold_value": 0.4,
+    },
+    {
+        "metric": "recall@",
+        "parameter": "100_abs",
+        "max_from_best": 0.2,
+        "threshold_value": 0.4,
+    },
+    {
+        "metric": "false positives@",
+        "parameter": "100_abs",
+        "max_from_best": 30,
+        "threshold_value": 50,
+    },
+]
+
+
+def setup_thresholder_data(engine, metric_filters):
+    ensure_db(engine)
+
+    SessionLocal = sessionmaker(bind=engine)
+    session = SessionLocal()
+    try:
+        set_session(session)
+
         ModelGroupFactory(model_group_id=1, model_type="modelType1")
         ModelGroupFactory(model_group_id=2, model_type="modelType2")
         ModelGroupFactory(model_group_id=3, model_type="modelType3")
@@ -115,7 +123,10 @@ class ModelGroupThresholderTest(TestCase):
         ModelGroupFactory(model_group_id=5, model_type="modelType5")
         session.commit()
         distance_table = DistanceFromBestTable(
-            db_engine=engine, models_table="models", distance_table="dist_table", agg_type="worst"
+            db_engine=engine,
+            models_table="models",
+            distance_table="dist_table",
+            agg_type="worst",
         )
         distance_table._create()
         distance_rows = [
@@ -185,70 +196,80 @@ class ModelGroupThresholderTest(TestCase):
             (6, "2016-01-01", "recall@", "100_abs", 0.5, 0.5, 0.0, 0.38),
             (6, "2016-01-01", "false positives@", "100_abs", 40, 30, 10, 10),
         ]
-        for dist_row in distance_rows:
-            engine.execute(
-                "insert into dist_table values (%s, %s, %s, %s, %s, %s, %s, %s)",
-                dist_row,
-            )
+
+        with engine.begin() as conn:
+            for dist_row in distance_rows:
+                conn.execute(
+                    text(
+                        "insert into dist_table values (:col1, :col2, :col3, :col4, :col5, :col6, :col7, :col8)"
+                    ),
+                    {
+                        "col1": dist_row[0],
+                        "col2": dist_row[1],
+                        "col3": dist_row[2],
+                        "col4": dist_row[3],
+                        "col5": dist_row[4],
+                        "col6": dist_row[5],
+                        "col7": dist_row[6],
+                        "col8": dist_row[7],
+                    },
+                )
         thresholder = ModelGroupThresholder(
             distance_from_best_table=distance_table,
             train_end_times=["2014-01-01", "2015-01-01"],
             initial_model_group_ids=[1, 2, 4, 5, 6],
-            initial_metric_filters=self.metric_filters,
+            initial_metric_filters=metric_filters,
         )
         return thresholder
+    finally:
+        clear_session()
+        session.close()
 
-    def dataframe_as_of(self, thresholder, train_end_time):
-        return thresholder.distance_from_best_table.dataframe_as_of(
-            model_group_ids=thresholder._initial_model_group_ids,
-            train_end_time=train_end_time,
-        )
 
-    def test_thresholder_2014_close(self):
-        with testing.postgresql.Postgresql() as postgresql:
-            engine = create_engine(postgresql.url())
-            thresholder = self.setup_data(engine)
+def dataframe_as_of(thresholder, train_end_time):
+    return thresholder.distance_from_best_table.dataframe_as_of(
+        model_group_ids=thresholder._initial_model_group_ids,
+        train_end_time=train_end_time,
+    )
 
-            assert thresholder.model_groups_close_to_best_case(
-                self.dataframe_as_of(thresholder, "2014-01-01")
-            ) == set([1, 2])
 
-    def test_thresholder_2015_close(self):
-        with testing.postgresql.Postgresql() as postgresql:
-            engine = create_engine(postgresql.url())
-            thresholder = self.setup_data(engine)
-            assert thresholder.model_groups_close_to_best_case(
-                self.dataframe_as_of(thresholder, "2015-01-01")
-            ) == set([2])
+def test_thresholder_2014_close(db_engine):
+    thresholder = setup_thresholder_data(db_engine, METRIC_FILTERS)
+    assert thresholder.model_groups_close_to_best_case(
+        dataframe_as_of(thresholder, "2014-01-01")
+    ) == {1, 2}
 
-    def test_thresholder_2014_threshold(self):
-        with testing.postgresql.Postgresql() as postgresql:
-            engine = create_engine(postgresql.url())
-            thresholder = self.setup_data(engine)
-            assert thresholder.model_groups_past_threshold(
-                self.dataframe_as_of(thresholder, "2014-01-01")
-            ) == set([1])
 
-    def test_thresholder_2015_threshold(self):
-        with testing.postgresql.Postgresql() as postgresql:
-            engine = create_engine(postgresql.url())
-            thresholder = self.setup_data(engine)
-            assert thresholder.model_groups_past_threshold(
-                self.dataframe_as_of(thresholder, "2015-01-01")
-            ) == set([1, 2, 4])
+def test_thresholder_2015_close(db_engine):
+    thresholder = setup_thresholder_data(db_engine, METRIC_FILTERS)
+    assert thresholder.model_groups_close_to_best_case(
+        dataframe_as_of(thresholder, "2015-01-01")
+    ) == {2}
 
-    def test_thresholder_all_rules(self):
-        with testing.postgresql.Postgresql() as postgresql:
-            engine = create_engine(postgresql.url())
-            thresholder = self.setup_data(engine)
-            # The multi-date version of this function should have
-            # the mins ANDed together and the closes ORed together
-            assert thresholder.model_groups_passing_rules() == set([1])
 
-    def test_update_filters(self):
-        with testing.postgresql.Postgresql() as postgresql:
-            engine = create_engine(postgresql.url())
-            thresholder = self.setup_data(engine)
-            assert thresholder.model_group_ids == set([1])
-            thresholder.update_filters([])
-            assert thresholder.model_group_ids == set([1, 2, 4, 5, 6])
+def test_thresholder_2014_threshold(db_engine):
+    thresholder = setup_thresholder_data(db_engine, METRIC_FILTERS)
+    assert thresholder.model_groups_past_threshold(
+        dataframe_as_of(thresholder, "2014-01-01")
+    ) == {1}
+
+
+def test_thresholder_2015_threshold(db_engine):
+    thresholder = setup_thresholder_data(db_engine, METRIC_FILTERS)
+    assert thresholder.model_groups_past_threshold(
+        dataframe_as_of(thresholder, "2015-01-01")
+    ) == {1, 2, 4}
+
+
+def test_thresholder_all_rules(db_engine):
+    thresholder = setup_thresholder_data(db_engine, METRIC_FILTERS)
+    # The multi-date version of this function should have
+    # the mins ANDed together and the closes ORed together
+    assert thresholder.model_groups_passing_rules() == {1}
+
+
+def test_update_filters(db_engine):
+    thresholder = setup_thresholder_data(db_engine, METRIC_FILTERS)
+    assert thresholder.model_group_ids == {1}
+    thresholder.update_filters([])
+    assert thresholder.model_group_ids == {1, 2, 4, 5, 6}

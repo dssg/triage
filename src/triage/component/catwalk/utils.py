@@ -1,31 +1,33 @@
 import csv
 import datetime
 import hashlib
-import numpy as np
-import os
-import pandas as pd
+import io
 import json
-
-import verboselogs, logging
-
-logger = verboselogs.VerboseLogger(__name__)
-
+import os
 import random
-from itertools import chain
-from functools import partial
 
-import postgres_copy
+import numpy as np
+import pandas as pd
 import sqlalchemy
+from psycopg import sql
+
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
+
+from functools import partial
+from itertools import chain
+
 from retrying import retry
-from sqlalchemy.orm import sessionmaker
-from ohio import PipeTextIO
+from sqlalchemy import select, text
+from sqlalchemy.orm import Session
 
 from triage.component.results_schema import (
     Experiment,
-    Matrix,
-    Model,
     ExperimentMatrix,
     ExperimentModel,
+    Matrix,
+    Model,
     TriageRun,
 )
 
@@ -67,34 +69,38 @@ db_retry = retry(**DEFAULT_RETRY_KWARGS)
 @db_retry
 def save_experiment_and_get_hash(config, db_engine):
     experiment_hash = filename_friendly_hash(config)
-    session = sessionmaker(bind=db_engine)()
-    session.merge(Experiment(experiment_hash=experiment_hash, config=config))
-    session.commit()
-    session.close()
+    with Session(db_engine) as session:
+        with session.begin():
+            session.merge(Experiment(experiment_hash=experiment_hash, config=config))
+
     return experiment_hash
 
 
 @db_retry
 def associate_matrices_with_experiment(experiment_hash, matrix_uuids, db_engine):
-    session = sessionmaker(bind=db_engine)()
-    for matrix_uuid in matrix_uuids:
-        session.merge(
-            ExperimentMatrix(experiment_hash=experiment_hash, matrix_uuid=matrix_uuid)
-        )
-    session.commit()
-    session.close()
+    with Session(db_engine) as session:
+        with session.begin():
+            for matrix_uuid in matrix_uuids:
+                session.merge(
+                    ExperimentMatrix(
+                        experiment_hash=experiment_hash, matrix_uuid=matrix_uuid
+                    )
+                )
+
     logger.spam("Associated matrices with experiment in database")
 
 
 @db_retry
 def associate_models_with_experiment(experiment_hash, model_hashes, db_engine):
-    session = sessionmaker(bind=db_engine)()
-    for model_hash in model_hashes:
-        session.merge(
-            ExperimentModel(experiment_hash=experiment_hash, model_hash=model_hash)
-        )
-    session.commit()
-    session.close()
+    with Session(db_engine) as session:
+        with session.begin():
+            for model_hash in model_hashes:
+                session.merge(
+                    ExperimentModel(
+                        experiment_hash=experiment_hash, model_hash=model_hash
+                    )
+                )
+
     logger.spam("Associated models with experiment in database")
 
 
@@ -109,10 +115,15 @@ def missing_matrix_uuids(experiment_hash, db_engine):
         from {ExperimentMatrix.__table__.fullname} experiment_matrices
         left join {Matrix.__table__.fullname} matrices
         on (experiment_matrices.matrix_uuid = matrices.matrix_uuid)
-        where experiment_hash = %s
+        where experiment_hash = :experiment_hash
         and matrices.matrix_uuid is null
     """
-    return [row[0] for row in db_engine.execute(query, experiment_hash)]
+    with db_engine.connect() as conn:
+        return (
+            conn.execute(text(query), {"experiment_hash": experiment_hash})
+            .scalars()
+            .all()
+        )
 
 
 @db_retry
@@ -126,10 +137,18 @@ def missing_model_hashes(experiment_hash, db_engine):
         from {ExperimentModel.__table__.fullname} experiment_models
         left join {Model.__table__.fullname} models
         on (experiment_models.model_hash = models.model_hash)
-        where experiment_hash = %s
+        where experiment_hash = :experiment_hash
         and models.model_hash is null
     """
-    return [row[0] for row in db_engine.execute(query, experiment_hash)]
+    with db_engine.connect() as conn:
+        return (
+            conn.execute(
+                text(query),
+                {"experiment_hash": experiment_hash},
+            )
+            .scalars()
+            .all()
+        )
 
 
 class Batch:
@@ -225,12 +244,11 @@ def retrieve_model_id_from_hash(db_engine, model_hash):
 
     Returns: (int) The model id (if found in DB), None (if not)
     """
-    session = sessionmaker(bind=db_engine)()
-    try:
-        saved = session.query(Model).filter_by(model_hash=model_hash).one_or_none()
+    with Session(db_engine) as session:
+        stmt = select(Model).where(Model.model_hash == model_hash)
+        saved = session.execute(stmt).scalar_one_or_none()
+        # saved = session.query(Model).filter_by(model_hash=model_hash).one_or_none()
         return saved.model_id if saved else None
-    finally:
-        session.close()
 
 
 @db_retry
@@ -242,11 +260,8 @@ def retrieve_model_hash_from_id(db_engine, model_id):
 
     Returns: (str) the stored hash of the model
     """
-    session = sessionmaker(bind=db_engine)()
-    try:
-        return session.query(Model).get(model_id).model_hash
-    finally:
-        session.close()
+    with Session(db_engine) as session:
+        return session.get(Model, model_id).model_hash
 
 
 @db_retry
@@ -262,7 +277,7 @@ def retrieve_existing_model_random_seeds(
     experiment-level random seed to allow for reusing seeds before creating a
     new one.
     """
-    query = f"""
+    query = text(f"""
         select models.random_seed
         from {ExperimentModel.__table__.fullname} experiment_models
         join {Model.__table__.fullname} models
@@ -273,18 +288,29 @@ def retrieve_existing_model_random_seeds(
             --makes sure that the model has been created before, and not being created in this run
             and models.built_in_triage_run = triage_runs.id
         )
-        where models.model_group_id = {model_group_id}
-        and models.train_end_time = '{train_end_time}'
-        and models.train_matrix_uuid = '{train_matrix_uuid}'
-        and models.training_label_timespan = '{training_label_timespan}'
-        and triage_runs.random_seed = {experiment_random_seed}
+        where models.model_group_id = :model_group_id
+        and models.train_end_time = :train_end_time
+        and models.train_matrix_uuid = :train_matrix_uuid
+        and models.training_label_timespan = :training_label_timespan
+        and triage_runs.random_seed = :experiment_random_seed
         order by models.run_time DESC, random()
-    """
-    logging.debug(f"Query that will retrieve random seeds for the model: {query}")
-    return [
-        row[0]
-        for row in db_engine.execute(query)
-    ]
+    """)
+    logger.debug(f"Query that will retrieve random seeds for the model: {query}")
+    with db_engine.connect() as conn:
+        return (
+            conn.execute(
+                query,
+                {
+                    "model_group_id": model_group_id,
+                    "train_end_time": train_end_time,
+                    "train_matrix_uuid": train_matrix_uuid,
+                    "training_label_timespan": training_label_timespan,
+                    "experiment_random_seed": experiment_random_seed,
+                },
+            )
+            .scalars()
+            .all()
+        )
 
 
 @db_retry
@@ -296,11 +322,8 @@ def retrieve_experiment_seed_from_run_id(db_engine, run_id):
 
     Returns: (int) the stored random seed from the experiment
     """
-    session = sessionmaker(bind=db_engine)()
-    try:
-        return session.query(TriageRun).get(run_id).random_seed
-    finally:
-        session.close()
+    with Session(db_engine) as session:
+        return session.get(TriageRun, run_id).random_seed
 
 
 def _write_csv(file_like, db_objects, type_of_object):
@@ -329,18 +352,38 @@ def save_db_objects(db_engine, db_objects):
     first_object = next(db_objects)
     type_of_object = type(first_object)
     columns = [col.name for col in first_object.__table__.columns]
+    table_name = first_object.__table__.name
+    schema_name = first_object.__table__.schema or "public"
 
-    with PipeTextIO(
-        partial(
-            _write_csv,
-            db_objects=chain((first_object,), db_objects),
-            type_of_object=type_of_object,
+    # Build CSV data in memory
+    csv_buffer = io.StringIO()
+    writer = csv.writer(csv_buffer, quoting=csv.QUOTE_MINIMAL, lineterminator="\n")
+    for db_object in chain((first_object,), db_objects):
+        if type(db_object) != type_of_object:
+            raise TypeError(
+                "Cannot copy collection of objects to db as they are not all "
+                f"of the same type. First object was {type_of_object} "
+                f"and later encountered a {type(db_object)}"
+            )
+        writer.writerow(
+            [getattr(db_object, col.name) for col in db_object.__table__.columns]
         )
-    ) as pipe:
-        postgres_copy.copy_from(
-            source=pipe,
-            dest=type_of_object,
-            engine_or_conn=db_engine,
-            columns=columns,
-            format="csv",
+    csv_buffer.seek(0)
+
+    # Use psycopg3's native COPY
+    connection = db_engine.raw_connection()
+    try:
+        cursor = connection.cursor()
+        # Build the COPY SQL using psycopg.sql for proper identifier quoting
+        column_identifiers = sql.SQL(", ").join(sql.Identifier(c) for c in columns)
+        copy_sql = sql.SQL("COPY {}.{} ({}) FROM STDIN WITH CSV").format(
+            sql.Identifier(schema_name),
+            sql.Identifier(table_name),
+            column_identifiers,
         )
+        with cursor.copy(copy_sql) as copy:
+            while data := csv_buffer.read(8192):
+                copy.write(data)
+        connection.commit()
+    finally:
+        connection.close()

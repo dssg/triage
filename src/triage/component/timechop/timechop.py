@@ -1,7 +1,8 @@
 import itertools
 
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 
 from triage.util.conf import convert_str_to_relativedelta, dt_from_str
 from triage.util.structs import AsOfTimeList
@@ -47,8 +48,7 @@ class Timechop:
         test_durations,
         test_label_timespans,
     ):
-
-        '''
+        """
         Date strings should follow the format `YYYY-MM-DD`. Date intervals
         should be strings of the Postgres interval input format.
 
@@ -76,22 +76,14 @@ class Timechop:
                 matrix
             test_label_timespans (str): How much time is included in a label
                 in the test matrix.
-        '''
-        self.feature_start_time = dt_from_str(
-            feature_start_time
-        )
-        self.feature_end_time = dt_from_str(
-            feature_end_time
-        )
+        """
+        self.feature_start_time = dt_from_str(feature_start_time)
+        self.feature_end_time = dt_from_str(feature_end_time)
         if self.feature_start_time > self.feature_end_time:
             raise ValueError("Feature start time after feature end time.")
 
-        self.label_start_time = dt_from_str(
-            label_start_time
-        )
-        self.label_end_time = dt_from_str(
-            label_end_time
-        )
+        self.label_start_time = dt_from_str(label_start_time)
+        self.label_end_time = dt_from_str(label_end_time)
         if self.label_start_time > self.label_end_time:
             raise ValueError("Label start time after label end time.")
 
@@ -116,7 +108,7 @@ class Timechop:
         self.test_label_timespans = utils.convert_to_list(test_label_timespans)
 
     def chop_time(self):
-        """ Given the attributes of the object, define all train/test splits
+        """Given the attributes of the object, define all train/test splits
         for all combinations of the temporal parameters.
 
         return:
@@ -165,7 +157,9 @@ class Timechop:
                     f"max_training_history {max_training_history}"
                 )
                 for train_test_split_time in train_test_split_times:
-                    logger.spam(f"Generating matrix definitions for split {train_test_split_time}")
+                    logger.spam(
+                        f"Generating matrix definitions for split {train_test_split_time}"
+                    )
                     matrix_set_definitions.append(
                         self.generate_matrix_definitions(
                             train_test_split_time=train_test_split_time,
@@ -181,7 +175,7 @@ class Timechop:
     def calculate_train_test_split_times(
         self, training_label_timespan, test_label_timespan, test_duration
     ):
-        """ Calculate the split times between train and test matrices. All
+        """Calculate the split times between train and test matrices. All
         label spans in train matrices will end at this time, and this will be
         the first as of time in the respective test matrix.
 
@@ -220,7 +214,9 @@ class Timechop:
         earliest_possible_split_time = training_label_timespan + max(
             self.feature_start_time, self.label_start_time
         )
-        logger.spam(f"Earliest possible train/test split time: {earliest_possible_split_time}")
+        logger.spam(
+            f"Earliest possible train/test split time: {earliest_possible_split_time}"
+        )
 
         # last split is the first as of time in the final test matrix
         # that is, starting from the label_end_time, we've walked back by the test_label_timespan
@@ -254,7 +250,7 @@ class Timechop:
     def calculate_as_of_times(
         self, as_of_start_limit, as_of_end_limit, data_frequency, forward=False
     ):
-        """ Given a start and stop time, a frequncy, and a direction, calculate the
+        """Given a start and stop time, a frequncy, and a direction, calculate the
         as of times for a matrix.
 
         Arguments:
@@ -269,7 +265,9 @@ class Timechop:
         return:
             list: list of as of times for the matrix
         """
-        logger.spam(f"Calculating as_of_times from {as_of_start_limit} to {as_of_end_limit} using example frequency {data_frequency}")
+        logger.spam(
+            f"Calculating as_of_times from {as_of_start_limit} to {as_of_end_limit} using example frequency {data_frequency}"
+        )
 
         as_of_times = []
 
@@ -315,7 +313,7 @@ class Timechop:
         training_label_timespan,
         test_label_timespan,
     ):
-        """ Given a split time and parameters for train and test matrices,
+        """Given a split time and parameters for train and test matrices,
         generate as of times and metadata for the matrices in the split.
 
         Arguments:
@@ -371,7 +369,9 @@ class Timechop:
             "train_matrix": train_matrix_definition,
             "test_matrices": test_matrix_definitions,
         }
-        logger.spam(f"Matrix definitions for train/test split {train_test_split_time}: {matrix_set_definition}")
+        logger.spam(
+            f"Matrix definitions for train/test split {train_test_split_time}: {matrix_set_definition}"
+        )
 
         return matrix_set_definition
 
@@ -382,7 +382,7 @@ class Timechop:
         max_training_history,
         training_as_of_date_frequency,
     ):
-        """ Given a split time and the parameters of a training matrix, generate
+        """Given a split time and the parameters of a training matrix, generate
         the as of times and metadata for a train matrix.
 
         Arguments:
@@ -395,7 +395,9 @@ class Timechop:
             dict: dictionary containing the temporal parameters and as of times
                   for a train matrix
         """
-        logger.debug(f"Generating train matrix definitions for train/test split {train_test_split_time}")
+        logger.debug(
+            f"Generating train matrix definitions for train/test split {train_test_split_time}"
+        )
         # for our example, this will be called with:
         #   train_test_split_time = 2016-10-01
         #   training_label_timespan = 6month
@@ -426,7 +428,9 @@ class Timechop:
         )
         if earliest_possible_train_as_of_time < experiment_as_of_time_limit:
             earliest_possible_train_as_of_time = experiment_as_of_time_limit
-        logger.spam(f"Earliest possible train as of time: {earliest_possible_train_as_of_time}")
+        logger.spam(
+            f"Earliest possible train as of time: {earliest_possible_train_as_of_time}"
+        )
 
         # with the last as of time and the earliest possible time known,
         # calculate all the as of times for the matrix, stepping backwards
@@ -459,7 +463,7 @@ class Timechop:
     def define_test_matrices(
         self, train_test_split_time, test_duration, test_label_timespan
     ):
-        """ Given a train/test split time and a set of testing parameters,
+        """Given a train/test split time and a set of testing parameters,
         generate the metadata and as of times for the test matrices in a split.
 
         Arguments:
@@ -483,7 +487,9 @@ class Timechop:
         #
         # for the example, as_of_time_limit = 2016-10-01 + 3month = 2017-01-01
         # (note as well that this will be treated as an _exclusive_ limit)
-        logger.debug(f"Generating test matrix definitions for train/test split {train_test_split_time}")
+        logger.debug(
+            f"Generating test matrix definitions for train/test split {train_test_split_time}"
+        )
         test_definitions = []
         test_delta = convert_str_to_relativedelta(test_duration)
         as_of_time_limit = train_test_split_time + test_delta
@@ -492,7 +498,9 @@ class Timechop:
         # calculate the as_of_times associated with each test data frequency
         # for our example, we just have one, 1month
         for test_as_of_date_frequency in self.test_as_of_date_frequencies:
-            logger.spam(f"Generating test matrix definitions for test data frequency {test_as_of_date_frequency}")
+            logger.spam(
+                f"Generating test matrix definitions for test data frequency {test_as_of_date_frequency}"
+            )
 
             # for test as_of_times we step _forwards_ from the train_test_split_time
             # to ensure that we always have a prediction set made immediately after

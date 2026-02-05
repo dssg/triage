@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """Integration tests for `collate` module."""
-import testing.postgresql
-from sqlalchemy import create_engine
+
+import pytest
+from sqlalchemy import text
 from sqlalchemy.sql import expression as ex
 
-from triage.component.collate import Aggregation, Aggregate
+from triage.component.collate import Aggregate, Aggregation
 from triage.component.collate.spacetime import SpacetimeAggregation
 
 from . import initialize_db
-
 
 IMPUTE_RULES = {
     "coltype": "aggregate",
@@ -16,23 +16,21 @@ IMPUTE_RULES = {
     "mode": {"type": "mean"},
 }
 
-Postgresql = testing.postgresql.PostgresqlFactory(
-    cache_initialized_db=True, on_initialized=initialize_db.handler
-)
+
+@pytest.fixture
+def db_engine_with_collate_data(db_engine):
+    """Create a db_engine with food inspections data loaded."""
+    initialize_db.load_data(db_engine)
+    return db_engine
 
 
-def teardown_module():
-    Postgresql.clear_cache()
-
-
-def test_engine():
-    with Postgresql() as postgresql:
-        engine = create_engine(postgresql.url())
-        ((result,),) = engine.execute("SELECT COUNT(*) FROM food_inspections")
+def test_engine(db_engine_with_collate_data):
+    with db_engine_with_collate_data.connect() as conn:
+        ((result,),) = conn.execute(text("SELECT COUNT(*) FROM food_inspections"))
     assert result == 966
 
 
-def test_st_explicit_execute():
+def test_st_explicit_execute(db_engine_with_collate_data):
     agg = Aggregate({"F": "results='Fail'"}, ["count"], IMPUTE_RULES)
     mode = Aggregate("", "mode", IMPUTE_RULES, order="zip")
     st = SpacetimeAggregation(
@@ -46,12 +44,10 @@ def test_st_explicit_execute():
         date_column="inspection_date",
         prefix="food_inspections",
     )
-    with Postgresql() as postgresql:
-        engine = create_engine(postgresql.url())
-        st.execute(engine.connect())
+    st.execute(db_engine_with_collate_data)
 
 
-def test_st_lazy_execute():
+def test_st_lazy_execute(db_engine_with_collate_data):
     agg = Aggregate("results='Fail'", ["count"], IMPUTE_RULES)
     st = SpacetimeAggregation(
         [agg],
@@ -63,12 +59,10 @@ def test_st_lazy_execute():
         state_group="license_no",
         date_column='"inspection_date"',
     )
-    with Postgresql() as postgresql:
-        engine = create_engine(postgresql.url())
-        st.execute(engine.connect())
+    st.execute(db_engine_with_collate_data)
 
 
-def test_st_execute_broadcast_intervals():
+def test_st_execute_broadcast_intervals(db_engine_with_collate_data):
     agg = Aggregate("results='Fail'", ["count"], IMPUTE_RULES)
     st = SpacetimeAggregation(
         [agg],
@@ -80,12 +74,10 @@ def test_st_execute_broadcast_intervals():
         state_group="license_no",
         date_column='"inspection_date"',
     )
-    with Postgresql() as postgresql:
-        engine = create_engine(postgresql.url())
-        st.execute(engine.connect())
+    st.execute(db_engine_with_collate_data)
 
 
-def test_execute():
+def test_execute(db_engine_with_collate_data):
     agg = Aggregate("results='Fail'", ["count"], IMPUTE_RULES)
     st = Aggregation(
         [agg],
@@ -94,12 +86,10 @@ def test_execute():
         state_table="all_licenses",
         state_group="license_no",
     )
-    with Postgresql() as postgresql:
-        engine = create_engine(postgresql.url())
-        st.execute(engine.connect())
+    st.execute(db_engine_with_collate_data)
 
 
-def test_execute_schema_output_date_column():
+def test_execute_schema_output_date_column(db_engine_with_collate_data):
     agg = Aggregate("results='Fail'", ["count"], IMPUTE_RULES)
     st = SpacetimeAggregation(
         [agg],
@@ -113,6 +103,4 @@ def test_execute_schema_output_date_column():
         date_column='"inspection_date"',
         output_date_column="aggregation_date",
     )
-    with Postgresql() as postgresql:
-        engine = create_engine(postgresql.url())
-        st.execute(engine.connect())
+    st.execute(db_engine_with_collate_data)

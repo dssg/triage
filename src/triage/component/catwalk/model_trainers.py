@@ -2,8 +2,9 @@ import copy
 import datetime
 import importlib
 
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 
 import random
 import sys
@@ -11,25 +12,25 @@ from contextlib import contextmanager
 
 import numpy as np
 import pandas as pd
-
+from joblib import parallel_backend
 from sklearn.model_selection import ParameterGrid
-from sklearn.utils import parallel_backend
+from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
-from triage.util.random import generate_python_random_seed
-from triage.component.results_schema import Model, FeatureImportance
 from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
-from triage.tracking import built_model, skipped_model, errored_model
+from triage.component.results_schema import FeatureImportance, Model
+from triage.tracking import built_model, errored_model, skipped_model
+from triage.util.random import generate_python_random_seed
 
-from .model_grouping import ModelGrouper
 from .feature_importances import get_feature_importances
+from .model_grouping import ModelGrouper
 from .utils import (
-    filename_friendly_hash,
-    retrieve_model_id_from_hash,
     db_retry,
-    save_db_objects,
+    filename_friendly_hash,
     retrieve_existing_model_random_seeds,
     retrieve_experiment_seed_from_run_id,
+    retrieve_model_id_from_hash,
+    save_db_objects,
 )
 
 NO_FEATURE_IMPORTANCE = (
@@ -74,7 +75,9 @@ class ModelTrainer:
         self.db_engine = db_engine
         self.replace = replace
         self.run_id = run_id
-        self.experiment_random_seed = retrieve_experiment_seed_from_run_id(self.db_engine, self.run_id)
+        self.experiment_random_seed = retrieve_experiment_seed_from_run_id(
+            self.db_engine, self.run_id
+        )
 
     @property
     def sessionmaker(self):
@@ -106,7 +109,7 @@ class ModelTrainer:
         }
         logger.spam(f"Creating model hash from unique data {unique}")
         return filename_friendly_hash(unique)
-    
+
     def _train(self, matrix_store, class_path, parameters, random_seed):
         """Fit a model to a training set. Works on any modeling class that
         is available in this package's environment and implements .fit
@@ -123,11 +126,11 @@ class ModelTrainer:
         module = importlib.import_module(module_name)
         cls = getattr(module, class_name)
         instance = cls(random_state=random_seed, **parameters)
-        logging.debug(f"Before fitting the model, model instance {instance}")
+        logger.debug(f"Before fitting the model, model instance {instance}")
 
         # using a threading backend because the default loky backend doesn't
         # allow for nested parallelization (e.g., multiprocessing at triage level)
-        with parallel_backend('threading'):
+        with parallel_backend("threading"):
             fitted = instance.fit(matrix_store.design_matrix, matrix_store.labels)
 
         return fitted
@@ -144,10 +147,12 @@ class ModelTrainer:
                 for the model
             feature_names (list) Feature names for the corresponding entries in feature_importances
         """
-        self.db_engine.execute(
-            "delete from train_results.feature_importances where model_id = %s",
-            model_id,
-        )
+        with self.db_engine.begin() as conn:
+            conn.execute(
+                text(
+                    f"delete from train_results.feature_importances where model_id = {model_id}",
+                )
+            )
         db_objects = []
         if isinstance(feature_importances, np.ndarray):
             temp_df = pd.DataFrame({"feature_importance": feature_importances})
@@ -248,12 +253,10 @@ class ModelTrainer:
                     built_in_triage_run=self.run_id,
                     model_size=model_size,
                     **misc_db_parameters,
-                )    
+                )
             session = self.sessionmaker()
             if model_id:
-                logger.notice(
-                    f"Found model {model_id}, updating non-unique attributes"
-                )
+                logger.notice(f"Found model {model_id}, updating non-unique attributes")
                 model.model_id = model_id
                 session.merge(model)
                 session.commit()
@@ -261,9 +264,11 @@ class ModelTrainer:
                 session.add(model)
                 session.commit()
                 model_id = model.model_id
-                logger.notice(f"Model {model_id}, not found from previous runs. Adding the new model")
+                logger.notice(
+                    f"Model {model_id}, not found from previous runs. Adding the new model"
+                )
             session.close()
-        
+
         logger.spam(f"Saving feature importances for model_id {model_id}")
         self._save_feature_importances(
             model_id, get_feature_importances(trained_model), feature_names
@@ -272,7 +277,15 @@ class ModelTrainer:
         return model_id
 
     def _train_and_store_model(
-        self, matrix_store, class_path, parameters, model_hash, misc_db_parameters, random_seed, retrain, model_group_id, 
+        self,
+        matrix_store,
+        class_path,
+        parameters,
+        model_hash,
+        misc_db_parameters,
+        random_seed,
+        retrain,
+        model_group_id,
     ):
         """Train a model, cache it, and write metadata to a database
 
@@ -289,20 +302,21 @@ class ModelTrainer:
         misc_db_parameters["random_seed"] = random_seed
         misc_db_parameters["run_time"] = datetime.datetime.now().isoformat()
         logger.debug(f"Training and storing model for matrix uuid {matrix_store.uuid}")
-        if parameters.get('random_state', None): 
-            logging.warning("User has defined a custom random seed, removing it from hyperparameters (still using it)")
-            parameters.pop('random_state')
-        logging.debug(f"hyperparameters before training: {parameters}")
+        if parameters.get("random_state", None):
+            logger.warning(
+                "User has defined a custom random seed, removing it from hyperparameters (still using it)"
+            )
+            parameters.pop("random_state")
+        logger.debug(f"hyperparameters before training: {parameters}")
         trained_model = self._train(matrix_store, class_path, parameters, random_seed)
 
         unique_parameters = self.unique_parameters(parameters)
 
-               
         if retrain:
             # if retrain, use the provided model_group_id
             if not model_group_id:
-                raise ValueError("model_group_id should be provided when retrain") 
-            
+                raise ValueError("model_group_id should be provided when retrain")
+
         else:
             model_group_id = self.model_grouper.get_model_group_id(
                 class_path, unique_parameters, matrix_store.metadata, self.db_engine
@@ -310,12 +324,10 @@ class ModelTrainer:
 
         # Writing th model to storage, then getting its size in kilobytes.
         self.model_storage_engine.write(trained_model, model_hash)
-        
-        logger.debug(
-            f"Trained model: hash {model_hash}, model group {model_group_id} "
-        )
+
+        logger.debug(f"Trained model: hash {model_hash}, model group {model_group_id} ")
         logger.spam(f"Cached model: {model_hash}")
- 
+
         model_size = sys.getsizeof(trained_model) / (1024.0)
 
         model_id = self._write_model_to_db(
@@ -330,7 +342,7 @@ class ModelTrainer:
             retrain,
         )
         logger.debug(f"Wrote model {model_id} [{model_hash}] to db")
-        return model_id, model_hash 
+        return model_id, model_hash
 
     @contextmanager
     def cache_models(self):
@@ -388,7 +400,15 @@ class ModelTrainer:
         ]
 
     def process_train_task(
-        self, matrix_store, class_path, parameters, model_hash, misc_db_parameters, random_seed=None, retrain=False, model_group_id=None, 
+        self,
+        matrix_store,
+        class_path,
+        parameters,
+        model_hash,
+        misc_db_parameters,
+        random_seed=None,
+        retrain=False,
+        model_group_id=None,
     ):
         """Trains and stores a model, or skips it and returns the existing id
 
@@ -408,7 +428,9 @@ class ModelTrainer:
                 and self.model_storage_engine.exists(model_hash)
                 and saved_model_id
             ):
-                logger.debug(f"Skipping model {saved_model_id} {class_path} {parameters}")
+                logger.debug(
+                    f"Skipping model {saved_model_id} {class_path} {parameters}"
+                )
                 if self.run_id:
                     skipped_model(self.run_id, self.db_engine)
                 return saved_model_id
@@ -426,7 +448,14 @@ class ModelTrainer:
             )
             try:
                 model_id, model_hash = self._train_and_store_model(
-                    matrix_store, class_path, parameters, model_hash, misc_db_parameters, random_seed, retrain, model_group_id
+                    matrix_store,
+                    class_path,
+                    parameters,
+                    model_hash,
+                    misc_db_parameters,
+                    random_seed,
+                    retrain,
+                    model_group_id,
                 )
             except BaselineFeatureNotInMatrix:
                 logger.warning(
@@ -439,37 +468,46 @@ class ModelTrainer:
                 built_model(self.run_id, self.db_engine)
             return model_id
         except Exception as exc:
-            logger.exception(f"Model training for matrix {matrix_store.uuid}, estimator {class_path}/{parameters}, model hash {model_hash} failed.")
+            logger.exception(
+                f"Model training for matrix {matrix_store.uuid}, estimator {class_path}/{parameters}, model hash {model_hash} failed."
+            )
             errored_model(self.run_id, self.db_engine)
 
     @staticmethod
     def flattened_grid_config(grid_config):
         return flatten_grid_config(grid_config)
 
-
-    def get_or_generate_random_seed(self, model_group_id, matrix_metadata, train_matrix_uuid):
+    def get_or_generate_random_seed(
+        self, model_group_id, matrix_metadata, train_matrix_uuid
+    ):
         """Look for an existing model with the same model group, train matrix metadata, and experiment-level
-           random seed and reuse this model's random seed if found, otherwise generate a new one. If multiple
-           matching models are found, we'll use the one with the most recent run time.
+        random seed and reuse this model's random seed if found, otherwise generate a new one. If multiple
+        matching models are found, we'll use the one with the most recent run time.
 
-           Args:
-                model_group_id (int): unique id for the model group this model is associated with
-                matrix_metadata (dict): metatdata associated with the model's training matrix
-                train_matrix_uuid (str): unique identifier for the model's training matrix
+        Args:
+             model_group_id (int): unique id for the model group this model is associated with
+             matrix_metadata (dict): metatdata associated with the model's training matrix
+             train_matrix_uuid (str): unique identifier for the model's training matrix
         """
         train_end_time = matrix_metadata["end_time"]
         training_label_timespan = matrix_metadata["label_timespan"]
-        existing_seeds = retrieve_existing_model_random_seeds(self.db_engine, model_group_id, train_end_time, train_matrix_uuid, training_label_timespan, self.experiment_random_seed)
-        logging.debug(f"Existing random seeds -> {existing_seeds}")
+        existing_seeds = retrieve_existing_model_random_seeds(
+            self.db_engine,
+            model_group_id,
+            train_end_time,
+            train_matrix_uuid,
+            training_label_timespan,
+            self.experiment_random_seed,
+        )
+        logger.debug(f"Existing random seeds -> {existing_seeds}")
         if existing_seeds:
-            logging.debug(f"Existing random seeds found")
+            logger.debug(f"Existing random seeds found")
             return existing_seeds[0]
         else:
-            logging.debug(f"No existing random seeds found")
+            logger.debug(f"No existing random seeds found")
             generated_random_seed = generate_python_random_seed()
-            logging.debug(f"Generated random seed: {generated_random_seed}")
+            logger.debug(f"Generated random seed: {generated_random_seed}")
             return generated_random_seed
-
 
     def generate_train_tasks(self, grid_config, misc_db_parameters, matrix_store=None):
         """Train and store configured models, yielding the ids one by one
@@ -506,19 +544,20 @@ class ModelTrainer:
             random_seed = self.get_or_generate_random_seed(
                 model_group_id, matrix_store.metadata, matrix_store.uuid
             )
-            logging.debug(f"random seed retrieved of generated: {random_seed}")
-            if unique_parameters.get('random_state', None):
-               logging.warning(f"User has explicitly defined a random seed for a particular model, overwriting the random seed generated by Triage from {random_seed} to {unique_parameters['random_state']}")
-               # random seed defined explicitly by user on grid config for model
-               random_seed = unique_parameters['random_state']
-               unique_parameters.pop('random_state') 
-               logging.debug(f"unique parameters after owner defined random seed: {unique_parameters}")
+            logger.debug(f"random seed retrieved of generated: {random_seed}")
+            if unique_parameters.get("random_state", None):
+                logger.warning(
+                    f"User has explicitly defined a random seed for a particular model, overwriting the random seed generated by Triage from {random_seed} to {unique_parameters['random_state']}"
+                )
+                # random seed defined explicitly by user on grid config for model
+                random_seed = unique_parameters["random_state"]
+                unique_parameters.pop("random_state")
+                logger.debug(
+                    f"unique parameters after owner defined random seed: {unique_parameters}"
+                )
 
             model_hash = self._model_hash(
-                matrix_store.metadata,
-                class_path,
-                parameters,
-                random_seed
+                matrix_store.metadata, class_path, parameters, random_seed
             )
             logger.spam(
                 f"Computed model hash for {class_path} "
@@ -541,9 +580,11 @@ class ModelTrainer:
                     "parameters": parameters,
                     "model_hash": model_hash,
                     "misc_db_parameters": misc_db_parameters,
-                    "random_seed": random_seed
+                    "random_seed": random_seed,
                 }
             )
-            logger.debug(f"Task added for model {class_path}({parameters}) [{model_hash}]")
+            logger.debug(
+                f"Task added for model {class_path}({parameters}) [{model_hash}]"
+            )
         logger.debug(f"Found {len(tasks)} unique model training tasks")
         return tasks

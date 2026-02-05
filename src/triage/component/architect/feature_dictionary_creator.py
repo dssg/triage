@@ -1,5 +1,8 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
+
+from sqlalchemy import text
 
 from triage.component.architect.utils import str_in_sql
 from triage.util.structs import FeatureNameList
@@ -18,7 +21,7 @@ class FeatureDictionaryCreator:
         ]
 
     def feature_dictionary(self, feature_table_names, index_column_lookup):
-        """ Create a dictionary of feature names, where keys are feature tables
+        """Create a dictionary of feature names, where keys are feature tables
         and values are lists of feature names.
 
         :return: feature_dictionary
@@ -27,21 +30,25 @@ class FeatureDictionaryCreator:
         feature_dictionary = {}
 
         # iterate! store each table name + features names as key-value pair
-        for feature_table_name in self._tables_to_include(feature_table_names):
-            feature_names = [
-                row[0]
-                for row in self.db_engine.execute(
-                    self._build_feature_names_query(
-                        feature_table_name, index_column_lookup[feature_table_name]
+        with self.db_engine.connect() as conn:
+            for feature_table_name in self._tables_to_include(feature_table_names):
+                feature_names = [
+                    row[0]
+                    for row in conn.execute(
+                        text(
+                            self._build_feature_names_query(
+                                feature_table_name,
+                                index_column_lookup[feature_table_name],
+                            )
+                        )
                     )
-                )
-            ]
-            feature_dictionary[feature_table_name] = FeatureNameList(feature_names)
+                ]
+                feature_dictionary[feature_table_name] = FeatureNameList(feature_names)
         logger.spam(f"Feature dictionary built: {feature_dictionary}")
         return feature_dictionary
 
     def _build_feature_names_query(self, table_name, index_columns):
-        """ For a given feature table, get the names of the feature columns.
+        """For a given feature table, get the names of the feature columns.
 
         :param table_name: name of the feature table
         :type table_name: str

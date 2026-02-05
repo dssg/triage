@@ -1,42 +1,42 @@
 import os.path
 
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
 
+logger = get_logger(__name__)
+
+from alembic import command, script
 from alembic.config import Config
-from alembic import script
-from alembic import command
+from sqlalchemy import text
+
 from triage import create_engine
 from triage.database_reflection import table_exists
-
 
 from .schema import (
     Base,
     Experiment,
-    Retrain,
+    ExperimentMatrix,
+    ExperimentModel,
     FeatureImportance,
     IndividualImportance,
     ListPrediction,
-    ExperimentMatrix,
+    ListPredictionMetadata,
     Matrix,
-    ExperimentModel,
-    RetrainModel,
-    TriageRun,
-    TriageRunStatus,
     Model,
     ModelGroup,
+    Retrain,
+    RetrainModel,
     Subset,
+    TestAequitas,
     TestEvaluation,
-    TrainEvaluation,
     TestPrediction,
-    TrainPrediction,
     TestPredictionMetadata,
-    TrainPredictionMetadata,
-    ListPredictionMetadata,
     TrainAequitas,
-    TestAequitas
+    TrainEvaluation,
+    TrainPrediction,
+    TrainPredictionMetadata,
+    TriageRun,
+    TriageRunStatus,
 )
-
 
 __all__ = (
     "Base",
@@ -85,7 +85,9 @@ def upgrade_db(db_engine=None, dburl=None, revision="head"):
     elif dburl:
         command.upgrade(alembic_config(dburl=dburl), revision)
     else:
-        raise ValueError("Must pass either a db_config_filehandle or a db_engine or a dburl")
+        raise ValueError(
+            "Must pass either a db_config_filehandle or a db_engine or a dburl"
+        )
 
 
 def downgrade_db(db_engine=None, dburl=None, revision="-1"):
@@ -94,7 +96,9 @@ def downgrade_db(db_engine=None, dburl=None, revision="-1"):
     elif dburl:
         command.downgrade(alembic_config(dburl=dburl), revision)
     else:
-        raise ValueError("Must pass either a db_config_filehandle or a db_engine or a dburl")
+        raise ValueError(
+            "Must pass either a db_config_filehandle or a db_engine or a dburl"
+        )
 
 
 def stamp_db(revision, dburl):
@@ -113,16 +117,20 @@ def upgrade_if_clean(dburl):
     alembic_cfg = alembic_config(dburl)
     engine = create_engine(dburl)
     script_ = script.ScriptDirectory.from_config(alembic_cfg)
-    if not table_exists('results_schema_versions', engine):
-        logger.info("No results_schema_versions table exists, which means that this installation "
-                     "is fresh. Upgrading db.")
+    if not table_exists("results_schema_versions", engine):
+        logger.info(
+            "No results_schema_versions table exists, which means that this installation "
+            "is fresh. Upgrading db."
+        )
         upgrade_db(dburl=dburl)
         return
     with engine.begin() as conn:
         current_revision = conn.execute(
-            'select version_num from results_schema_versions limit 1'
-        ).scalar()
-        logger.debug("Database's triage_metadata schema version is %s", current_revision)
+            text("select version_num from results_schema_versions limit 1")
+        ).scalar_one()
+        logger.debug(
+            "Database's triage_metadata schema version is %s", current_revision
+        )
         triage_head = script_.get_current_head()
         logger.debug("Code's triage_metadata schema version is %s", triage_head)
         database_is_ahead = not any(

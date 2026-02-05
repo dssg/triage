@@ -1,18 +1,23 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
+from collections import defaultdict
+
 import numpy as np
 import pandas as pd
-
 from scipy import stats
-from collections import defaultdict
+
 from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
 
 REQUIRED_KEYS = frozenset(["feature", "low_value_high_score"])
 
 
 class PercentileRankOneFeature:
-    def __init__(self, feature, low_value_high_score=None, descend=None, random_state=42):
-        logger.warning("DEPRECATION WARNING: PercentileRankOneFeature is being replaced by "
+    def __init__(
+        self, feature, low_value_high_score=None, descend=None, random_state=42
+    ):
+        logger.warning(
+            "DEPRECATION WARNING: PercentileRankOneFeature is being replaced by "
             "BaselineRankMultiFeature. Note, however, that the scores returned by the new "
             "ranker cannot be interpreted as percentiles."
         )
@@ -20,13 +25,15 @@ class PercentileRankOneFeature:
             # If the deprecated `descend` parameter has been specified, raise a
             # warning, then use this value for low_value_high_score, which has
             # the same behavior
-            logger.warning("DEPRECATION WARNING: parameter `descend` is deprecated for "
+            logger.warning(
+                "DEPRECATION WARNING: parameter `descend` is deprecated for "
                 "PercentileRankOneFeature. Use `low_value_high_score` instead."
             )
             if low_value_high_score is not None:
-                raise ValueError("Only one of `descend` or `low_value_high_score` can be "
+                raise ValueError(
+                    "Only one of `descend` or `low_value_high_score` can be "
                     "specified for PercentileRankOneFeature."
-                    )
+                )
             low_value_high_score = descend
 
         # set default this way so we can check if both have been specified above
@@ -35,13 +42,11 @@ class PercentileRankOneFeature:
 
         self.random_state = random_state
         self.feature = feature  # which feature to rank on
-        self.low_value_high_score = (
-            low_value_high_score
-        )  # should feature be ranked so lower values -> higher scores
+        self.low_value_high_score = low_value_high_score  # should feature be ranked so lower values -> higher scores
         self.feature_importances_ = None
 
     def _set_feature_importances_(self, x):
-        """ Assigns feature importances following the rule: 1 for the feature we
+        """Assigns feature importances following the rule: 1 for the feature we
         are ranking on, 0 for all other features.
         """
         feature_importances = [0] * len(x.columns)
@@ -60,14 +65,12 @@ class PercentileRankOneFeature:
         self.feature_importances_ = np.array(feature_importances)
 
     def fit(self, x, y):
-        """ Set feature importances and return self.
-        """
+        """Set feature importances and return self."""
         self._set_feature_importances_(x)
         return self
 
     def predict_proba(self, x):
-        """ Generate the rank percentile scores and return these.
-        """
+        """Generate the rank percentile scores and return these."""
         # reduce x to the selected feature, raise error if not found
         x = x[self.feature]
 
@@ -121,9 +124,13 @@ class BaselineRankMultiFeature:
         # validate rules: must have feature and sort order
         for rule in rules:
             if not isinstance(rule, dict):
-                raise ValueError('Rules for BaselineRankMultiFeature must be of type dict')
+                raise ValueError(
+                    "Rules for BaselineRankMultiFeature must be of type dict"
+                )
             if not rule.keys() >= REQUIRED_KEYS:
-                raise ValueError(f'BaselineRankMultiFeature rule "{rule}" missing one or more required keys ({REQUIRED_KEYS})')
+                raise ValueError(
+                    f'BaselineRankMultiFeature rule "{rule}" missing one or more required keys ({REQUIRED_KEYS})'
+                )
 
         self.rules = rules
         self.feature_importances_ = None
@@ -136,10 +143,10 @@ class BaselineRankMultiFeature:
     def all_sort_directions(self):
         # note that ascending=True sort will mean low values get low scores,
         # so negate the parameter direction to get the right relationship
-        return [not rule['low_value_high_score'] for rule in self.rules]
+        return [not rule["low_value_high_score"] for rule in self.rules]
 
     def _set_feature_importances_(self, x):
-        """ Assigns feature importances following the rule: 1 for the features
+        """Assigns feature importances following the rule: 1 for the features
         we are thresholding on, 0 for all other features.
         """
         feature_importances = [0] * len(x.columns)
@@ -157,14 +164,12 @@ class BaselineRankMultiFeature:
         self.feature_importances_ = np.array(feature_importances)
 
     def fit(self, x, y):
-        """ Set feature importances and return self.
-        """
+        """Set feature importances and return self."""
         self._set_feature_importances_(x)
         return self
 
     def predict_proba(self, x):
-        """ Generate the rank scores and return these.
-        """
+        """Generate the rank scores and return these."""
         # reduce x to the selected set of features
         x = x[self.all_feature_names].reset_index(drop=True)
 
@@ -185,11 +190,11 @@ class BaselineRankMultiFeature:
 
         # normalize to 0 to 1 range
         max_rank = ranks[-1]
-        x['score'] = [r/max_rank for r in ranks]
+        x["score"] = [r / max_rank for r in ranks]
 
         # reset back to original sort order, calculate "score" for "0 class"
-        scores_1 = x.sort_index()['score'].values
-        scores_0 = np.array([1-s for s in scores_1])
+        scores_1 = x.sort_index()["score"].values
+        scores_0 = np.array([1 - s for s in scores_1])
 
         return np.array([scores_0, scores_1]).transpose()
 
@@ -206,34 +211,36 @@ class LinearRanker:
         weights (list): list of weights to use in the linear combination
 
     Returns:
-        scores (array): Numpy array of shape (n, 2) where n is the number of rows in X. 
+        scores (array): Numpy array of shape (n, 2) where n is the number of rows in X.
     """
+
     def __init__(self, features, weights, random_state=42):
         self.features = features
         self.weights = np.array(weights) / sum(np.array(weights))
-        #self.__name__ = 'LinearRanker'
+        # self.__name__ = 'LinearRanker'
         self.feature_importances_ = None
         self.random_state = random_state
-    
+
     def _set_feature_importance(self, x):
-        """ Assigns feature importances based on the weights provided.
-        """
+        """Assigns feature importances based on the weights provided."""
         diff_features = set(self.features).difference(set(x.columns.tolist()))
         if len(diff_features) > 0:
-            for feature in list(diff_features): 
-                logger.error(f"LinearRanker refers to feature {feature} not included in the training matrix!")
-                raise Exception(f"LinearRanker refers to feature {feature} not included in the training matrix!")
-        
-        # feature importance 
-        df = pd.DataFrame({'feature': self.features, 'weight': self.weights})
-        self.feature_importances_ = np.array(df.weight) 
-       
+            for feature in list(diff_features):
+                logger.error(
+                    f"LinearRanker refers to feature {feature} not included in the training matrix!"
+                )
+                raise Exception(
+                    f"LinearRanker refers to feature {feature} not included in the training matrix!"
+                )
+
+        # feature importance
+        df = pd.DataFrame({"feature": self.features, "weight": self.weights})
+        self.feature_importances_ = np.array(df.weight)
 
     def fit(self, x, y):
-        """Run sanity checks and populate self.feature_importances_
-        """
+        """Run sanity checks and populate self.feature_importances_"""
         # Ensure all the features requested are real features
-        self._set_feature_importance(x) 
+        self._set_feature_importance(x)
 
         return self
 
@@ -248,7 +255,11 @@ class LinearRanker:
         np.array of shape (n, 2) where n is the number of rows in X.
 
         This output has this structure to mimic the behavior of sklearn.model.predic_proba()
-        """ 
+        """
+        # Make a copy and convert features to float to avoid int64 assignment errors
+        x = x.copy()
+        for feature in self.features:
+            x[feature] = x[feature].astype(float)
 
         # Change scale of each column from 0 to 1
         def index_build(feat):
@@ -256,13 +267,13 @@ class LinearRanker:
             x.loc[x[feat] > perc_99, feat] = perc_99
             # Apply function to non-zero percentile columns
             if perc_99 != 0:
-                x[feat] = x[feat]/perc_99
-        
+                x[feat] = x[feat] / perc_99
+
         for feature in self.features:
             index_build(feature)
 
-        # Compute the score as a linear combination 
+        # Compute the score as a linear combination
         score = np.array((self.weights * x[self.features]).sum(axis=1))
-        rv = np.array([1-score, score]).T
+        rv = np.array([1 - score, score]).T
 
         return rv

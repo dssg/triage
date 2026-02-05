@@ -1,16 +1,17 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 
 import json
 import os
 
-from .distance_from_best import DistanceFromBestTable, BestDistancePlotter
-from .thresholding import model_groups_filter, ModelGroupThresholder
-from .regrets import SelectionRulePicker, SelectionRulePlotter
-from .selection_rule_performance import SelectionRulePerformancePlotter
+from .distance_from_best import BestDistancePlotter, DistanceFromBestTable
 from .model_group_performance import ModelGroupPerformancePlotter
-from .selection_rule_grid import make_selection_rule_grid
 from .pre_audition import PreAudition
+from .regrets import SelectionRulePicker, SelectionRulePlotter
+from .selection_rule_grid import make_selection_rule_grid
+from .selection_rule_performance import SelectionRulePerformancePlotter
+from .thresholding import ModelGroupThresholder, model_groups_filter
 
 
 class Auditioner:
@@ -23,7 +24,7 @@ class Auditioner:
         models_table=None,
         distance_table=None,
         directory=None,
-        agg_type='worst',
+        agg_type="worst",
         baseline_model_group_ids=None,
     ):
         """Filter model groups using a two-step process:
@@ -84,8 +85,8 @@ class Auditioner:
             agg_type (string) Method for aggregating metric values (for instance, if there
                 are multiple models at a given train_end_time with different random seeds).
                 Can be: 'mean', 'best', or 'worst' (the default)
-            baseline_model_group_ids (list): An optional list of model groups for baseline 
-                models which will be included on all plots without being subject to filtering 
+            baseline_model_group_ids (list): An optional list of model groups for baseline
+                models which will be included on all plots without being subject to filtering
                 or included as candidate models from the selection process.
         """
         self.metric_filters = initial_metric_filters
@@ -98,7 +99,7 @@ class Auditioner:
             db_engine=db_engine,
             models_table=models_table,
             distance_table=distance_table,
-            agg_type=agg_type
+            agg_type=agg_type,
         )
         self.best_distance_plotter = BestDistancePlotter(
             self.distance_from_best_table, self.directory
@@ -142,9 +143,9 @@ class Auditioner:
         # note we populate the distance from best table using both the
         # baseline and candidate model groups
         self.distance_from_best_table.create_and_populate(
-            self.first_pass_model_groups | self.baseline_model_groups, 
-            self.train_end_times, 
-            self.metrics
+            self.first_pass_model_groups | self.baseline_model_groups,
+            self.train_end_times,
+            self.metrics,
         )
         self.results_for_rule = {}
 
@@ -202,14 +203,14 @@ class Auditioner:
         thresholded_ids = self.thresholded_model_group_ids
         for selection_rule in self.selection_rules:
             logger.debug("Calculating selection rule picks for %s", selection_rule)
-            model_group_ids[
-                selection_rule.descriptive_name
-            ] = self.selection_rule_picker.model_group_from_rule(
-                bound_selection_rule=selection_rule,
-                model_group_ids=thresholded_ids,
-                # evaluate the selection rules for the most recent
-                # time period and use those as candidate model groups
-                train_end_time=self.train_end_times[-1],
+            model_group_ids[selection_rule.descriptive_name] = (
+                self.selection_rule_picker.model_group_from_rule(
+                    bound_selection_rule=selection_rule,
+                    model_group_ids=thresholded_ids,
+                    # evaluate the selection rules for the most recent
+                    # time period and use those as candidate model groups
+                    train_end_time=self.train_end_times[-1],
+                )
             )
             logger.debug(
                 "For rule %s, model group %s was picked",
@@ -240,9 +241,9 @@ class Auditioner:
             )
             return
         self.best_distance_plotter.plot_all_best_dist(
-            self.metrics, 
-            thresholded_model_group_ids | self.baseline_model_groups, 
-            self.train_end_times
+            self.metrics,
+            thresholded_model_group_ids | self.baseline_model_groups,
+            self.train_end_times,
         )
         logger.debug("Showing model group performance plots for all metrics")
         self.model_group_performance_plotter.plot_all(
@@ -283,20 +284,20 @@ class Auditioner:
     def update_metric_filters(self, new_filters=None, plot=True):
         """Update the thresholding metric filters
 
-        Args:
-            new_filters (list): A list of metrics to filter model
-                groups on, and how to filter them. This is an identical format to
-                the list given to 'initial_metric_filters' in the constructor.
-                Each entry should be a dict with the keys:
-initial_metric_filters
-                    metric (string) -- model evaluation metric, such as 'precision@'
-                    parameter (string) -- model evaluation metric parameter,
-                        such as '300_abs'
-                    max_below_best (float) The maximum value that the given metric
-                        can be below the best for a given train end time
-                    threshold_value (float) The threshold value that the given metric can be
-            plot (boolean, default True): Whether or not to also plot model group performance
-                and thresholding details at this time.
+                Args:
+                    new_filters (list): A list of metrics to filter model
+                        groups on, and how to filter them. This is an identical format to
+                        the list given to 'initial_metric_filters' in the constructor.
+                        Each entry should be a dict with the keys:
+        initial_metric_filters
+                            metric (string) -- model evaluation metric, such as 'precision@'
+                            parameter (string) -- model evaluation metric parameter,
+                                such as '300_abs'
+                            max_below_best (float) The maximum value that the given metric
+                                can be below the best for a given train end time
+                            threshold_value (float) The threshold value that the given metric can be
+                    plot (boolean, default True): Whether or not to also plot model group performance
+                        and thresholding details at this time.
         """
         logger.debug("Updating metric filters with new config %s", new_filters)
         self.model_group_thresholder.update_filters(new_filters)
@@ -415,7 +416,9 @@ class AuditionRunner:
         query_end_times = self.config["time_stamps"]["query"].format(
             ", ".join(map(str, model_group_ids))
         )
+        logger.spam(f"query to get end times: {query_end_times}")
         end_times = pre_aud.get_train_end_times(query=query_end_times)
+        logger.spam(f"end times: {end_times}")
 
         aud = Auditioner(
             db_engine=self.db_engine,
@@ -432,7 +435,7 @@ class AuditionRunner:
             models_table=self.config["filter"]["models_table"],
             distance_table=self.config["filter"]["distance_table"],
             directory=self.dir,
-            agg_type=self.config["filter"].get("agg_type") or 'worst',
+            agg_type=self.config["filter"].get("agg_type") or "worst",
         )
 
         aud.plot_model_groups()

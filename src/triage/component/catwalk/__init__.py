@@ -1,22 +1,32 @@
 """Main application"""
+
 from enum import Enum
+
+from triage.logging import get_logger
+
+from .evaluation import ModelEvaluator
+from .individual_importance import (
+    IndividualImportanceCalculator,
+    IndividualImportanceCalculatorNoOp,
+)
+from .model_grouping import ModelGrouper
 from .model_trainers import ModelTrainer
 from .predictors import Predictor
-from .evaluation import ModelEvaluator
-from .individual_importance import IndividualImportanceCalculator, IndividualImportanceCalculatorNoOp
-from .model_grouping import ModelGrouper
+from .protected_groups_generators import (
+    ProtectedGroupsGenerator,
+    ProtectedGroupsGeneratorNoOp,
+)
 from .subsetters import Subsetter, SubsetterNoOp
-from .protected_groups_generators import ProtectedGroupsGenerator, ProtectedGroupsGeneratorNoOp
 from .utils import filename_friendly_hash
 
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+logger = get_logger(__name__)
 
 from collections import namedtuple
 
 import numpy as np
 
-TaskBatch = namedtuple('TaskBatch', ['key', 'tasks', 'description'])
+TaskBatch = namedtuple("TaskBatch", ["key", "tasks", "description"])
+
 
 class BatchKey(Enum):
     QUICKTRAIN = 1
@@ -36,7 +46,7 @@ class ModelTrainTester:
         protected_groups_generator,
         additional_bigtrain_classnames=None,
         cohort_hash=None,
-        replace=True
+        replace=True,
     ):
         self.matrix_storage_engine = matrix_storage_engine
         self.model_trainer = model_trainer
@@ -47,13 +57,13 @@ class ModelTrainTester:
         self.replace = replace
         self.protected_groups_generator = protected_groups_generator
         self.bigtrain_classnames = [
-            'imblearn.ensemble.BalancedRandomForestClassifier',
-            'sklearn.ensemble.RandomForestClassifier',
-            'sklearn.ensemble.ExtraTreesClassifier',
-            'sklearn.ensemble.AdaBoostClassifier',
-            'sklearn.ensemble.GradientBoostingClassifier',
-            'xgboost.XGBClassifier',
-            'lightgbm.LGBMClassifier',
+            "imblearn.ensemble.BalancedRandomForestClassifier",
+            "sklearn.ensemble.RandomForestClassifier",
+            "sklearn.ensemble.ExtraTreesClassifier",
+            "sklearn.ensemble.AdaBoostClassifier",
+            "sklearn.ensemble.GradientBoostingClassifier",
+            "xgboost.XGBClassifier",
+            "lightgbm.LGBMClassifier",
         ]
         if additional_bigtrain_classnames:
             self.bigtrain_classnames += additional_bigtrain_classnames
@@ -68,7 +78,7 @@ class ModelTrainTester:
             train_tasks = self.model_trainer.generate_train_tasks(
                 grid_config=grid_config,
                 misc_db_parameters=dict(test=False, model_comment=model_comment),
-                matrix_store=train_store
+                matrix_store=train_store,
             )
 
             for test_matrix_def, test_uuid in zip(
@@ -86,61 +96,66 @@ class ModelTrainTester:
                     )
         return self.order_and_batch_tasks(train_test_tasks)
 
-
     def order_and_batch_tasks(self, tasks):
         batches = (
             TaskBatch(
                 key=BatchKey.QUICKTRAIN,
                 tasks=[],
-                description="Baselines or simple classifiers (e.g. DecisionTree, SLR)"
+                description="Baselines or simple classifiers (e.g. DecisionTree, SLR)",
             ),
             TaskBatch(
-                key=BatchKey.BIGTRAIN,
-                tasks=[],
-                description="Heavyweight classifiers."
+                key=BatchKey.BIGTRAIN, tasks=[], description="Heavyweight classifiers."
             ),
             TaskBatch(
                 key=BatchKey.MAYBETRAIN,
                 tasks=[],
-                description="All classifiers not found in one of the other batches."
+                description="All classifiers not found in one of the other batches.",
             ),
         )
 
         for task in tasks:
-            if task['train_kwargs']['class_path'].startswith('triage.component.catwalk.baselines') \
-                    or task['train_kwargs']['class_path'] in (
-                    'triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression',
-                    'sklearn.tree.DecisionTreeClassifier',
-                    'sklearn.dummy.DummyClassifier'
-                    ):
+            if task["train_kwargs"]["class_path"].startswith(
+                "triage.component.catwalk.baselines"
+            ) or task["train_kwargs"]["class_path"] in (
+                "triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression",
+                "sklearn.tree.DecisionTreeClassifier",
+                "sklearn.dummy.DummyClassifier",
+            ):
                 # First priority: baselines or simple, effective classifiers
                 batches[0].tasks.append(task)
-            elif task['train_kwargs']['class_path'] in self.bigtrain_classnames:
+            elif task["train_kwargs"]["class_path"] in self.bigtrain_classnames:
                 # Second priority: heavyweight classifiers that we use the whole machines for
                 batches[1].tasks.append(task)
             else:
                 # Last priority: Everything else. Maybe these are slow/non-parallelizable
                 batches[2].tasks.append(task)
-        logger.verbose("Split train/test tasks into three task batches. - each batch has models from all splits")
+        logger.verbose(
+            "Split train/test tasks into three task batches. - each batch has models from all splits"
+        )
         for batch_num, batch in enumerate(batches, 1):
-            logger.verbose(f"Batch {batch_num}: {batch.description} ({len(batch.tasks)} tasks total)")
-
-
+            logger.verbose(
+                f"Batch {batch_num}: {batch.description} ({len(batch.tasks)} tasks total)"
+            )
 
         return batches
 
-
     def process_all_batches(self, task_batches):
         for n_batch, batch in enumerate(task_batches, start=1):
-            logger.verbose(f"Processing '{batch.description}' [{n_batch} of {len(task_batches)} batches]")
+            logger.verbose(
+                f"Processing '{batch.description}' [{n_batch} of {len(task_batches)} batches]"
+            )
             for n_task, task in enumerate(batch.tasks, start=1):
-                logger.verbose(f"Processing task [{n_task} of {len(batch.tasks)}] from {batch.description}")
+                logger.verbose(
+                    f"Processing task [{n_task} of {len(batch.tasks)}] from {batch.description}"
+                )
                 self.process_task(**task)
                 logger.verbose(f"Task {n_task} from {batch.description} completed")
             logger.success(f"Batch '{batch.description}' completed")
 
     def process_task(self, test_store, train_store, train_kwargs):
-        logger.verbose(f"Training {train_kwargs.get('class_path')}({train_kwargs.get('parameters')}) [{train_kwargs.get('model_hash')}] on train matrix {train_store.uuid}")
+        logger.verbose(
+            f"Training {train_kwargs.get('class_path')}({train_kwargs.get('parameters')}) [{train_kwargs.get('model_hash')}] on train matrix {train_store.uuid}"
+        )
 
         # If the matrices and train labels are OK, train and test the model!
         with self.model_trainer.cache_models(), test_store.cache(), train_store.cache():
@@ -150,37 +165,35 @@ class ModelTrainTester:
             # If the train or test design matrix empty, or if the train store only
             # has one label value, skip training the model.
             if train_store.empty:
-                logger.notice(
-                    f"""Train matrix for split {train_store.uuid} was empty,
+                logger.notice(f"""Train matrix for split {train_store.uuid} was empty,
                     no point in training this model. Skipping
-                    """
-                )
+                    """)
                 return
 
             if len(train_store.labels.unique()) == 1:
-                logger.notice(
-                    f"""Train Matrix for split {train_store.uuid} had only one
+                logger.notice(f"""Train Matrix for split {train_store.uuid} had only one
                     unique value, no point in training this model. Skipping
-                    """
-                )
+                    """)
                 return
 
             if test_store.empty:
-                logger.notice(
-                    f"""Test matrix for uuid {test_store.uuid}
+                logger.notice(f"""Test matrix for uuid {test_store.uuid}
                     was empty, no point in generating predictions. Not processing train/test task.
-                    """
-                )
+                    """)
                 return
 
             model_id = self.model_trainer.process_train_task(**train_kwargs)
 
             if not model_id:
-                logger.warning("Training unsuccessful for {train_kwargs.get('class_path')}({train_kwargs.get('parameters')}) [{train_kwargs.get('model_hash')}] on train matrix {train_store.uuid}. "
-                               "No model id returned.  Not attempting to test it")
+                logger.warning(
+                    "Training unsuccessful for {train_kwargs.get('class_path')}({train_kwargs.get('parameters')}) [{train_kwargs.get('model_hash')}] on train matrix {train_store.uuid}. "
+                    "No model id returned.  Not attempting to test it"
+                )
                 return
 
-            logger.success(f"Trained model id {model_id}: {train_kwargs.get('class_path')}({train_kwargs.get('parameters')}) [{train_kwargs.get('model_hash')}] on train matrix {train_store.uuid}. ")
+            logger.success(
+                f"Trained model id {model_id}: {train_kwargs.get('class_path')}({train_kwargs.get('parameters')}) [{train_kwargs.get('model_hash')}] on train matrix {train_store.uuid}. "
+            )
 
             # Storing individual importances (if any)
             self.individual_importance_calculator.calculate_and_save_all_methods_and_dates(
@@ -190,13 +203,17 @@ class ModelTrainTester:
             as_of_dates = test_store.as_of_dates
             logger.debug(
                 f"Testing and evaluating model {model_id}  {train_kwargs.get('class_path')}({train_kwargs.get('parameters')}) [{train_kwargs.get('model_hash')}] "
-                f"on test matrix {test_store.uuid}. ")
-            logger.spam(f"as_of_times min: {min(as_of_dates)} max: {max(as_of_dates)} num: {len(as_of_dates)}")
-
+                f"on test matrix {test_store.uuid}. "
+            )
+            logger.spam(
+                f"as_of_times min: {min(as_of_dates)} max: {max(as_of_dates)} num: {len(as_of_dates)}"
+            )
 
             # Generate predictions for the testing data then training data
             for store in (test_store, train_store):
-                if self.replace or self.model_evaluator.needs_evaluations(store, model_id):
+                if self.replace or self.model_evaluator.needs_evaluations(
+                    store, model_id
+                ):
                     logger.spam(
                         f"Generating new predictions for "
                         f"{store.matrix_type.string_name} matrix {store.uuid}, and model {model_id} to make evaluation",
@@ -209,8 +226,9 @@ class ModelTrainTester:
                         train_matrix_columns=train_store.columns(),
                     )
 
-                    logger.debug(f"Predictions generated for {store.matrix_type.string_name} matrix {store.uuid} using model {model_id}")
-
+                    logger.debug(
+                        f"Predictions generated for {store.matrix_type.string_name} matrix {store.uuid} using model {model_id}"
+                    )
 
                     protected_df = self.protected_groups_generator.as_dataframe(
                         as_of_dates=store.as_of_dates,
@@ -226,7 +244,7 @@ class ModelTrainTester:
                         matrix_store=store,
                         model_id=model_id,
                         subset=None,
-                        protected_df=protected_df
+                        protected_df=protected_df,
                     )
 
                     logger.info(
@@ -240,22 +258,22 @@ class ModelTrainTester:
                         f"in db from a previous run (or none needed at all), so skipping!",
                     )
 
-
                 for subset in self.subsets:
                     subset_hash = filename_friendly_hash(subset)
-                    if self.replace or self.model_evaluator.needs_evaluations(store, model_id, subset_hash):
+                    if self.replace or self.model_evaluator.needs_evaluations(
+                        store, model_id, subset_hash
+                    ):
 
                         logger.spam(
                             f"Evaluating {store.matrix_type.string_name} matrix {store.uuid}, subset {subset_hash}, and model {model_id}"
                         )
-
 
                         self.model_evaluator.evaluate(
                             predictions_proba=predictions_proba,
                             matrix_store=store,
                             model_id=model_id,
                             subset=subset,
-                            protected_df=protected_df
+                            protected_df=protected_df,
                         )
 
                         logger.info(
@@ -273,8 +291,7 @@ class ModelTrainTester:
 __all__ = (
     "IndividualImportanceCalculator",
     "ModelEvaluator",
-    "ModelGrouper"
-    "ModelTrainer",
+    "ModelGrouper" "ModelTrainer",
     "Predictor",
     "ModelTrainTester",
     "Subsetter",

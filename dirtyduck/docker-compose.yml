@@ -1,38 +1,49 @@
-version: "3.7"
+# DirtyDuck Tutorial - Docker Compose Configuration
 
 services:
   food_db:
     build:
       context: ./food_db
     image: dirtyduck/db
-    container_name: dirtyduck_db
     environment:
-      - POSTGRES_HOST=0.0.0.0
-      - POSTGRES_USER=food_user
-      - POSTGRES_PORT=5432
-      - POSTGRES_PASSWORD=some_password
-      - POSTGRES_DB=food
+      # Standard PostgreSQL environment variables
+      POSTGRES_USER: food_user
+      POSTGRES_PASSWORD: some_password
+      POSTGRES_DB: food
     volumes:
       - db-data:/var/lib/postgresql/data
     ports:
       - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U food_user -d food"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   bastion:
     build:
       context: ..
       dockerfile: Dockerfile
-      target: development
-    image: dsapp/triage:development
-    container_name: dirtyduck_bastion
+      target: base
+    image: dsapp/triage:dev
+    depends_on:
+      food_db:
+        condition: service_healthy
     tty: true
+    stdin_open: true
     environment:
-      - PS1=\[$$(tput setaf 4)$$(tput bold)[\]\u@$$(tput setaf 2)$$(tput smul)dirtyduck$$(tput rmul)$$(tput setaf 4)$$:\\w]#\[$$(tput sgr0) ]\
-      - TRIAGE_IMAGE=dirtyduck
-      - DATABASE_URL=postgresql://food_user:some_password@dirtyduck_db/food
-      - TRIAGE_OUTPUT=/triage-output
+      # Use standard PostgreSQL environment variables
+      PGHOST: food_db
+      PGPORT: 5432
+      PGUSER: food_user
+      PGPASSWORD: some_password
+      PGDATABASE: food
+      # For compatibility with old scripts
+      DATABASE_URL: postgresql://food_user:some_password@food_db/food
+      TRIAGE_OUTPUT: /triage-output
     volumes:
-      - "../example/dirtyduck:/dirtyduck"
-      - "../dirtyduck-output:/triage-output"
+      - ../example/dirtyduck:/dirtyduck
+      - ../dirtyduck-output:/triage-output
     working_dir: /dirtyduck
 
 volumes:

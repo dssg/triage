@@ -1,7 +1,9 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 
 import itertools
+
 from triage.component.architect.feature_group_creator import FeatureGroup
 
 
@@ -45,8 +47,7 @@ def all_combinations(feature_groups):
     """
     results = []
     for number_feature_groups in range(len(feature_groups) + 1):
-        for combo in itertools.combinations(feature_groups,
-                                            number_feature_groups):
+        for combo in itertools.combinations(feature_groups, number_feature_groups):
             feature_dict = FeatureGroup()
             for group_element in combo:
                 feature_dict.update(group_element)
@@ -76,7 +77,7 @@ class FeatureGroupMixer:
     strategy_lookup = {
         "leave-one-out": leave_one_out,
         "leave-one-in": leave_one_in,
-        "all-combinations":  all_combinations,
+        "all-combinations": all_combinations,
         "all": all_features,
     }
 

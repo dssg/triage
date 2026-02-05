@@ -1,29 +1,28 @@
-import os.path
-import enum
 import datetime
+import enum
+import os.path
 
 from sqlalchemy import (
-    Column,
+    DDL,
+    JSON,
     BigInteger,
     Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
     Integer,
     Interval,
-    String,
     Numeric,
-    DateTime,
-    JSON,
-    Float,
+    String,
     Text,
-    ForeignKey,
-    DDL,
     event,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
-from sqlalchemy.types import ARRAY, Enum
-from sqlalchemy.sql import func
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.sql import func
+from sqlalchemy.types import ARRAY, Enum
 
 # One declarative_base object for each schema created
 Base = declarative_base()
@@ -45,14 +44,12 @@ with open(group_proc_filename) as fd:
 
 event.listen(Base.metadata, "before_create", DDL(stmt))
 
-nuke_triage_filename = os.path.join(
-    os.path.dirname(__file__), "sql", "nuke_triage.sql"
-)
+nuke_triage_filename = os.path.join(os.path.dirname(__file__), "sql", "nuke_triage.sql")
 with open(nuke_triage_filename) as fd:
     stmt = fd.read()
 
 
-event.listen(Base.metadata, "before_create", DDL(stmt.replace('%', '%%')))
+event.listen(Base.metadata, "before_create", DDL(stmt.replace("%", "%%")))
 
 
 class Experiment(Base):
@@ -60,10 +57,7 @@ class Experiment(Base):
     __tablename__ = "experiments"
     __table_args__ = {"schema": "triage_metadata"}
 
-    experiment_hash = Column(
-            String,
-            primary_key=True
-    )
+    experiment_hash = Column(String, primary_key=True)
     config = Column(JSONB)
     time_splits = Column(Integer)
     as_of_times = Column(Integer)
@@ -79,10 +73,7 @@ class Retrain(Base):
     __tablename__ = "retrain"
     __table_args__ = {"schema": "triage_metadata"}
 
-    retrain_hash = Column(
-            String,
-            primary_key=True
-    )
+    retrain_hash = Column(String, primary_key=True)
     config = Column(JSONB)
     prediction_date = Column(DateTime)
 
@@ -129,7 +120,7 @@ class TriageRun(Base):
     cohort_table_name = Column(String)
     labels_table_name = Column(String)
     bias_hash = Column(String)
-        
+
 
 class Subset(Base):
 
@@ -182,7 +173,9 @@ class ListPredictionMetadata(Base):
     model_id = Column(
         Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
     )
-    matrix_uuid = Column(Text, ForeignKey("triage_metadata.matrices.matrix_uuid"), primary_key=True)
+    matrix_uuid = Column(
+        Text, ForeignKey("triage_metadata.matrices.matrix_uuid"), primary_key=True
+    )
     tiebreaker_ordering = Column(Text)
     random_seed = Column(Integer)
     predictions_saved = Column(Boolean)
@@ -195,7 +188,7 @@ class ExperimentMatrix(Base):
     experiment_hash = Column(
         String,
         ForeignKey("triage_metadata.experiments.experiment_hash"),
-        primary_key=True
+        primary_key=True,
     )
 
     matrix_uuid = Column(String, primary_key=True)
@@ -266,11 +259,13 @@ class ExperimentModel(Base):
     experiment_hash = Column(
         String,
         ForeignKey("triage_metadata.experiments.experiment_hash"),
-        primary_key=True
+        primary_key=True,
     )
     model_hash = Column(String, primary_key=True)
 
-    model_rel = relationship("Model", primaryjoin=(Model.model_hash == model_hash), foreign_keys=model_hash)
+    model_rel = relationship(
+        "Model", primaryjoin=(Model.model_hash == model_hash), foreign_keys=model_hash
+    )
     experiment_rel = relationship("Experiment")
 
 
@@ -279,12 +274,12 @@ class RetrainModel(Base):
     __table_args__ = {"schema": "triage_metadata"}
 
     retrain_hash = Column(
-        String,
-        ForeignKey("triage_metadata.retrain.retrain_hash"),
-        primary_key=True
+        String, ForeignKey("triage_metadata.retrain.retrain_hash"), primary_key=True
     )
     model_hash = Column(String, primary_key=True)
-    model_rel = relationship("Model", primaryjoin=(Model.model_hash == model_hash), foreign_keys=model_hash)
+    model_rel = relationship(
+        "Model", primaryjoin=(Model.model_hash == model_hash), foreign_keys=model_hash
+    )
     retrain_rel = relationship("Retrain")
 
 
@@ -302,10 +297,11 @@ class FeatureImportance(Base):
     rank_abs = Column(Integer)
     rank_pct = Column(Float)
 
-    model_rel = relationship("Model")
+    # model_rel = relationship("Model")
 
 
 class TestPrediction(Base):
+    __test__ = False  # Not a pytest test class
 
     __tablename__ = "predictions"
     __table_args__ = {"schema": "test_results"}
@@ -352,13 +348,17 @@ class TrainPrediction(Base):
 
 
 class TestPredictionMetadata(Base):
+    __test__ = False  # Not a pytest test class
+
     __tablename__ = "prediction_metadata"
     __table_args__ = {"schema": "test_results"}
 
     model_id = Column(
         Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
     )
-    matrix_uuid = Column(Text, ForeignKey("triage_metadata.matrices.matrix_uuid"), primary_key=True)
+    matrix_uuid = Column(
+        Text, ForeignKey("triage_metadata.matrices.matrix_uuid"), primary_key=True
+    )
     tiebreaker_ordering = Column(Text)
     random_seed = Column(Integer)
     predictions_saved = Column(Boolean)
@@ -371,10 +371,13 @@ class TrainPredictionMetadata(Base):
     model_id = Column(
         Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
     )
-    matrix_uuid = Column(Text, ForeignKey("triage_metadata.matrices.matrix_uuid"), primary_key=True)
+    matrix_uuid = Column(
+        Text, ForeignKey("triage_metadata.matrices.matrix_uuid"), primary_key=True
+    )
     tiebreaker_ordering = Column(Text)
     random_seed = Column(Integer)
     predictions_saved = Column(Boolean)
+
 
 class IndividualImportance(Base):
 
@@ -395,6 +398,7 @@ class IndividualImportance(Base):
 
 
 class TestEvaluation(Base):
+    __test__ = False  # Not a pytest test class
 
     __tablename__ = "evaluations"
     __table_args__ = {"schema": "test_results"}
@@ -402,7 +406,7 @@ class TestEvaluation(Base):
     model_id = Column(
         Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
     )
-    subset_hash = Column(String, primary_key=True, default='')
+    subset_hash = Column(String, primary_key=True, default="")
     evaluation_start_time = Column(DateTime, primary_key=True)
     evaluation_end_time = Column(DateTime, primary_key=True)
     as_of_date_frequency = Column(Interval, primary_key=True)
@@ -431,7 +435,7 @@ class TrainEvaluation(Base):
     model_id = Column(
         Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True
     )
-    subset_hash = Column(String, primary_key=True, default='')
+    subset_hash = Column(String, primary_key=True, default="")
     evaluation_start_time = Column(DateTime, primary_key=True)
     evaluation_end_time = Column(DateTime, primary_key=True)
     as_of_date_frequency = Column(Interval, primary_key=True)
@@ -453,12 +457,17 @@ class TrainEvaluation(Base):
 
 
 class TestAequitas(Base):
+    __test__ = False  # Not a pytest test class
+
     __tablename__ = "aequitas"
     __table_args__ = {"schema": "test_results"}
     model_id = Column(
-        Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True, index=True
+        Integer,
+        ForeignKey("triage_metadata.models.model_id"),
+        primary_key=True,
+        index=True,
     )
-    subset_hash = Column(String, primary_key=True, default='')
+    subset_hash = Column(String, primary_key=True, default="")
     tie_breaker = Column(String, primary_key=True)
     evaluation_start_time = Column(DateTime, primary_key=True, index=True)
     evaluation_end_time = Column(DateTime, primary_key=True, index=True)
@@ -528,9 +537,12 @@ class TrainAequitas(Base):
     __tablename__ = "aequitas"
     __table_args__ = {"schema": "train_results"}
     model_id = Column(
-        Integer, ForeignKey("triage_metadata.models.model_id"), primary_key=True, index=True
+        Integer,
+        ForeignKey("triage_metadata.models.model_id"),
+        primary_key=True,
+        index=True,
     )
-    subset_hash = Column(String, primary_key=True, default='')
+    subset_hash = Column(String, primary_key=True, default="")
     tie_breaker = Column(String, primary_key=True)
     evaluation_start_time = Column(DateTime, primary_key=True, index=True)
     evaluation_end_time = Column(DateTime, primary_key=True, index=True)

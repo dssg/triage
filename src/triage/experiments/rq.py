@@ -1,6 +1,8 @@
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 import time
+
 from triage.component.catwalk.utils import Batch
 from triage.experiments import ExperimentBase
 
@@ -14,9 +16,7 @@ except ImportError:
     raise
 
 
-DEFAULT_TIMEOUT = (
-    "365d"
-)  # We want to basically invalidate RQ's timeouts by setting them each to one year
+DEFAULT_TIMEOUT = "365d"  # We want to basically invalidate RQ's timeouts by setting them each to one year
 
 
 class RQExperiment(ExperimentBase):
@@ -136,7 +136,7 @@ class RQExperiment(ExperimentBase):
                 job_timeout=DEFAULT_TIMEOUT,
                 result_ttl=DEFAULT_TIMEOUT,
                 ttl=DEFAULT_TIMEOUT,
-                **build_task
+                **build_task,
             )
             for build_task in matrix_build_tasks.values()
         ]
@@ -156,7 +156,7 @@ class RQExperiment(ExperimentBase):
                 job_timeout=DEFAULT_TIMEOUT,
                 result_ttl=DEFAULT_TIMEOUT,
                 ttl=DEFAULT_TIMEOUT,
-                **task
+                **task,
             )
             for batch in train_test_batches
             for task in batch.tasks
@@ -177,7 +177,7 @@ class RQExperiment(ExperimentBase):
                 job_timeout=DEFAULT_TIMEOUT,
                 result_ttl=DEFAULT_TIMEOUT,
                 ttl=DEFAULT_TIMEOUT,
-                **task
+                **task,
             )
             for task in subset_tasks
         ]

@@ -1,16 +1,21 @@
-import sys
 import datetime
-import platform
 import getpass
+import logging
 import os
-import requests
+import platform
 import subprocess
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+import sys
+
+import requests
+
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 from functools import wraps
-from triage.util.db import scoped_session, get_for_update
-from triage.util.introspection import classpath
+
 from triage import __version__
+from triage.util.db import get_for_update, scoped_session
+from triage.util.introspection import classpath
 
 try:
     try:
@@ -30,7 +35,11 @@ def infer_git_hash():
     Returns: Either the 'git rev-parse HEAD' output or None
     """
     try:
-        git_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip().decode('utf-8')
+        git_hash = (
+            subprocess.check_output(["git", "rev-parse", "HEAD"])
+            .strip()
+            .decode("utf-8")
+        )
     except Exception as exc:
         logger.spam("Unable to infer git hash")
         git_hash = None
@@ -40,9 +49,11 @@ def infer_git_hash():
 def infer_triage_version():
     return __version__
 
+
 def infer_python_version():
-    """ Returns python version """
+    """Returns python version"""
     return sys.version.replace("\r", "").replace("\n", "")
+
 
 def infer_installed_libraries():
     """Attempt to infer the installed libraries by running pip freeze and formatting as a list
@@ -64,8 +75,7 @@ def infer_ec2_instance_type():
     """
     try:
         ec2_instance_type = requests.get(
-            'http://169.254.169.254/latest/meta-data/instance-type',
-            timeout=0.01
+            "http://169.254.169.254/latest/meta-data/instance-type", timeout=0.01
         ).text
     except requests.exceptions.RequestException:
         logger.spam(
@@ -88,17 +98,15 @@ def infer_log_location():
     if root_logger_handlers:
         log_location = root_logger_handlers[0].baseFilename
     else:
-        logger.spam("No FileHandler found in root logger, cannot record logging filename")
+        logger.spam(
+            "No FileHandler found in root logger, cannot record logging filename"
+        )
         log_location = None
     return log_location
 
 
 def initialize_tracking_and_get_run_id(
-    experiment_hash,
-    experiment_class_path,
-    random_seed,
-    experiment_kwargs,
-    db_engine
+    experiment_hash, experiment_class_path, random_seed, experiment_kwargs, db_engine
 ):
     """Create a row in the TriageRun table with some initial info and return the created run_id
 
@@ -131,7 +139,7 @@ def initialize_tracking_and_get_run_id(
         ec2_instance_type=infer_ec2_instance_type(),
         log_location=infer_log_location(),
         experiment_class_path=experiment_class_path,
-        random_seed = random_seed,
+        random_seed=random_seed,
         experiment_kwargs=cleaned_experiment_kwargs,
     )
     run_id = None
@@ -165,6 +173,7 @@ def experiment_entrypoint(entrypoint_func):
     Upon method entry, will update the TriageRun row with the wrapped method name.
     Upon method exit, will update the TriageRun row with the status (either failed or completed)
     """
+
     @wraps(entrypoint_func)
     def with_entrypoint(self, *args, **kwargs):
         entrypoint_name = entrypoint_func.__name__
@@ -202,10 +211,12 @@ def increment_field(field, run_id, db_engine):
     with scoped_session(db_engine) as session:
         # Use an update query instead of a session merge so it happens in one atomic query
         # and protect against race conditions
-        session.query(TriageRun).filter_by(run_id=run_id).update({
-            field: getattr(TriageRun, field) + 1,
-            'last_updated_time': datetime.datetime.now()
-        })
+        session.query(TriageRun).filter_by(run_id=run_id).update(
+            {
+                field: getattr(TriageRun, field) + 1,
+                "last_updated_time": datetime.datetime.now(),
+            }
+        )
 
 
 def record_matrix_building_started(run_id, db_engine):
@@ -273,7 +284,7 @@ def built_matrix(run_id, db_engine):
         run_id (int) The identifier/primary key of the run
         db_engine (sqlalchemy.engine)
     """
-    increment_field('matrices_made', run_id, db_engine)
+    increment_field("matrices_made", run_id, db_engine)
 
 
 def skipped_matrix(run_id, db_engine):
@@ -283,7 +294,7 @@ def skipped_matrix(run_id, db_engine):
         run_id (int) The identifier/primary key of the run
         db_engine (sqlalchemy.engine)
     """
-    increment_field('matrices_skipped', run_id, db_engine)
+    increment_field("matrices_skipped", run_id, db_engine)
 
 
 def errored_matrix(run_id, db_engine):
@@ -293,7 +304,7 @@ def errored_matrix(run_id, db_engine):
         run_id (int) The identifier/primary key of the run
         db_engine (sqlalchemy.engine)
     """
-    increment_field('matrices_errored', run_id, db_engine)
+    increment_field("matrices_errored", run_id, db_engine)
 
 
 def built_model(run_id, db_engine):
@@ -303,7 +314,7 @@ def built_model(run_id, db_engine):
         run_id (int) The identifier/primary key of the run
         db_engine (sqlalchemy.engine)
     """
-    increment_field('models_made', run_id, db_engine)
+    increment_field("models_made", run_id, db_engine)
 
 
 def skipped_model(run_id, db_engine):
@@ -313,7 +324,7 @@ def skipped_model(run_id, db_engine):
         run_id (int) The identifier/primary key of the run
         db_engine (sqlalchemy.engine)
     """
-    increment_field('models_skipped', run_id, db_engine)
+    increment_field("models_skipped", run_id, db_engine)
 
 
 def errored_model(run_id, db_engine):
@@ -323,4 +334,4 @@ def errored_model(run_id, db_engine):
         run_id (int) The identifier/primary key of the run
         db_engine (sqlalchemy.engine)
     """
-    increment_field('models_errored', run_id, db_engine)
+    increment_field("models_errored", run_id, db_engine)

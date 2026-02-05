@@ -1,11 +1,13 @@
 import copy
 import itertools
 
-import verboselogs, logging
-logger = verboselogs.VerboseLogger(__name__)
+from triage.logging import get_logger
+
+logger = get_logger(__name__)
 
 from triage.component.catwalk.utils import filename_friendly_hash
-from . import utils, entity_date_table_generators
+
+from . import entity_date_table_generators, utils
 
 
 class Planner:
@@ -18,8 +20,8 @@ class Planner:
         user_metadata,
     ):
         self.feature_start_time = (
-            feature_start_time
-        )  # earliest time included in features
+            feature_start_time  # earliest time included in features
+        )
         self.label_names = label_names
         self.label_types = label_types
         self.cohort_names = cohort_names
@@ -37,9 +39,9 @@ class Planner:
             "matrix_metadata": matrix_metadata,
             "matrix_type": matrix_metadata["matrix_type"],
         }
-    
+
     @staticmethod
-    def make_metadata( 
+    def make_metadata(
         matrix_definition,
         feature_dictionary,
         label_name,
@@ -49,7 +51,7 @@ class Planner:
         feature_start_time,
         user_metadata,
     ):
-        """ Generate dictionary of matrix metadata.
+        """Generate dictionary of matrix metadata.
 
         :param matrix_definition: temporal definition of matrix
         :param feature dictionary: feature tables and the columns within them to use as features
@@ -136,7 +138,10 @@ class Planner:
                 cohort_name,
                 feature_dictionary,
             ) in itertools.product(
-                self.label_names, self.label_types, self.cohort_names, feature_dictionaries
+                self.label_names,
+                self.label_types,
+                self.cohort_names,
+                feature_dictionaries,
             ):
                 matrix_set_clone = copy.deepcopy(matrix_set)
                 # get a uuid

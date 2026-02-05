@@ -29,3 +29,12 @@ src/triage/component/postmodeling/postmodeling_tmp.ipynb
 src/triage/component/postmodeling/model_class_testing.py
 src/triage/component/postmodeling/model_class_testing.ipynb
 src/triage/component/postmodeling/model_groups_testing.ipynb
+
+# Local environment and secrets
+.env
+.secrets
+.secrets/
+
+# Session handoff files
+GIT_REMOTE
+TODO.org

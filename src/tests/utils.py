@@ -5,29 +5,27 @@ import os
 import random
 import tempfile
 from contextlib import contextmanager
+from functools import cached_property
 from unittest import mock
 
 import matplotlib
 import numpy as np
 import pandas as pd
-import testing.postgresql
-from functools import cached_property
-from sqlalchemy import create_engine
+from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
+from tests.results_tests.factories import MatrixFactory, set_session
+from triage import create_engine
 from triage.component.catwalk.db import ensure_db
 from triage.component.catwalk.storage import MatrixStore, ProjectStorage
 from triage.component.catwalk.utils import filename_friendly_hash
-from triage.component.results_schema import Model, Matrix
+from triage.component.results_schema import Matrix, Model
 from triage.experiments import CONFIG_VERSION
 from triage.util.structs import FeatureNameList
-
-from tests.results_tests.factories import init_engine, session, MatrixFactory
 
 matplotlib.use("Agg")
 
 from matplotlib import pyplot as plt  # noqa
-
 
 CONFIG_QUERY_DATA = {
     "cohort": {
@@ -120,9 +118,13 @@ class MockMatrixStore(MatrixStore):
         self.matrix_uuid = matrix_uuid
         self.init_as_of_dates = init_as_of_dates or []
 
-        session = sessionmaker(db_engine)()
-        session.add(Matrix(matrix_uuid=matrix_uuid))
-        session.commit()
+        SessionLocal = sessionmaker(bind=db_engine)
+        session = SessionLocal()
+        try:
+            session.add(Matrix(matrix_uuid=matrix_uuid))
+            session.commit()
+        finally:
+            session.close()
 
     @property
     def as_of_dates(self):
@@ -148,21 +150,25 @@ def fake_trained_model(
     Returns:
         (int) model id for database retrieval
     """
-    session = sessionmaker(db_engine)()
-    session.merge(Matrix(matrix_uuid=train_matrix_uuid))
+    SessionLocal = sessionmaker(bind=db_engine)
+    session = SessionLocal()
 
-    # Create the fake trained model and store in db
-    trained_model = MockTrainedModel()
-    db_model = Model(
-        model_hash="abcd",
-        train_matrix_uuid=train_matrix_uuid,
-        train_end_time=train_end_time,
-    )
-    session.add(db_model)
-    session.commit()
-    model_id = db_model.model_id
-    session.close()
-    return trained_model, model_id
+    try:
+        session.merge(Matrix(matrix_uuid=train_matrix_uuid))
+
+        # Create the fake trained model and store in db
+        trained_model = MockTrainedModel()
+        db_model = Model(
+            model_hash="abcd",
+            train_matrix_uuid=train_matrix_uuid,
+            train_end_time=train_end_time,
+        )
+        session.add(db_model)
+        session.commit()
+        model_id = db_model.model_id
+        return trained_model, model_id
+    finally:
+        session.close()
 
 
 def matrix_metadata_creator(**override_kwargs):
@@ -209,7 +215,9 @@ def matrix_creator():
     return pd.DataFrame.from_dict(source_dict)
 
 
-def get_matrix_store(project_storage, matrix=None, metadata=None, write_to_db=True):
+def get_matrix_store(
+    project_storage, db_engine, matrix=None, metadata=None, write_to_db=True
+):
     """Return a matrix store associated with the given project storage.
     Also adds an entry in the matrices table if it doesn't exist already
 
@@ -223,7 +231,8 @@ def get_matrix_store(project_storage, matrix=None, metadata=None, write_to_db=Tr
         matrix = matrix_creator()
     if not metadata:
         metadata = matrix_metadata_creator()
-    matrix["as_of_date"] = matrix["as_of_date"].apply(pd.Timestamp)
+
+    # matrix["as_of_date"] = matrix["as_of_date"].apply(pd.Timestamp)
     matrix.set_index(MatrixStore.indices, inplace=True)
     matrix_store = project_storage.matrix_storage_engine().get_store(
         filename_friendly_hash(metadata)
@@ -235,14 +244,21 @@ def get_matrix_store(project_storage, matrix=None, metadata=None, write_to_db=Tr
     matrix_store.save()
     matrix_store.clear_cache()
     if write_to_db:
-        if (
-            session.query(Matrix)
-            .filter(Matrix.matrix_uuid == matrix_store.uuid)
-            .count()
-            == 0
-        ):
-            MatrixFactory(matrix_uuid=matrix_store.uuid)
-            session.commit()
+        SessionLocal = sessionmaker(bind=db_engine)
+        session = SessionLocal()
+        try:
+            if (
+                session.query(Matrix)
+                .filter(Matrix.matrix_uuid == matrix_store.uuid)
+                .count()
+                == 0
+            ):
+                set_session(session)
+                MatrixFactory(matrix_uuid=matrix_store.uuid)
+                session.commit()
+        finally:
+            session.close()
+
     return matrix_store
 
 
@@ -250,15 +266,16 @@ def get_matrix_store(project_storage, matrix=None, metadata=None, write_to_db=Tr
 def rig_engines():
     """Set up a db engine and project storage engine
 
+    DEPRECATED: Use the `rig_engines` pytest fixture instead.
+    This context manager is provided for backwards compatibility only.
+
     Yields (tuple) (database engine, project storage engine)
     """
-    with testing.postgresql.Postgresql() as postgresql:
-        db_engine = create_engine(postgresql.url())
-        ensure_db(db_engine)
-        init_engine(db_engine)
-        with tempfile.TemporaryDirectory() as temp_dir:
-            project_storage = ProjectStorage(temp_dir)
-            yield db_engine, project_storage
+    raise NotImplementedError(
+        "rig_engines() context manager has been removed. "
+        "Use the rig_engines pytest fixture from conftest.py instead. "
+        "Update your test to accept 'rig_engines' as a parameter."
+    )
 
 
 def populate_source_data(db_engine):
@@ -321,59 +338,96 @@ def populate_source_data(db_engine):
         (3, 0, "2015-01-01"),
     ]
 
-    db_engine.execute(
-        """create table cat_complaints (
-        entity_id int,
-        as_of_date date,
-        cat_sightings int
-        )"""
-    )
+    with db_engine.begin() as conn:
+        conn.execute(text("""
+                create table cat_complaints (
+                entity_id int,
+                as_of_date date,
+                cat_sightings int
+                )
+                """))
 
-    db_engine.execute(
-        """create table entity_zip_codes (
-        entity_id int,
-        zip_code text
-        )"""
-    )
+        conn.execute(text("""
+                create table entity_zip_codes (
+                entity_id int,
+                zip_code text
+                )
+                """))
 
-    db_engine.execute(
-        "create table zip_code_demographics (zip_code text, ethnicity text, as_of_date date)"
-    )
-    for demographic_row in zip_code_demographics:
-        db_engine.execute(
-            "insert into zip_code_demographics values (%s, %s, %s)", demographic_row
+        conn.execute(
+            text(
+                "create table zip_code_demographics (zip_code text, ethnicity text, as_of_date date)"
+            )
         )
+        for demographic_row in zip_code_demographics:
+            conn.execute(
+                text(
+                    "insert into zip_code_demographics values (:zip_code, :ethnicity, :as_of_date)"
+                ),
+                {
+                    "zip_code": demographic_row[0],
+                    "ethnicity": demographic_row[1],
+                    "as_of_date": demographic_row[2],
+                },
+            )
 
-    for entity_zip_code in entity_zip_codes:
-        db_engine.execute(
-            "insert into entity_zip_codes values (%s, %s)", entity_zip_code
-        )
+        for entity_zip_code in entity_zip_codes:
+            conn.execute(
+                text("insert into entity_zip_codes values (:entity_id, :zip_code)"),
+                {
+                    "entity_id": entity_zip_code[0],
+                    "zip_code": entity_zip_code[1],
+                },
+            )
 
-    db_engine.execute(
-        """create table zip_code_events (
-        zip_code text,
-        as_of_date date,
-        num_events int
-    )"""
-    )
-    for zip_code_event in zip_code_events:
-        db_engine.execute(
-            "insert into zip_code_events values (%s, %s, %s)", zip_code_event
-        )
+        conn.execute(text("""
+                create table zip_code_events (
+                zip_code text,
+                as_of_date date,
+                num_events int
+                )
+                """))
+        for zip_code_event in zip_code_events:
+            conn.execute(
+                text(
+                    "insert into zip_code_events values (:zip_code, :as_of_date, :num_events)"
+                ),
+                {
+                    "zip_code": zip_code_event[0],
+                    "as_of_date": zip_code_event[1],
+                    "num_events": zip_code_event[2],
+                },
+            )
 
-    for complaint in complaints:
-        db_engine.execute("insert into cat_complaints values (%s, %s, %s)", complaint)
+        for complaint in complaints:
+            conn.execute(
+                text(
+                    "insert into cat_complaints values (:entity_id, :as_of_date, :cat_sightings)"
+                ),
+                {
+                    "entity_id": complaint[0],
+                    "as_of_date": complaint[1],
+                    "cat_sightings": complaint[2],
+                },
+            )
 
-    db_engine.execute(
-        """create table events (
-        entity_id int,
-        outcome int,
-        outcome_date date
-    )"""
-    )
+        conn.execute(text("""
+                create table events (
+                entity_id int,
+                outcome int,
+                outcome_date date
+                )
+                """))
 
-    for event in events:
-        db_engine.execute("insert into events values (%s, %s, %s)", event)
+        for event in events:
+            conn.execute(
+                text("insert into events values (:entity_id, :outcome, :outcome_date)"),
+                {
+                    "entity_id": event[0],
+                    "outcome": event[1],
+                    "outcome_date": event[2],
+                },
+            )
 
 
 def sample_cohort_config(query_source="filepath"):
@@ -411,7 +465,7 @@ def sample_config(query_source="filepath"):
                 "query": """\
                     select distinct entity_id
                     from events
-                    where entity_id %% 2 = 0
+                    where entity_id % 2 = 0
                     and outcome_date < '{as_of_date}'::date
                 """,
             },
@@ -453,15 +507,16 @@ def sample_config(query_source="filepath"):
         "include_missing_labels_in_train_as": False,
     }
 
-    bias_audit_config = {
-        "from_obj_query": "select * from zip_code_demographics join entity_zip_codes using (zip_code)",
-        "attribute_columns": ["ethnicity"],
-        "knowledge_date_column": "as_of_date",
-        "entity_id_column": "entity_id",
-        "ref_groups_method": "predefined",
-        "ref_groups": {"ethnicity": "white"},
-        "thresholds": {"percentiles": [], "top_n": [2]},
-    }
+    # bias_audit_config disabled because aequitas 1.0.0 is incompatible with pandas 2.x
+    # bias_audit_config = {
+    #     "from_obj_query": "select * from zip_code_demographics join entity_zip_codes using (zip_code)",
+    #     "attribute_columns": ["ethnicity"],
+    #     "knowledge_date_column": "as_of_date",
+    #     "entity_id_column": "entity_id",
+    #     "ref_groups_method": "predefined",
+    #     "ref_groups": {"ethnicity": "white"},
+    #     "thresholds": {"percentiles": [], "top_n": [2]},
+    # }
 
     return {
         "config_version": CONFIG_VERSION,
@@ -477,10 +532,11 @@ def sample_config(query_source="filepath"):
             "parameters",
         ],
         "feature_aggregations": feature_config,
-        # "cohort_config": cohort_config,
+        "cohort_config": cohort_config,
         "temporal_config": temporal_config,
         "grid_config": grid_config,
-        "bias_audit_config": bias_audit_config,
+        # bias_audit_config disabled - aequitas 1.0.0 incompatible with pandas 2.x
+        # "bias_audit_config": bias_audit_config,
         "prediction": {"rank_tiebreaker": "random"},
         "scoring": scoring_config,
         "user_metadata": {"custom_key": "custom_value"},
