@@ -472,10 +472,18 @@ class ExperimentReport:
         # 1. fetch evaluation values to check if we have
         q = fetch_evaluation_values()
         df = pd.read_sql(q, self.engine)
+
+        # If no data, return empty DataFrame early
+        if df.empty:
+            return df
+
         # Validate that we have value for the DEFAULT metric and parameter
-        if df.metric_value.isna().unique():
+        # Check if all values are NA (meaning no evaluations for this metric/parameter)
+        if df.metric_value.isna().all():
             q = fetch_evaluation_values(with_parameter=False)
             df = pd.read_sql(q, self.engine)
+            if df.empty:
+                return df
             # fetch the first available value
             parameter_ = df.loc[0, "parameter"]
             self.threshold = parameter_
@@ -569,10 +577,18 @@ class ExperimentReport:
 
         q = fetch_evaluation_values_subsets()
         df = pd.read_sql(q, self.engine)
+
+        # If no data, return None early
+        if df.empty:
+            return None
+
         # Validate that we have value for the DEFAULT metric and parameter
-        if df.metric_value.isna().unique():
+        # Check if all values are NA (meaning no evaluations for this metric/parameter)
+        if df.metric_value.isna().all():
             q = fetch_evaluation_values_subsets(with_parameter=False)
             df = pd.read_sql(q, self.engine)
+            if df.empty:
+                return None
             # fetch the first available value
             parameter_ = df.loc[0, "parameter"]
             self.threshold = parameter_
@@ -1143,27 +1159,37 @@ class ExperimentReport:
         performance = self.model_performance(
             metric=metric, parameter=parameter, generate_plot=False
         )
-        best_performance = (
-            performance.groupby(["model_group_id", "model_type"])["metric_value"]
-            .mean()
-            .max()
-        )
-        best_model_group = (
-            performance.groupby(["model_group_id", "model_type"])["metric_value"]
-            .mean()
-            .idxmax()[0]
-        )
-        best_model_type = (
-            performance.groupby(["model_group_id", "model_type"])["metric_value"]
-            .mean()
-            .idxmax()[1]
-        )
 
-        # because we could change the value of the default parameter in case it doesn't exist,
-        # it is safer to take it from the object itself.
-        logger.notice(
-            f"Your models achieved a best average {self.performance_metric}{self.threshold} of {round(best_performance, 3)} over the {stats['validation_splits']} validation splits, with the Model Group {best_model_group},{best_model_type}. Note that model selection is more nuanced than average predictive performance over time. You could use Audition for model selection."
-        )
+        if performance is None or performance.empty:
+            logger.warning(
+                "No model performance data available. This may happen when save_predictions=False "
+                "or when no evaluations have been computed yet."
+            )
+            best_performance = None
+            best_model_group = None
+            best_model_type = None
+        else:
+            best_performance = (
+                performance.groupby(["model_group_id", "model_type"])["metric_value"]
+                .mean()
+                .max()
+            )
+            best_model_group = (
+                performance.groupby(["model_group_id", "model_type"])["metric_value"]
+                .mean()
+                .idxmax()[0]
+            )
+            best_model_type = (
+                performance.groupby(["model_group_id", "model_type"])["metric_value"]
+                .mean()
+                .idxmax()[1]
+            )
+
+            # because we could change the value of the default parameter in case it doesn't exist,
+            # it is safer to take it from the object itself.
+            logger.notice(
+                f"Your models achieved a best average {self.performance_metric}{self.threshold} of {round(best_performance, 3)} over the {stats['validation_splits']} validation splits, with the Model Group {best_model_group},{best_model_type}. Note that model selection is more nuanced than average predictive performance over time. You could use Audition for model selection."
+            )
 
         ## Subsets
         subset_performance = self.model_performance_subsets(
@@ -1208,7 +1234,7 @@ class ExperimentReport:
             generate_plot=False,
         )
 
-        if equity_metrics is not None:
+        if equity_metrics is not None and best_model_group is not None:
             grpobj = equity_metrics[
                 (equity_metrics.baserate > 0)
                 & (equity_metrics.model_group_id == best_model_group)

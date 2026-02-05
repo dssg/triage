@@ -131,6 +131,7 @@ class ExperimentBase(ABC):
     ):
         # For a partial run, skip validation and avoid cleaning up
         # we'll also skip filling default config values below
+        self.partial_run = partial_run
         if partial_run:
             cleanup = False
             skip_validation = True
@@ -906,7 +907,9 @@ class ExperimentBase(ABC):
             self.generate_subsets()
             self.generate_protected_groups()
             self.train_and_test_models()
-            self._summary_report()
+            # Skip summary report for partial runs (incomplete configurations)
+            if not self.partial_run:
+                self._summary_report()
             self._log_end_of_run_report()
         except Exception:
             logger.error("Uh oh... Houston we have a problem")
