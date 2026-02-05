@@ -783,8 +783,9 @@ def test_replace_true_rerun(db_engine):
         builder.build_matrix(**build_args)
 
         assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
-        assert builder.sessionmaker().query(Matrix).get(uuid)
+        session = builder.sessionmaker()
+        assert session.get(Matrix, uuid)
         # rerun
         builder.build_matrix(**build_args)
         assert len(matrix_storage_engine.get_store(uuid).design_matrix) == 5
-        assert builder.sessionmaker().query(Matrix).get(uuid)
+        assert session.get(Matrix, uuid)

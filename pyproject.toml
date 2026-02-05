@@ -150,6 +150,28 @@ BOTO_CONFIG = "/dev/null"
 
 [tool.pytest.ini_options]
 testpaths = ["src/tests"]
+filterwarnings = [
+    # External package warnings we can't fix
+    "ignore:invalid escape sequence:SyntaxWarning:millify",
+    "ignore:datetime.datetime.utcnow:DeprecationWarning:moto",
+    "ignore:datetime.datetime.utcnow:DeprecationWarning:botocore",
+    # sklearn deprecation warnings (external)
+    "ignore:'penalty' was deprecated:FutureWarning:sklearn",
+    "ignore:'n_jobs' has no effect:FutureWarning:sklearn",
+    # sklearn metrics warnings (expected with test data)
+    "ignore:Only one class is present:sklearn.exceptions.UndefinedMetricWarning",
+    "ignore:Precision is ill-defined:sklearn.exceptions.UndefinedMetricWarning",
+    "ignore:Recall is ill-defined:sklearn.exceptions.UndefinedMetricWarning",
+    "ignore:No positive class found:UserWarning",
+    # pandas SQLAlchemy warning (we use raw connections intentionally in some tests)
+    "ignore:pandas only supports SQLAlchemy connectable:UserWarning",
+    # SQLAlchemy legacy API warnings (Query.get() -> Session.get())
+    "ignore:The Query.get\\(\\) method is considered legacy:sqlalchemy.exc.LegacyAPIWarning",
+    # matplotlib non-interactive backend warning
+    "ignore:FigureCanvasAgg is non-interactive:UserWarning",
+    # matplotlib too many figures warning (expected in tests)
+    "ignore:More than 20 figures have been opened:RuntimeWarning",
+]
 
 [tool.ruff]
 line-length = 120

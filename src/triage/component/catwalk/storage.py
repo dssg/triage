@@ -404,10 +404,9 @@ class MatrixStore:
         if matrix_with_labels.index.names != self.indices:
             matrix_with_labels.set_index(self.indices, inplace=True)
         index_of_date = matrix_with_labels.index.names.index("as_of_date")
-        if matrix_with_labels.index.levels[index_of_date].dtype != "datetime64[ns]":
-            raise ValueError(
-                f"Woah is {matrix_with_labels.index.levels[index_of_date].dtype}"
-            )
+        date_dtype = str(matrix_with_labels.index.levels[index_of_date].dtype)
+        if not date_dtype.startswith("datetime64"):
+            raise ValueError(f"as_of_date must be datetime64 type, got {date_dtype}")
         # we no longer need to downcast to float32 since polars already have done it at this point
         # matrix_with_labels = downcast_matrix(matrix_with_labels)
         labels = matrix_with_labels.pop(self.label_column_name)
