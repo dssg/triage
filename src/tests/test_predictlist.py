@@ -86,7 +86,6 @@ def test_experiment_config_from_model_id(finished_experiment):
     # Remove the cohort_table_name key for comparison 
     finished_experiment.config['scoring']['subsets'][0].pop('cohort_table_name', None)
     assert experiment_config == finished_experiment.config
-    
 
 
 def test_train_matrix_info_from_model_id(finished_experiment):
