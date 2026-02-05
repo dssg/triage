@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.model_selection import ParameterGrid
-from sklearn.utils import parallel_backend
+from joblib import parallel_backend
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text
 from triage.util.random import generate_python_random_seed

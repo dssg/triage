@@ -6,7 +6,7 @@ import math
 import numpy as np
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import or_, select
-from sklearn.utils import parallel_backend
+from joblib import parallel_backend
 
 from .utils import db_retry, retrieve_model_hash_from_id, save_db_objects, sort_predictions_and_labels, AVAILABLE_TIEBREAKERS
 from triage.component.results_schema import Model
