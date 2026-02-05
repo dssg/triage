@@ -282,3 +282,12 @@ def sample_grid_config():
             "logical_operator": ["and"],
         },
     }
+
+
+@pytest.fixture(scope="function")
+def postmodeling_config():
+    return {
+        "error_analysis": {"k": [100], 
+                           "model_params": {"max_depth": [5]}, 
+                           "view_plots": False}
+    }
