@@ -192,4 +192,9 @@ def test_as_dataframe(db_engine):
     assert protected_df.shape == (15, 3)
     assert set(attribute_columns).issubset(protected_df.columns)
     for attr_col in attribute_columns:
-        assert protected_df[attr_col].dtype == "object"
+        # Accept either object (pandas) or string dtype (pandas 2.x with PyArrow)
+        assert protected_df[attr_col].dtype in (
+            "object",
+            "str",
+            "string",
+        ) or "String" in str(protected_df[attr_col].dtype)

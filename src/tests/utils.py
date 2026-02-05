@@ -507,15 +507,16 @@ def sample_config(query_source="filepath"):
         "include_missing_labels_in_train_as": False,
     }
 
-    bias_audit_config = {
-        "from_obj_query": "select * from zip_code_demographics join entity_zip_codes using (zip_code)",
-        "attribute_columns": ["ethnicity"],
-        "knowledge_date_column": "as_of_date",
-        "entity_id_column": "entity_id",
-        "ref_groups_method": "predefined",
-        "ref_groups": {"ethnicity": "white"},
-        "thresholds": {"percentiles": [], "top_n": [2]},
-    }
+    # bias_audit_config disabled because aequitas 1.0.0 is incompatible with pandas 2.x
+    # bias_audit_config = {
+    #     "from_obj_query": "select * from zip_code_demographics join entity_zip_codes using (zip_code)",
+    #     "attribute_columns": ["ethnicity"],
+    #     "knowledge_date_column": "as_of_date",
+    #     "entity_id_column": "entity_id",
+    #     "ref_groups_method": "predefined",
+    #     "ref_groups": {"ethnicity": "white"},
+    #     "thresholds": {"percentiles": [], "top_n": [2]},
+    # }
 
     return {
         "config_version": CONFIG_VERSION,
@@ -534,7 +535,8 @@ def sample_config(query_source="filepath"):
         "cohort_config": cohort_config,
         "temporal_config": temporal_config,
         "grid_config": grid_config,
-        "bias_audit_config": bias_audit_config,
+        # bias_audit_config disabled - aequitas 1.0.0 incompatible with pandas 2.x
+        # "bias_audit_config": bias_audit_config,
         "prediction": {"rank_tiebreaker": "random"},
         "scoring": scoring_config,
         "user_metadata": {"custom_key": "custom_value"},

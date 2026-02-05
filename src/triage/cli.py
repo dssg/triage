@@ -134,6 +134,15 @@ def resolve_db_url(dbfile: Optional[pathlib.Path]) -> str:
         # Try DATABASE_URL environment variable
         environ_url = os.getenv("DATABASE_URL")
         if environ_url:
+            # Convert to psycopg3 driver if using postgresql:// or postgresql+psycopg2://
+            if environ_url.startswith("postgresql://"):
+                environ_url = environ_url.replace(
+                    "postgresql://", "postgresql+psycopg://", 1
+                )
+            elif environ_url.startswith("postgresql+psycopg2://"):
+                environ_url = environ_url.replace(
+                    "postgresql+psycopg2://", "postgresql+psycopg://", 1
+                )
             return environ_url
 
         # Try PostgreSQL standard environment variables
