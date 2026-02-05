@@ -32,41 +32,46 @@ class SingleModelAnalyzer:
 
     @cachedproperty
     def metadata(self):
-        return next(self.engine.execute(
-            text(
-                f'''
-                    WITH individual_model_ids_metadata AS(
-                        SELECT m.model_id,
-                           m.model_group_id,
-                           m.hyperparameters,
-                           m.model_hash,
-                           m.train_end_time::date,
-                           m.train_matrix_uuid,
-                           m.training_label_timespan,
-                           m.model_type,
-                           mg.model_config
-                        FROM triage_metadata.models m
-                        JOIN triage_metadata.model_groups mg
-                        USING (model_group_id)
-                        WHERE model_id = {self.model_id}
-                    ),
-                    individual_model_id_matrices AS(
-                        SELECT DISTINCT ON (matrix_uuid)
-                           model_id,
-                           matrix_uuid,
-                           evaluation_start_time as as_of_date
-                        FROM test_results.evaluations
-                        WHERE model_id = ANY(
-                            SELECT model_id
-                            FROM individual_model_ids_metadata
+        with self.engine.connect() as conn:
+            metadata_ = conn.execute(
+                text(
+                    '''
+                        WITH individual_model_ids_metadata AS(
+                            SELECT m.model_id,
+                            m.model_group_id,
+                            m.hyperparameters,
+                            m.model_hash,
+                            m.train_end_time::date,
+                            m.train_matrix_uuid,
+                            m.training_label_timespan,
+                            m.model_type,
+                            mg.model_config
+                            FROM triage_metadata.models m
+                            JOIN triage_metadata.model_groups mg
+                            USING (model_group_id)
+                            WHERE model_id = :model_id
+                        ),
+                        individual_model_id_matrices AS(
+                            SELECT DISTINCT ON (matrix_uuid)
+                            model_id,
+                            matrix_uuid,
+                            evaluation_start_time as as_of_date
+                            FROM test_results.evaluations
+                            WHERE model_id = ANY(
+                                SELECT model_id
+                                FROM individual_model_ids_metadata
+                            )
                         )
-                    )
-                    SELECT metadata.*, test.*
-                    FROM individual_model_ids_metadata AS metadata
-                    LEFT JOIN individual_model_id_matrices AS test
-                    USING(model_id);'''
-            )
-        ))
+                        SELECT metadata.*, test.*
+                        FROM individual_model_ids_metadata AS metadata
+                        LEFT JOIN individual_model_id_matrices AS test
+                        USING(model_id)
+                    '''
+                ),
+                {'model_id': self.model_id},
+            ).mappings().first()
+            
+        return metadata_
     
     @property
     def model_group_id(self):
@@ -488,7 +493,48 @@ class SingleModelAnalyzer:
             )
 
             # TODO: Figure out to change the owner of the table
-            crosstabs_df.pg_copy_to(schema='test_results', name=table_name, con=self.engine, if_exists='append')
+            crosstabs_df.to_sql(schema='test_results', name=table_name, con=self.engine, if_exists='append')
+            logging.info(f'Pushing the results to the database, {len(crosstabs_df)} rows')
+                    
+            # crosstabs_df.set_index(
+            #     ['model_id', 'matrix_uuid', 'feature', 'metric', 'threshold_type', 'threshold'],
+            #     inplace=True
+            # )
+            
+            # crosstabs_df = crosstabs_df.reset_index()
+            
+            # if not table_exists(f'test_results.{table_name}', self.engine):
+            #     q = f'''
+            #         create schema if not exists test_results;
+                    
+            #         create table test_results.{table_name} (
+            #         model_id INTEGER,
+            #         matrix_uuid TEXT,
+            #         feature TEXT,
+            #         metric TEXT,
+            #         threshold_type TEXT,
+            #         threshold FLOAT,
+            #         value FLOAT  
+            #         );
+                
+            #     '''
+            #     # q = _generate_create_table_sql_statement_from_df(results, f'{table_schema}.{table_name}')
+            #     self.engine.execute(q)
+            
+            # conn = self.engine.raw_connection()
+            # cursor = conn.cursor()
+            
+            # buffer = StringIO()
+            # crosstabs_df.to_csv(buffer, index=False, header=False)
+            # buffer.seek(0)
+            
+            # columns = ', '.join(crosstabs_df.columns)
+            # print(columns)
+            # cursor.copy_expert(f"COPY test_results.{table_name} ({columns}) FROM STDIN WITH CSV", buffer)
+            # # results.to_sql(con=db_engine, schema=table_schema, name=table_name, if_exists='append')
+            # conn.commit()
+            # cursor.close()
+            # conn.close()
 
         if return_df:
             return crosstabs_df
