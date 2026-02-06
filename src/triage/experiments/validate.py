@@ -206,69 +206,69 @@ class FeatureAggregationsValidator(Validator):
 
     def _validate_categoricals(self, categoricals):
         logger.spam("Validating categoricals")
-        conn = self.db_engine.connect()
-        for categorical in categoricals:
-            if "choice_query" in categorical and "choices" in categorical:
-                raise ValueError(
-                    dedent(
-                        """
-                Section: feature_aggregations -
-                Both 'choice_query' and 'choices' specified for {}.
-                Please only specify one.""".format(
-                            categorical
-                        )
-                    )
-                )
-            if not ("choice_query" in categorical or "choices" in categorical):
-                raise ValueError(
-                    dedent(
-                        """
-                Section: feature_aggregations -
-                Neither 'choice_query' and 'choices' specified for {}.
-                Please specify one.""".format(
-                            categorical
-                        )
-                    )
-                )
-            if "choice_query" in categorical:
-                logger.spam("Validating choice query")
-                choice_query = categorical["choice_query"]
-                try:
-                    conn.execute(text(f"explain {choice_query}"))
-                    logger.debug("Validation of choice query was successful")
-                except Exception as e:
+        with self.db_engine.connect() as conn:
+            for categorical in categoricals:
+                if "choice_query" in categorical and "choices" in categorical:
                     raise ValueError(
                         dedent(
                             """
                     Section: feature_aggregations -
-                    choice query does not run.
-                    choice query: "{}"
-                    Full error: {}""".format(
-                                choice_query, e
+                    Both 'choice_query' and 'choices' specified for {}.
+                    Please only specify one.""".format(
+                                categorical
                             )
                         )
                     )
+                if not ("choice_query" in categorical or "choices" in categorical):
+                    raise ValueError(
+                        dedent(
+                            """
+                    Section: feature_aggregations -
+                    Neither 'choice_query' and 'choices' specified for {}.
+                    Please specify one.""".format(
+                                categorical
+                            )
+                        )
+                    )
+                if "choice_query" in categorical:
+                    logger.spam("Validating choice query")
+                    choice_query = categorical["choice_query"]
+                    try:
+                        conn.execute(text(f"explain {choice_query}"))
+                        logger.debug("Validation of choice query was successful")
+                    except Exception as e:
+                        raise ValueError(
+                            dedent(
+                                """
+                        Section: feature_aggregations -
+                        choice query does not run.
+                        choice query: "{}"
+                        Full error: {}""".format(
+                                    choice_query, e
+                                )
+                            )
+                        )
 
         logger.debug("Validation of categoricals was successful")
 
     def _validate_from_obj(self, from_obj):
-        conn = self.db_engine.connect()
-        logger.spam("Validating from_obj")
-        try:
-            conn.execute(text(f"explain select * from {from_obj}"))
-            logger.debug("Validation of from_obj was successful")
-        except Exception as e:
-            raise ValueError(
-                dedent(
-                    """
-                Section: feature_aggregations -
-                from_obj query does not run.
-                from_obj: "{}"
-                Full error: {}""".format(
-                        from_obj, e
+        with self.db_engine.connect() as conn:
+            logger.spam("Validating from_obj")
+            try:
+                conn.execute(text(f"explain select * from {from_obj}"))
+                logger.debug("Validation of from_obj was successful")
+            except Exception as e:
+                raise ValueError(
+                    dedent(
+                        """
+                    Section: feature_aggregations -
+                    from_obj query does not run.
+                    from_obj: "{}"
+                    Full error: {}""".format(
+                            from_obj, e
+                        )
                     )
                 )
-            )
 
     def _validate_time_intervals(self, intervals):
         logger.spam("Validating time intervals")
