@@ -620,8 +620,13 @@ class CSVMatrixStore(MatrixStore):
         else:
             user_id = os.getenv('USER')
             path_ = Path(f"/tmp/{user_id}")
-            # create directory if it doesn't exist
-            os.makedirs(path_, exist_ok=True)
+            
+            # Check if path exists as a file (not directory)
+            if path_.exists() and not path_.is_dir():
+                path_.unlink()  # Remove the file using pathlib
+            
+            # Create directory - pathlib's mkdir
+            path_.mkdir(parents=True, exist_ok=True)
         
         logger.debug(f"get storage directory path: {path_}")
         
