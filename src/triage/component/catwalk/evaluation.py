@@ -870,7 +870,9 @@ class ModelEvaluator:
                     matrix_uuid=row["matrix_uuid"],
                     attribute_name=row["attribute_name"],
                     attribute_value=row["attribute_value"],
-                ).delete()
+                ).delete(synchronize_session=False)
+
+            session.flush()
 
             session.bulk_insert_mappings(
                 matrix_type.aequitas_obj, 
