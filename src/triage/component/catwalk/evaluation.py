@@ -12,7 +12,7 @@ import statistics
 import typing
 from collections import defaultdict
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import delete
+from sqlalchemy import delete, and_, or_
 from aequitas.bias import Bias
 from aequitas.fairness import Fairness
 from aequitas.group import Group
