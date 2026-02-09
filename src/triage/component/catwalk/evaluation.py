@@ -859,25 +859,48 @@ class ModelEvaluator:
             )
         
         with scoped_session(self.db_engine) as session:
+            # filter cols
+            primary_key_cols = ['model_id', 'evaluation_start_time', 'evaluation_end_time', 
+                        'subset_hash', 'parameter', 'tie_breaker', 'matrix_uuid',
+                        'attribute_name', 'attribute_value']
+            
+            delete_conditions = []
             for index, row in group_value_df.iterrows():
-                session.query(matrix_type.aequitas_obj).filter_by(
-                    model_id=row["model_id"],
-                    evaluation_start_time=row["evaluation_start_time"],
-                    evaluation_end_time=row["evaluation_end_time"],
-                    subset_hash=row["subset_hash"],
-                    parameter=row["parameter"],
-                    tie_breaker=row["tie_breaker"],
-                    matrix_uuid=row["matrix_uuid"],
-                    attribute_name=row["attribute_name"],
-                    attribute_value=row["attribute_value"],
-                ).delete(synchronize_session=False)
+                logger.debug(f"Deleting existing audit records for row with model id {row['model_id']}:\n{row}")
+                delete_conditions.append(
+                    and_(
+                        matrix_type.aequitas_obj.model_id == row["model_id"],
+                        matrix_type.aequitas_obj.evaluation_start_time == row["evaluation_start_time"],
+                        matrix_type.aequitas_obj.evaluation_end_time == row["evaluation_end_time"],
+                        matrix_type.aequitas_obj.subset_hash == row["subset_hash"],
+                        matrix_type.aequitas_obj.parameter == row["parameter"],
+                        matrix_type.aequitas_obj.tie_breaker == row["tie_breaker"],
+                        matrix_type.aequitas_obj.matrix_uuid == row["matrix_uuid"],
+                        matrix_type.aequitas_obj.attribute_name == row["attribute_name"],
+                        matrix_type.aequitas_obj.attribute_value == row["attribute_value"],
+                    )
+                )
 
-            session.flush()
+            if delete_conditions:
+                session.query(matrix_type.aequitas_obj).filter(or_(*delete_conditions)).delete(synchronize_session=False)
+                session.commit()
 
+            # check for duplicates
+            duplicates = group_value_df[group_value_df.duplicated(subset=primary_key_cols, keep=False)]
+            logger.debug(f"Found {len(duplicates)} duplicate rows in DataFrame. Deleting duplicates and keeping last occurrence.")
+            if not duplicates.empty:
+                logger.warning(f"Found {len(duplicates)} duplicate rows in DataFrame:")
+                logger.warning(duplicates[primary_key_cols])
+                # Remove duplicates, keeping last occurrence
+                group_value_df = group_value_df.drop_duplicates(subset=primary_key_cols, keep='last')
+
+
+            # Bulk insert
             session.bulk_insert_mappings(
                 matrix_type.aequitas_obj, 
                 group_value_df.to_dict(orient="records")
             )
+            session.commit()
 
     @db_retry
     def _write_to_db(
