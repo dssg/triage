@@ -88,7 +88,6 @@ def scoped_session(db_engine):
 @contextmanager
 def get_for_update(db_engine, orm_class, primary_key):
     """ Gets object from the database to updated it """
-    logger.spam(f"ORM class: {orm_class} with primary key {primary_key}")
     with scoped_session(db_engine) as session:
         obj = session.get(orm_class, primary_key)
         logger.spam(f"obj from get_for_update: {obj}")
