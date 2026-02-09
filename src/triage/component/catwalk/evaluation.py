@@ -866,7 +866,7 @@ class ModelEvaluator:
             
             delete_conditions = []
             for index, row in group_value_df.iterrows():
-                logger.debug(f"Deleting existing audit records for row with model id {row['model_id']}:\n{row}")
+                logger.spam(f"Deleting existing audit records for row with model id {row['model_id']}:\n{row}")
                 delete_conditions.append(
                     and_(
                         matrix_type.aequitas_obj.model_id == row["model_id"],
@@ -882,6 +882,7 @@ class ModelEvaluator:
                 )
 
             if delete_conditions:
+                logger.debug(f"Deleting existing audit records for model id: {model_id}")
                 session.query(matrix_type.aequitas_obj).filter(or_(*delete_conditions)).delete(synchronize_session=False)
                 session.commit()
 
@@ -889,8 +890,8 @@ class ModelEvaluator:
             duplicates = group_value_df[group_value_df.duplicated(subset=primary_key_cols, keep=False)]
             logger.debug(f"Found {len(duplicates)} duplicate rows in DataFrame. Deleting duplicates and keeping last occurrence.")
             if not duplicates.empty:
-                logger.warning(f"Found {len(duplicates)} duplicate rows in DataFrame:")
-                logger.warning(duplicates[primary_key_cols])
+                logger.spam(f"Found {len(duplicates)} duplicate rows in DataFrame:")
+                logger.spam(duplicates[primary_key_cols])
                 # Remove duplicates, keeping last occurrence
                 group_value_df = group_value_df.drop_duplicates(subset=primary_key_cols, keep='last')
 
@@ -901,6 +902,7 @@ class ModelEvaluator:
                 group_value_df.to_dict(orient="records")
             )
             session.commit()
+            
 
     @db_retry
     def _write_to_db(
