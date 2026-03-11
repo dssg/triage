@@ -3,6 +3,7 @@ import os.path
 import verboselogs, logging
 logger = verboselogs.VerboseLogger(__name__)
 
+from sqlalchemy import text
 from alembic.config import Config
 from alembic import script
 from alembic import command
@@ -120,8 +121,10 @@ def upgrade_if_clean(dburl):
         return
     with engine.begin() as conn:
         current_revision = conn.execute(
-            'select version_num from results_schema_versions limit 1'
-        ).scalar()
+            text(
+                'select version_num from results_schema_versions limit 1'
+            )
+        ).scalar_one()
         logger.debug("Database's triage_metadata schema version is %s", current_revision)
         triage_head = script_.get_current_head()
         logger.debug("Code's triage_metadata schema version is %s", triage_head)

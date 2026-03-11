@@ -14,6 +14,8 @@ import pytest
 import sqlalchemy
 import testing.postgresql
 
+from sqlalchemy import create_engine
+from sqlalchemy import text
 from triage.component.collate import (
     Aggregate,
     available_imputations,
@@ -111,30 +113,49 @@ def test_available_imputations_coverage():
 )
 def test_imputation_output(feat_list, exp_imp_cols, feat_table):
     with testing.postgresql.Postgresql() as psql:
-        engine = sqlalchemy.create_engine(psql.url())
+        engine = create_engine(psql.url())
 
-        engine.execute("create table states (entity_id int, as_of_date date)")
-        for state in states_table:
-            engine.execute("insert into states values (%s, %s)", state)
+        with engine.begin() as conn:
+            conn.execute(text("create table states (entity_id int, as_of_date date)"))
+            for state in states_table:
+                conn.execute(
+                    text("insert into states values (:entity_id, :as_of_date)"),
+                    {
+                        "entity_id": state[0],
+                        "as_of_date": state[1],
+                    }
+                )
 
-        feat_sql = "\n".join(
-            [", prefix_entity_id_1y_%s_max int" % f for f in feat_list]
-        )
-        engine.execute(
-            """create table prefix_aggregation (
+            feat_sql = "\n".join(
+                [", prefix_entity_id_1y_%s_max int" % f for f in feat_list]
+            )
+            sql_stmt = f"""create table prefix_aggregation (
                 entity_id int
                 , as_of_date date
-                %s
-                )"""
-            % feat_sql
-        )
-        ins_sql = (
-            "insert into prefix_aggregation values (%s, %s"
-            + (", %s" * len(feat_list))
-            + ")"
-        )
-        for rec in feat_table:
-            engine.execute(ins_sql, rec)
+                {feat_sql}
+                )""" 
+            conn.execute(
+                text(sql_stmt)
+            )
+             
+            ins_sql = (
+                "insert into prefix_aggregation values (:entity_id, :as_of_date, "
+                + ", ".join([f':{feat}' for feat in feat_list])
+                + ")"
+            )
+      
+            for rec in feat_table:
+                # dynamically generating the dictionary of stmts 
+                fixed_ = { 
+                    'entity_id': rec[0],
+                    'as_of_date': rec[1]
+                }
+                feats_ = {f'{feat}': rec[i+2] for i, feat in enumerate(feat_list)}
+                stmt_params = fixed_ | feats_
+                conn.execute(
+                    text(ins_sql),
+                    stmt_params
+                )
 
         for imp in available_imputations.keys():
             # skip error imputation
@@ -169,13 +190,10 @@ def test_imputation_output(feat_list, exp_imp_cols, feat_table):
                     output_date_column="as_of_date",
                 )
 
-                conn = engine.connect()
-
-                trans = conn.begin()
-
                 # excute query to find columns with null values and create lists of columns
                 # that do and do not need imputation when creating the imputation table
-                res = conn.execute(st.find_nulls())
+                with engine.connect() as conn:
+                    res = conn.execute(text(st.find_nulls()))
                 null_counts = list(zip(res.keys(), res.fetchone()))
                 impute_cols = [col for col, val in null_counts if val > 0]
                 nonimpute_cols = [col for col, val in null_counts if val == 0]
@@ -186,14 +204,12 @@ def test_imputation_output(feat_list, exp_imp_cols, feat_table):
                     impute_cols=impute_cols, nonimpute_cols=nonimpute_cols
                 )
 
-                # create the imputation table
-                conn.execute(drop_imp)
-                conn.execute(create_imp)
-
-                trans.commit()
-
-                # check the results
-                df = pd.read_sql("SELECT * FROM prefix_aggregation_imputed", engine)
+                with engine.begin() as conn:
+                    # create the imputation table
+                    conn.execute(drop_imp) # already has been wrapped with text
+                    conn.execute(create_imp) #already has been wrapped with text
+                    # check the results
+                    df = pd.read_sql("SELECT * FROM prefix_aggregation_imputed", conn.connection)
 
                 # we should have a record for every entity/date combo
                 assert df.shape[0] == len(states_table)

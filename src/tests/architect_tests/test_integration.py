@@ -1,12 +1,12 @@
 import os
+import yaml
+import testing.postgresql
+
 from datetime import datetime
 from tempfile import TemporaryDirectory
-import yaml
-
-
-import testing.postgresql
+from sqlalchemy import text 
+from tests.utils import sample_config
 from triage import create_engine
-
 from triage.component.results_schema import Base
 from triage.component.timechop import Timechop
 from triage.component.architect.features import (
@@ -20,9 +20,6 @@ from triage.component.architect.entity_date_table_generators import EntityDateTa
 from triage.component.architect.planner import Planner
 from triage.component.architect.builders import MatrixBuilder
 from triage.component.catwalk.storage import ProjectStorage
-
-from tests.utils import sample_config
-
 
 def populate_source_data(db_engine):
     cat_complaints = [
@@ -99,40 +96,70 @@ def populate_source_data(db_engine):
         (3, 0, "2015-01-01"),
     ]
 
-    db_engine.execute(
-        """create table cat_complaints (
-        entity_id int,
-        as_of_date date,
-        cat_sightings int
-        )"""
-    )
+    with db_engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                    create table cat_complaints (
+                        entity_id int,
+                        as_of_date date,
+                        cat_sightings int
+                    )
+                """
+            )
+        )
 
-    for complaint in cat_complaints:
-        db_engine.execute(
-            "insert into cat_complaints values (%s, %s, %s)", complaint)
+        for complaint in cat_complaints:
+            conn.execute(
+                text(
+                    f"insert into cat_complaints values (:entity_id, :as_of_date, :cat_sightings)"
+                ),
+                {
+                    "entity_id": complaint[0],
+                    "as_of_date": complaint[1],
+                    "cat_sightings": complaint[2],
+                }
+            )
 
-    db_engine.execute(
-        """create table dog_complaints (
-        entity_id int,
-        as_of_date date,
-        dog_sightings int
-        )"""
-    )
+        conn.execute(
+            text(
+                """create table dog_complaints (
+                entity_id int,
+                as_of_date date,
+                dog_sightings int
+                )"""
+            )
+        )
 
-    for complaint in dog_complaints:
-        db_engine.execute(
-            "insert into dog_complaints values (%s, %s, %s)", complaint)
+        for complaint in dog_complaints:
+            conn.execute(
+                text("insert into dog_complaints values (:entity_id, :as_of_date, :dog_sightings)"),
+                {
+                    "entity_id": complaint[0],
+                    "as_of_date": complaint[1],
+                    "dog_sightings": complaint[2],
+                }
+            )
 
-    db_engine.execute(
-        """create table events (
-        entity_id int,
-        outcome int,
-        outcome_date date
-    )"""
-    )
+        conn.execute(
+            text(
+                """create table events (
+                    entity_id int,
+                    outcome int,
+                    outcome_date date
+                )"""
+            )
+        )
 
-    for event in events:
-        db_engine.execute("insert into events values (%s, %s, %s)", event)
+        for event in events:
+            conn.execute(
+                text("insert into events values (:entity_id, :outcome, :outcome_date)"),
+                {
+                    "entity_id": event[0],
+                    "outcome": event[1],
+                    "outcome_date": event[2]   
+                }
+            )
 
 
 def basic_integration_test(
@@ -304,13 +331,16 @@ def basic_integration_test(
             builder.build_all_matrices(matrix_build_tasks)
 
             # super basic assertion: did matrices we expect get created?
-            matrices_records = list(
-                db_engine.execute(
-                    """select matrix_uuid, num_observations, matrix_type
-                    from triage_metadata.matrices
-                    """
+            with db_engine.connect() as conn:
+                matrices_records = list(
+                    conn.execute(
+                        text(
+                            """select matrix_uuid, num_observations, matrix_type
+                            from triage_metadata.matrices
+                            """
+                        )
+                    )
                 )
-            )
             matrix_directory = os.path.join(temp_dir, "matrices")
             matrices = [path for path in os.listdir(
                 matrix_directory) if ".csv" in path]

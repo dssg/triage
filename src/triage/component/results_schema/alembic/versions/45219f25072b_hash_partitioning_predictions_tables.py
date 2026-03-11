@@ -5,12 +5,12 @@ Revises: a98acf92fd48
 Create Date: 2020-08-21 09:29:04.751933
 
 """
-from alembic import op
 import os
-
 import verboselogs, logging
 logger = verboselogs.VerboseLogger(__name__)
 
+from alembic import op
+from sqlalchemy import text
 
 # revision identifiers, used by Alembic.
 revision = '45219f25072b'
@@ -21,7 +21,7 @@ depends_on = None
 
 def get_pg_major_version(op):
     conn = op.get_bind()
-    pg_major_version = conn.execute('show server_version').fetchone()[0].split('.')[0]
+    pg_major_version = conn.execute(text('show server_version')).scalar_one().split('.')[0]
     logger.debug(f'PostgreSQL major version {pg_major_version}')
     return int(pg_major_version)
 

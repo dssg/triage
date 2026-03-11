@@ -78,7 +78,7 @@ def load_query_if_needed(config_component):
     """
     config_component_copy = copy.copy(config_component)
     if "filepath" in config_component_copy:
-        logger.warn(
+        logger.warning(
             "Loading query from file; if there is a query in the config, it will be overwritten"
         )
 

@@ -12,7 +12,7 @@ import statistics
 import typing
 from collections import defaultdict
 from sqlalchemy.orm import sessionmaker
-
+from sqlalchemy import delete, and_, or_
 from aequitas.bias import Bias
 from aequitas.fairness import Fairness
 from aequitas.group import Group
@@ -98,6 +98,7 @@ def query_subset_table(db_engine, as_of_dates, subset_table_name):
         from {subset_table_name}
         join dates using(as_of_date)
     """
+    logger.spam(f"Subset table query to execute: {query_string}")
     df = pd.DataFrame.pg_copy_from(
         query_string,
         connectable=db_engine,
@@ -423,29 +424,28 @@ class ModelEvaluator:
 
         # assemble a list of evaluation objects from the database
         # by querying the unique metrics and parameters relevant to the passed-in matrix
-        session = self.sessionmaker()
-
-        evaluation_objects_in_db = (
-            session.query(eval_obj)
-            .filter_by(
-                model_id=model_id,
-                evaluation_start_time=matrix_store.as_of_dates[0],
-                evaluation_end_time=matrix_store.as_of_dates[-1],
-                as_of_date_frequency=matrix_store.metadata["as_of_date_frequency"],
-                subset_hash=subset_hash,
+        with scoped_session(self.db_engine) as session:
+            evaluation_objects_in_db = (
+                session.query(eval_obj)
+                .filter_by(
+                    model_id=model_id,
+                    evaluation_start_time=matrix_store.as_of_dates[0],
+                    evaluation_end_time=matrix_store.as_of_dates[-1],
+                    as_of_date_frequency=matrix_store.metadata["as_of_date_frequency"],
+                    subset_hash=subset_hash,
+                )
+                .distinct(eval_obj.metric, eval_obj.parameter)
+                .all()
             )
-            .distinct(eval_obj.metric, eval_obj.parameter)
-            .all()
-        )
 
-        # The list of needed metrics and parameters are all the unique metric/params from the config
-        # not present in the unique metric/params from the db
+            # The list of needed metrics and parameters are all the unique metric/params from the config
+            # not present in the unique metric/params from the db
 
-        evals_needed = bool(
-            {(met.metric, met.parameter_string) for met in metric_definitions}
-            - {(obj.metric, obj.parameter) for obj in evaluation_objects_in_db}
-        )
-        session.close()
+            evals_needed = bool(
+                {(met.metric, met.parameter_string) for met in metric_definitions}
+                - {(obj.metric, obj.parameter) for obj in evaluation_objects_in_db}
+            )
+
         if evals_needed:
             logger.notice(
                 f"Needed evaluations for model {model_id} on matrix {matrix_store.uuid} are missing"
@@ -461,6 +461,7 @@ class ModelEvaluator:
         # if we do have bias config, return True. Too complicated with aequitas' visibility
         # at present to check whether all the needed records are needed.
         return True
+
 
     def _compute_evaluations(self, predictions_proba, labels, metric_definitions):
         """Compute evaluations for a set of predictions and labels
@@ -542,6 +543,7 @@ class ModelEvaluator:
         """
         # If we are evaluating on a subset, we want to get just the labels and
         # predictions for the included entity-date pairs
+        logger.debug(f"Evaluating a subset? {subset}")
         if subset:
             logger.verbose(
                 f"Subsetting labels and predictions of model {model_id} on matrix {matrix_store.uuid}"
@@ -564,11 +566,13 @@ class ModelEvaluator:
             labels = matrix_store.labels
             subset_hash = ""
         
+        logger.spam(f"labels df index type {type(labels.index)}, labels df index shape: {labels.shape}, labels df shape: {labels.shape}")
         # confirm protected_df and labels have same set and count of values
         if (protected_df is not None) and (not protected_df.empty):
+            logger.spam(f"protected_df index type {type(protected_df.index)}, protected_df index shape: {protected_df.index.shape}, protected_df shape: {protected_df.shape}")
             # Checking whether there are indexes (entity-date pairs) that appear in either the matrix or the protected df, but not in both
             symmetric_diff = protected_df.index.symmetric_difference(labels.index)
-            
+            logger.spam(f"Evaluation with protected_df, bias configuration in yaml. Symmetric difference: {symmetric_diff}")
             if (protected_df.index.shape != labels.index.shape) or (
                 not symmetric_diff.empty
             ):
@@ -656,8 +660,9 @@ class ModelEvaluator:
                 metric_defs_to_trial.append(metric_def)
 
         # 4. get average of n random trials
+        which_metrics = [obj.metric for obj in metric_defs_to_trial]
         logger.debug(
-            f"For model {model_id}, {len(metric_defs_to_trial)} metric definitions need {SORT_TRIALS} random trials each as best/worst evals were different"
+            f"For model {model_id}, {len(metric_defs_to_trial)} metric definitions ({which_metrics}) need {SORT_TRIALS} random trials each as best/worst evals were different"
         )
 
         random_eval_accumulator = defaultdict(list)
@@ -852,22 +857,52 @@ class ModelEvaluator:
             Returned empty dataframe for model_id = {model_id}, and subset_hash = {subset_hash}
             and matrix_type = {matrix_type}"""
             )
+        
         with scoped_session(self.db_engine) as session:
+            # filter cols
+            primary_key_cols = ['model_id', 'evaluation_start_time', 'evaluation_end_time', 
+                        'subset_hash', 'parameter', 'tie_breaker', 'matrix_uuid',
+                        'attribute_name', 'attribute_value']
+            
+            delete_conditions = []
             for index, row in group_value_df.iterrows():
-                session.query(matrix_type.aequitas_obj).filter_by(
-                    model_id=row["model_id"],
-                    evaluation_start_time=row["evaluation_start_time"],
-                    evaluation_end_time=row["evaluation_end_time"],
-                    subset_hash=row["subset_hash"],
-                    parameter=row["parameter"],
-                    tie_breaker=row["tie_breaker"],
-                    matrix_uuid=row["matrix_uuid"],
-                    attribute_name=row["attribute_name"],
-                    attribute_value=row["attribute_value"],
-                ).delete()
+                logger.spam(f"Deleting existing audit records for row with model id {row['model_id']}:\n{row}")
+                delete_conditions.append(
+                    and_(
+                        matrix_type.aequitas_obj.model_id == row["model_id"],
+                        matrix_type.aequitas_obj.evaluation_start_time == row["evaluation_start_time"],
+                        matrix_type.aequitas_obj.evaluation_end_time == row["evaluation_end_time"],
+                        matrix_type.aequitas_obj.subset_hash == row["subset_hash"],
+                        matrix_type.aequitas_obj.parameter == row["parameter"],
+                        matrix_type.aequitas_obj.tie_breaker == row["tie_breaker"],
+                        matrix_type.aequitas_obj.matrix_uuid == row["matrix_uuid"],
+                        matrix_type.aequitas_obj.attribute_name == row["attribute_name"],
+                        matrix_type.aequitas_obj.attribute_value == row["attribute_value"],
+                    )
+                )
+
+            if delete_conditions:
+                logger.debug(f"Deleting existing audit records for model id: {model_id}")
+                session.query(matrix_type.aequitas_obj).filter(or_(*delete_conditions)).delete(synchronize_session=False)
+                session.commit()
+
+            # check for duplicates
+            duplicates = group_value_df[group_value_df.duplicated(subset=primary_key_cols, keep=False)]
+            logger.debug(f"Found {len(duplicates)} duplicate rows in DataFrame. Deleting duplicates and keeping last occurrence.")
+            if not duplicates.empty:
+                logger.spam(f"Found {len(duplicates)} duplicate rows in DataFrame:")
+                logger.spam(duplicates[primary_key_cols])
+                # Remove duplicates, keeping last occurrence
+                group_value_df = group_value_df.drop_duplicates(subset=primary_key_cols, keep='last')
+
+
+            # Bulk insert
             session.bulk_insert_mappings(
-                matrix_type.aequitas_obj, group_value_df.to_dict(orient="records")
+                matrix_type.aequitas_obj, 
+                group_value_df.to_dict(orient="records")
             )
+            session.commit()
+            
 
     @db_retry
     def _write_to_db(
@@ -899,14 +934,18 @@ class ModelEvaluator:
             evaluation_table_obj (schema.TestEvaluation or TrainEvaluation)
                 specifies to which table to add the evaluations
         """
-        with scoped_session(self.db_engine) as session:
-            session.query(evaluation_table_obj).filter_by(
-                model_id=model_id,
-                evaluation_start_time=evaluation_start_time,
-                evaluation_end_time=evaluation_end_time,
-                as_of_date_frequency=as_of_date_frequency,
-                subset_hash=subset_hash,
-            ).delete()
+        with scoped_session(self.db_engine) as session: 
+            stmt = (
+                delete(evaluation_table_obj)
+                .where(
+                    evaluation_table_obj.model_id == model_id,
+                    evaluation_table_obj.evaluation_start_time == evaluation_start_time, 
+                    evaluation_table_obj.evaluation_end_time == evaluation_end_time, 
+                    evaluation_table_obj.as_of_date_frequency == as_of_date_frequency,
+                    evaluation_table_obj.subset_hash == subset_hash,
+                )
+            )
+            session.execute(stmt)
 
             for evaluation in evaluations:
                 evaluation.model_id = model_id
@@ -914,7 +953,5 @@ class ModelEvaluator:
                 evaluation.subset_hash = subset_hash
                 evaluation.evaluation_start_time = evaluation_start_time
                 evaluation.evaluation_end_time = evaluation_end_time
-                evaluation.as_of_date_frequency = as_of_date_frequency
                 evaluation.matrix_uuid = matrix_uuid
-                evaluation.subset_hash = subset_hash
                 session.add(evaluation)

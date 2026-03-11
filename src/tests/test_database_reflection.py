@@ -1,60 +1,111 @@
-from sqlalchemy import Table
-from sqlalchemy import create_engine
-from sqlalchemy.types import VARCHAR
-from testing.postgresql import Postgresql
-from unittest import TestCase
+import pytest
+import sqlalchemy 
 
-import triage.database_reflection as dbreflect
+from sqlalchemy import Table, text, quoted_name
+from tests.conftest import shared_db_engine
+from triage.database_reflection import (
+    split_table,
+    table_object,
+    reflected_table,
+    table_exists,
+    table_has_data,    
+    table_has_duplicates,
+    table_has_column,
+    column_type,
+    table_row_count,
+    schema_tables,
+)
+
+def test_split_table():
+    assert split_table("staging.incidents") == ("staging", "incidents")
+    assert split_table("incidents") == (None, "incidents")
+    with pytest.raises(ValueError):
+        split_table("blah.staging.incidents")
 
 
-class TestDatabaseReflection(TestCase):
-    def setUp(self):
-        self.postgresql = Postgresql()
-        self.engine = create_engine(self.postgresql.url())
+def test_table_object():
+    assert isinstance(table_object("incidents"), Table)
 
-    def tearDown(self):
-        self.postgresql.stop()
 
-    def test_split_table(self):
-        assert dbreflect.split_table("staging.incidents") == ("staging", "incidents")
-        assert dbreflect.split_table("incidents") == (None, "incidents")
-        with self.assertRaises(ValueError):
-            dbreflect.split_table("blah.staging.incidents")
+def test_reflected_table(db_engine):
+    with db_engine.connect() as conn:
+        conn.execute(text("create table incidents (col1 varchar)"))
+        conn.commit()
+    # if table was successfully reflected, it should have metadata.
+    table_ = reflected_table("incidents", db_engine)
 
-    def test_table_object(self):
-        assert isinstance(dbreflect.table_object("incidents", self.engine), Table)
+    assert table_.metadata is not None
 
-    def test_reflected_table(self):
-        self.engine.execute("create table incidents (col1 varchar)")
-        assert dbreflect.reflected_table("incidents", self.engine).exists()
 
-    def test_table_exists(self):
-        self.engine.execute("create table incidents (col1 varchar)")
-        assert dbreflect.table_exists("incidents", self.engine)
-        assert not dbreflect.table_exists("compliments", self.engine)
+def test_table_exists(db_engine):
+    with db_engine.begin() as conn:
+        conn.execute(text("create table incidents (col1 varchar)"))
+        
+    assert table_exists("incidents", db_engine)
+    assert not table_exists("compliments", db_engine)
 
-    def test_table_has_data(self):
-        self.engine.execute("create table incidents (col1 varchar)")
-        self.engine.execute("create table compliments (col1 varchar)")
-        self.engine.execute("insert into compliments values ('good job')")
-        assert dbreflect.table_has_data("compliments", self.engine)
-        assert not dbreflect.table_has_data("incidents", self.engine)
 
-    def test_table_has_duplicates(self):
-        self.engine.execute("create table events (col1 int, col2 int)")
-        assert not dbreflect.table_has_duplicates("events", ['col1', 'col2'], self.engine)
-        self.engine.execute("insert into events values (1,2)")
-        self.engine.execute("insert into events values (1,3)")
-        assert dbreflect.table_has_duplicates("events", ['col1'], self.engine)
-        assert not dbreflect.table_has_duplicates("events", ['col1', 'col2'], self.engine)
-        self.engine.execute("insert into events values (1,2)")
-        assert dbreflect.table_has_duplicates("events", ['col1', 'col2'], self.engine)
+def test_table_has_data(db_engine):
+    with db_engine.begin() as conn:
+        conn.execute(text("create table incidents (col1 varchar)"))
+        conn.execute(text("create table compliments (col1 varchar)"))
+        conn.execute(text("insert into compliments values ('good job')"))
+    
+    assert table_has_data("compliments", db_engine)
+    assert not table_has_data("incidents", db_engine)
 
-    def test_table_has_column(self):
-        self.engine.execute("create table incidents (col1 varchar)")
-        assert dbreflect.table_has_column("incidents", "col1", self.engine)
-        assert not dbreflect.table_has_column("incidents", "col2", self.engine)
 
-    def test_column_type(self):
-        self.engine.execute("create table incidents (col1 varchar)")
-        assert dbreflect.column_type("incidents", "col1", self.engine) == VARCHAR
+def test_table_has_duplicates(db_engine):
+    with db_engine.connect() as conn:
+        conn.execute(text("create table events (col1 int, col2 int)"))
+        conn.commit()
+        assert not table_has_duplicates("events", ['col1'], db_engine)
+    
+        conn.execute(text("insert into events values (1,2)"))   
+        conn.commit()     
+        assert not table_has_duplicates("events", ['col1', 'col2'], db_engine)
+        conn.execute(text("insert into events values (1,3)"))
+        conn.commit()
+        assert not table_has_duplicates("events", ['col1', 'col2'], db_engine)
+
+        assert table_has_duplicates('events', ['col1'], db_engine)
+        assert not table_has_duplicates("events", ['col1', 'col2'], db_engine)
+
+        conn.execute(text("insert into events values (1,2)"))
+        conn.commit()
+        assert table_has_duplicates("events", ['col1', 'col2'], db_engine)
+
+
+def test_table_row_count(db_engine):
+    with db_engine.begin() as conn:
+        conn.execute(text("create table incidents (col1 varchar)"))
+        conn.execute(text("insert into incidents values ('a'), ('b'), ('c')"))
+    
+    assert table_row_count("incidents", db_engine) == 3
+
+
+def test_table_has_column(db_engine):
+    with db_engine.begin() as conn:
+        conn.execute(text("create table incidents (col1 varchar)"))
+    
+    assert table_has_column("incidents", "col1", db_engine)
+    assert not table_has_column("incidents", "col2", db_engine)
+
+
+def test_column_type(db_engine):
+    with db_engine.begin() as conn:
+        conn.execute(text("create table incidents (col1 varchar, col2 int)"))
+    
+    assert 'VARCHAR' in str(column_type("incidents", "col1", db_engine))
+    assert 'INTEGER' in str(column_type("incidents", "col2", db_engine))
+
+
+def test_schema_tables(db_engine):
+    with db_engine.begin() as conn:
+        conn.execute(text(f"create schema if not exists test"))
+        conn.execute(text(f"create table test.incidents (col1 varchar)"))
+        conn.execute(text(f"create table test.compliments (col1 varchar)"))
+    
+    tables = schema_tables("test", db_engine)
+    assert f"incidents" in tables
+    assert f"compliments" in tables

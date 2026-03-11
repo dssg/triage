@@ -10,7 +10,7 @@ import polars as pl
 import time
 
 from sqlalchemy.orm import sessionmaker
-
+from sqlalchemy import text
 from triage.component.results_schema import Matrix
 from triage.database_reflection import table_has_data, table_row_count
 from triage.tracking import built_matrix, skipped_matrix, errored_matrix
@@ -208,7 +208,7 @@ class BuilderBase:
         :return: table name
         :rtype: str
         """
-
+        logger.debug(f"Matrix type passed: {matrix_type}")
         as_of_time_strings = [str(as_of_time) for as_of_time in as_of_times]
         if matrix_type == "test" or matrix_type == "production" or self.include_missing_labels_in_train_as is not None:
             indices_query = self._all_valid_entity_dates_query(
@@ -235,7 +235,8 @@ class BuilderBase:
             f"Creating matrix-specific entity-date table for matrix {matrix_uuid} ",
         )
         logger.debug(f"with query {query}")
-        self.db_engine.execute(query)
+        with self.db_engine.begin() as conn:
+            conn.execute(text(query))
 
         return table_name
 
@@ -383,20 +384,16 @@ class MatrixBuilder(BuilderBase):
         else:
             lookback = matrix_metadata["test_duration"]
 
-        row_count = table_row_count(
-            '{schema}."{table}"'.format(
-                schema=self.db_config["features_schema_name"],
-                table=entity_date_table_name,
-            ),
-            self.db_engine
-        )
+        row_count = table_row_count(f'{self.db_config["features_schema_name"]}."{entity_date_table_name}"', 
+                                    self.db_engine
+                                   )
 
         matrix = Matrix(
             matrix_id=matrix_metadata["matrix_id"],
             matrix_uuid=matrix_uuid,
             matrix_type=matrix_type,
             labeling_window=matrix_metadata["label_timespan"],
-            num_observations=row_count[0], #row count is a tuple
+            num_observations=row_count,
             lookback_duration=lookback,
             feature_start_time=matrix_metadata["feature_start_time"],
             feature_dictionary=feature_dictionary,
@@ -637,8 +634,12 @@ class MatrixBuilder(BuilderBase):
         df = df_pl_aux.to_pandas()
         end = time.time()
         logger.debug(f"Time converting from polars to pandas (sec): {(end-start)/60}")
+        # on pandas 2 the default unit for datetime is micro sec but we need ns
+        # so we change it before make it part of the index
+        df['as_of_date'] = df.as_of_date.astype('datetime64[ns]')
         df.set_index(["entity_id", "as_of_date"], inplace=True)
         logger.debug(f"df data types: {df.dtypes}")
+        logger.debug(f"df index data types: {df.index.dtypes}")
         logger.debug(f"Pandas DF memory usage: {df.memory_usage(deep=True).sum()/1000000} MB")
         # generating gzip file from csv
         generate_gzip(path_, matrix_uuid)

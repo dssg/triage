@@ -86,7 +86,7 @@ class Subsetter:
         logger.debug(f"Subset {subset_config['name']}-{subset_hash} created successfully")
 
     def save_subset_to_db(self, subset_hash, subset_config):
-        session = sessionmaker(bind=self.db_engine)()
+        session = sessionmaker(bind=self.db_engine, future=True)()
         session.merge(Subset(subset_hash=subset_hash, config=subset_config))
         session.commit()
         session.close()

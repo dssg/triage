@@ -5,6 +5,7 @@ import os
 import numpy as np
 import pandas as pd
 
+from sqlalchemy import text
 from .utils import str_in_sql
 from .metric_directionality import sql_rank_order, value_agg_funcs
 from .plotting import plot_cats, plot_bounds, category_colordict, category_styledict
@@ -30,25 +31,28 @@ class DistanceFromBestTable:
 
     def _delete(self):
         """Delete the distance-from-best table if it exists"""
-        self.db_engine.execute("drop table if exists {}".format(self.distance_table))
+        with self.db_engine.begin() as conn:
+            conn.execute(text(f"drop table if exists {self.distance_table}"))
 
     def _create(self):
         """Create the distance-from-best table"""
-        self.db_engine.execute(
-            """create table {} (
-            model_group_id int,
-            train_end_time timestamp,
-            metric text,
-            parameter text,
-            raw_value float,
-            best_case float,
-            dist_from_best_case float,
-            raw_value_next_time float,
-            dist_from_best_case_next_time float
-        )""".format(
-                self.distance_table
+        with self.db_engine.begin() as conn:
+            conn.execute(
+                text(f"""
+                     create table {self.distance_table} (
+                     model_group_id int,
+                     train_end_time timestamp,
+                     metric text,
+                     parameter text,
+                     raw_value float,
+                     best_case float,
+                     dist_from_best_case float,
+                     raw_value_next_time float,
+                     dist_from_best_case_next_time float
+                    )
+                    """
+                )
             )
-        )
 
     def _populate(self, model_group_ids, train_end_times, metrics):
         """Populate the distance table with the given model groups, times, and metrics
@@ -64,106 +68,116 @@ class DistanceFromBestTable:
                 for all given model group ids, train end times, and metric/param combos
         """
         logger.debug("Populating data to distance table")
-        for metric in metrics:
-            self.db_engine.execute(
-                """
-                insert into {new_table}
-                WITH first_evals AS (
-                    SELECT *, row_number() OVER (
-                        PARTITION BY model_id
-                        ORDER BY evaluation_start_time ASC, evaluation_end_time ASC
-                        ) AS eval_rn
-                    FROM test_results.evaluations
-                    WHERE metric='{metric}' AND parameter='{parameter}' AND subset_hash=''
-                ),
-                metric_values AS (
-                    SELECT
-                        m.model_group_id,
-                        m.train_end_time,
-                        {metric_agg_fcn}(ev.stochastic_value) as value
-                  FROM first_evals ev
-                  JOIN triage_metadata.{models_table} m USING(model_id)
-                  JOIN triage_metadata.model_groups mg USING(model_group_id)
-                  WHERE m.model_group_id IN ({model_group_ids})
-                        AND train_end_time in ({train_end_times})
-                        AND ev.eval_rn = 1
-                  GROUP BY model_group_id, train_end_time
-                ),
-                model_ranks AS (
-                    SELECT
-                        model_group_id,
-                        train_end_time,
-                        value,
-                        row_number() OVER (
-                            PARTITION BY train_end_time
-                            ORDER BY value {metric_value_order}, RANDOM()
-                        ) AS rank
-                  FROM metric_values
-                ),
-                model_tols AS (
-                  SELECT train_end_time, model_group_id,
-                         rank,
-                         value,
-                         first_value(value) over (
-                            partition by train_end_time
-                            order by rank ASC
-                        ) AS best_val
-                  FROM model_ranks
-                ),
-                current_best_vals as (
-                    SELECT
-                        model_group_id,
-                        train_end_time,
-                        '{metric}',
-                        '{parameter}',
-                        value as raw_value,
-                        best_val as best_case,
-                        abs(value - best_val) dist_from_best_case
-                    FROM model_tols
+        with self.db_engine.begin() as conn:
+            for metric in metrics:
+                conn.execute(
+                    text("""
+                        insert into {new_table}
+                        WITH first_evals AS (
+                            SELECT *, row_number() OVER (
+                                PARTITION BY model_id
+                                ORDER BY evaluation_start_time ASC, evaluation_end_time ASC
+                                ) AS eval_rn
+                            FROM test_results.evaluations
+                            WHERE metric='{metric}' AND parameter='{parameter}' AND subset_hash=''
+                        ),
+                        metric_values AS (
+                            SELECT
+                                m.model_group_id,
+                                m.train_end_time,
+                                {metric_agg_fcn}(ev.stochastic_value) as value
+                        FROM first_evals ev
+                        JOIN triage_metadata.{models_table} m USING(model_id)
+                        JOIN triage_metadata.model_groups mg USING(model_group_id)
+                        WHERE m.model_group_id IN ({model_group_ids})
+                                AND train_end_time in ({train_end_times})
+                                AND ev.eval_rn = 1
+                        GROUP BY model_group_id, train_end_time
+                        ),
+                        model_ranks AS (
+                            SELECT
+                                model_group_id,
+                                train_end_time,
+                                value,
+                                row_number() OVER (
+                                    PARTITION BY train_end_time
+                                    ORDER BY value {metric_value_order}, RANDOM()
+                                ) AS rank
+                        FROM metric_values
+                        ),
+                        model_tols AS (
+                        SELECT train_end_time, model_group_id,
+                                rank,
+                                value,
+                                first_value(value) over (
+                                    partition by train_end_time
+                                    order by rank ASC
+                                ) AS best_val
+                        FROM model_ranks
+                        ),
+                        current_best_vals as (
+                            SELECT
+                                model_group_id,
+                                train_end_time,
+                                '{metric}',
+                                '{parameter}',
+                                value as raw_value,
+                                best_val as best_case,
+                                abs(value - best_val) dist_from_best_case
+                            FROM model_tols
+                        )
+                        select
+                            current_best_vals.*,
+                            first_value(raw_value) over (
+                                partition by model_group_id
+                                order by train_end_time asc
+                                rows between 1 following and unbounded following
+                            ) raw_value_next_time,
+                            first_value(dist_from_best_case) over (
+                                partition by model_group_id
+                                order by train_end_time asc
+                                rows between 1 following and unbounded following
+                            ) dist_from_best_case_next_time
+                        from current_best_vals
+                        order by train_end_time
+                        """.format(
+                                model_group_ids=str_in_sql(model_group_ids),
+                                train_end_times=str_in_sql(train_end_times),
+                                models_table=self.models_table,
+                                metric=metric["metric"],
+                                parameter=metric["parameter"],
+                                metric_value_order=sql_rank_order(metric["metric"]),
+                                new_table=self.distance_table,
+                                metric_agg_fcn=value_agg_funcs(metric["metric"])[self.agg_type],
+                            )
+                    )
                 )
-                select
-                    current_best_vals.*,
-                    first_value(raw_value) over (
-                        partition by model_group_id
-                        order by train_end_time asc
-                        rows between 1 following and unbounded following
-                    ) raw_value_next_time,
-                    first_value(dist_from_best_case) over (
-                        partition by model_group_id
-                        order by train_end_time asc
-                        rows between 1 following and unbounded following
-                    ) dist_from_best_case_next_time
-                from current_best_vals
-                order by train_end_time
-            """.format(
-                    model_group_ids=str_in_sql(model_group_ids),
-                    train_end_times=str_in_sql(train_end_times),
-                    models_table=self.models_table,
-                    metric=metric["metric"],
-                    parameter=metric["parameter"],
-                    metric_value_order=sql_rank_order(metric["metric"]),
-                    new_table=self.distance_table,
-                    metric_agg_fcn=value_agg_funcs(metric["metric"])[self.agg_type],
-                )
-            )
 
     @property
     def observed_bounds(self):
-        query = """
-            SELECT
-                metric,
-                parameter,
-                min(raw_value),
-                max(raw_value)
-            FROM {distance_table} dist
-            GROUP BY metric, parameter
-        """.format(
-            distance_table=self.distance_table
-        )
-        return dict(
-            ((metric, parameter), (minimum, maximum))
-            for metric, parameter, minimum, maximum in self.db_engine.execute(query)
-        )
+        query = f"""
+                SELECT
+                    metric,
+                    parameter,
+                    min(raw_value),
+                    max(raw_value)
+                FROM {self.distance_table} dist
+                GROUP BY metric, parameter
+            """
+
+        with self.db_engine.connect() as conn: 
+            results = dict(
+                ((metric, parameter), (minimum, maximum))
+                    for metric, parameter, minimum, maximum in conn.execute(text(query))
+                )
+        
+        # return dict(
+        #     ((metric, parameter), (minimum, maximum))
+        #     for metric, parameter, minimum, maximum in self.db_engine.execute(query)
+        # )
+    
+        return results
+
 
     def create_and_populate(
         self, model_group_ids, train_end_times, metrics, delete=True

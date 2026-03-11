@@ -1,13 +1,12 @@
-from __future__ import with_statement
+#from __future__ import with_statement
 
 import os
 
 import yaml
 import re
 from alembic import context
-from sqlalchemy import create_engine
-from sqlalchemy import pool
-from sqlalchemy.engine.url import URL
+from sqlalchemy import create_engine, pool, text
+from sqlalchemy.engine import URL
 
 from triage.component.results_schema import Base
 
@@ -73,8 +72,8 @@ if not url:
 
     with open(db_config_file) as fd:
         config = yaml.full_load(fd)
-        url = URL(
-            "postgres",
+        url = URL.create(
+            "postgresql+psycopg2",
             host=config["host"],
             username=config["user"],
             database=config["db"],
@@ -100,6 +99,9 @@ def run_migrations_offline():
         literal_binds=True,
         version_table="results_schema_versions",
         include_object=include_object,
+        include_schemas=True,
+        compare_type=True,
+        compare_server_default=True,
     )
 
     with context.begin_transaction():
@@ -114,23 +116,23 @@ def run_migrations_online():
 
     """
 
-    connectable = create_engine(url, poolclass=pool.NullPool)
+    connectable = create_engine(url, poolclass=pool.NullPool, future=True)
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection,
+            connection=connection,                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
             target_metadata=target_metadata,
             version_table="results_schema_versions",
             include_schemas=True,
             include_object=include_object,
         )
-        connection.execute('set search_path to "{}", public'.format("results"))
+        connection.execute(text('set search_path to "results", public'))
 
         with context.begin_transaction():
             context.run_migrations()
 
 
 if context.is_offline_mode():
-    run_migrations_offline()
+    run_migrations_offline()                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
 else:
     run_migrations_online()

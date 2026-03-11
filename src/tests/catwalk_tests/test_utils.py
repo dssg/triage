@@ -10,6 +10,7 @@ from triage.component.catwalk.utils import (
 from triage.component.results_schema.schema import Matrix, Model
 from triage.component.catwalk.db import ensure_db
 from sqlalchemy import create_engine
+from sqlalchemy import text
 import testing.postgresql
 import datetime
 import re
@@ -84,10 +85,13 @@ def test_missing_model_hashes():
         assert missing_model_hashes(experiment_hash, db_engine) == model_hashes
 
         # if we insert a model row they should no longer be considered missing
-        db_engine.execute(
-            f"insert into {Model.__table__.fullname} (model_hash) values (%s)",
-            model_hashes[0],
-        )
+        with db_engine.begin() as conn:
+            conn.execute(
+                text(f"insert into {Model.__table__.fullname} (model_hash) values (:model_hash)"),
+                {
+                    "model_hash": model_hashes[0],
+                }
+            )
         assert missing_model_hashes(experiment_hash, db_engine) == model_hashes[1:]
 
 
@@ -105,10 +109,13 @@ def test_missing_matrix_uuids():
         assert missing_matrix_uuids(experiment_hash, db_engine) == matrix_uuids
 
         # if we insert a matrix row they should no longer be considered missing
-        db_engine.execute(
-            f"insert into {Matrix.__table__.fullname} (matrix_uuid) values (%s)",
-            matrix_uuids[0],
-        )
+        with db_engine.begin() as conn:
+            conn.execute(
+                text(f"insert into {Matrix.__table__.fullname} (matrix_uuid) values (:matrix_uuid)"),
+                {
+                    "matrix_uuid": matrix_uuids[0],
+                }
+            )
         assert missing_matrix_uuids(experiment_hash, db_engine) == matrix_uuids[1:]
 
 

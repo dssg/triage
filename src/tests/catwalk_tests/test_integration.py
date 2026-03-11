@@ -19,7 +19,7 @@ def test_ModelTrainTester_generate_tasks(db_engine_with_results_schema, project_
     db_engine = db_engine_with_results_schema
     model_storage_engine = ModelStorageEngine(project_storage)
     matrix_storage_engine = MatrixStorageEngine(project_storage)
-    sample_matrix_store = get_matrix_store(project_storage)
+    sample_matrix_store = get_matrix_store(project_storage, db_engine_with_results_schema)
     experiment_hash = save_experiment_and_get_hash({}, db_engine)
     run_id = initialize_tracking_and_get_run_id(
         experiment_hash,
@@ -60,15 +60,17 @@ def test_ModelTrainTester_generate_tasks(db_engine_with_results_schema, project_
                 train_tester.process_task(**task)
 
 
-def setup_model_train_tester(project_storage, replace, additional_bigtrain_classnames=None):
+def setup_model_train_tester(project_storage, db_engine_with_results_schema, replace, additional_bigtrain_classnames=None):
     matrix_storage_engine = MatrixStorageEngine(project_storage)
     train_matrix_store = get_matrix_store(
         project_storage,
+        db_engine=db_engine_with_results_schema,
         metadata=matrix_metadata_creator(matrix_type="train"),
         write_to_db=False
     )
     test_matrix_store = get_matrix_store(
         project_storage,
+        db_engine=db_engine_with_results_schema,
         metadata=matrix_metadata_creator(matrix_type="test"),
         write_to_db=False
     )
@@ -104,8 +106,8 @@ def setup_model_train_tester(project_storage, replace, additional_bigtrain_class
     return train_tester, train_test_task
 
 
-def test_ModelTrainTester_process_task_replace_False_needs_evaluations(project_storage):
-    train_tester, train_test_task = setup_model_train_tester(project_storage, replace=False)
+def test_ModelTrainTester_process_task_replace_False_needs_evaluations(project_storage, db_engine_with_results_schema):
+    train_tester, train_test_task = setup_model_train_tester(project_storage, db_engine_with_results_schema, replace=False)
     train_tester.model_evaluator.needs_evaluations.return_value = True
     train_tester.process_task(**train_test_task)
     assert train_tester.model_evaluator.needs_evaluations.call_count == 2
@@ -114,8 +116,8 @@ def test_ModelTrainTester_process_task_replace_False_needs_evaluations(project_s
     assert train_tester.protected_groups_generator.as_dataframe.call_count == 2
 
 
-def test_ModelTrainTester_process_task_replace_False_no_evaluations(project_storage):
-    train_tester, train_test_task = setup_model_train_tester(project_storage, replace=False)
+def test_ModelTrainTester_process_task_replace_False_no_evaluations(project_storage, db_engine_with_results_schema):
+    train_tester, train_test_task = setup_model_train_tester(project_storage, db_engine_with_results_schema, replace=False)
     train_tester.model_evaluator.needs_evaluations.return_value = False
     train_tester.process_task(**train_test_task)
     assert train_tester.model_evaluator.needs_evaluations.call_count == 2
@@ -124,8 +126,8 @@ def test_ModelTrainTester_process_task_replace_False_no_evaluations(project_stor
     assert train_tester.protected_groups_generator.as_dataframe.call_count == 0
 
 
-def test_ModelTrainTester_process_task_replace_True(project_storage):
-    train_tester, train_test_task = setup_model_train_tester(project_storage, replace=True)
+def test_ModelTrainTester_process_task_replace_True(project_storage, db_engine_with_results_schema):
+    train_tester, train_test_task = setup_model_train_tester(project_storage, db_engine_with_results_schema, replace=True)
     train_tester.process_task(**train_test_task)
     assert train_tester.model_evaluator.needs_evaluations.call_count == 0
     assert train_tester.predictor.predict.call_count == 2
@@ -133,8 +135,8 @@ def test_ModelTrainTester_process_task_replace_True(project_storage):
     assert train_tester.protected_groups_generator.as_dataframe.call_count == 2
 
 
-def test_ModelTrainTester_process_task_empty_train(project_storage):
-    train_tester, train_test_task = setup_model_train_tester(project_storage, replace=True)
+def test_ModelTrainTester_process_task_empty_train(project_storage, db_engine_with_results_schema):
+    train_tester, train_test_task = setup_model_train_tester(project_storage, db_engine_with_results_schema, replace=True)
     train_store = MagicMock()
     train_store.empty = True
     train_test_task['train_store'] = train_store
@@ -146,8 +148,8 @@ def test_ModelTrainTester_process_task_empty_train(project_storage):
     assert train_tester.model_evaluator.evaluate.call_count == 0
     assert train_tester.protected_groups_generator.as_dataframe.call_count == 0
 
-def test_ModelTrainTester_order_and_batch_tasks(project_storage):
-    train_tester, sample_train_test_task = setup_model_train_tester(project_storage, replace=True)
+def test_ModelTrainTester_order_and_batch_tasks(project_storage, db_engine_with_results_schema):
+    train_tester, sample_train_test_task = setup_model_train_tester(project_storage, db_engine_with_results_schema, replace=True)
     train_classpaths = [
         'triage.component.catwalk.estimators.classifiers.ScaledLogisticRegression',
         'sklearn.ensemble.RandomForestClassifier',
@@ -175,9 +177,10 @@ def test_ModelTrainTester_order_and_batch_tasks(project_storage):
     assert batches[2].tasks[0]['train_kwargs']['class_path'] == 'someclass.OtherClassifier'
 
 
-def test_ModelTrainTester_order_and_batch_tasks_allows_additional(project_storage):
+def test_ModelTrainTester_order_and_batch_tasks_allows_additional(project_storage, db_engine_with_results_schema):
     train_tester, sample_train_test_task = setup_model_train_tester(
         project_storage,
+        db_engine_with_results_schema,
         replace=True,
         additional_bigtrain_classnames=['someclass.OtherClassifier']
     )
