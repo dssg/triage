@@ -7,17 +7,16 @@ from tests.utils import sample_config, populate_source_data, open_side_effect
 from triage import create_engine
 from triage.component.catwalk.storage import ProjectStorage
 from triage.component.catwalk.db import ensure_db
-from tests.results_tests.factories import init_engine
 from triage.component.postmodeling.crosstabs import CrosstabsConfigLoader
 from triage.experiments import SingleThreadedExperiment
+from sqlalchemy.orm import sessionmaker, Session
 
 
 @pytest.fixture(name="db_engine", scope="function")
 def fixture_db_engine():
-    """pytest fixture provider to set up and teardown a "test" database
+    """pytest fixture provider to set up and teardown a test database
     and provide the test function a connection engine with which to
     query that database.
-
     """
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
@@ -27,9 +26,33 @@ def fixture_db_engine():
 
 @pytest.fixture(scope="function")
 def db_engine_with_results_schema(db_engine):
+    """Database engine with results schema initialized"""
     ensure_db(db_engine)
-    init_engine(db_engine)
     yield db_engine
+    
+
+@pytest.fixture(scope="function")
+def db_session(db_engine_with_results_schema):
+    """Provides a SQLAlchemy session for each test.
+    
+    The session is automatically rolled back after each test to ensure isolation.
+    """
+    from tests.results_tests.factories import set_session, clear_session
+
+    SessionLocal = sessionmaker(bind=db_engine_with_results_schema)
+    session = SessionLocal()
+
+    set_session(session)
+    
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        clear_session()
+        session.close()
 
 
 @pytest.fixture(scope="function")
@@ -47,7 +70,7 @@ def project_storage(project_path):
     yield ProjectStorage(project_path)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def shared_db_engine():
     """pytest fixture provider to set up and teardown a "test" database
     and provide a test module a connection engine with which to
@@ -60,7 +83,7 @@ def shared_db_engine():
         engine.dispose()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def shared_project_storage():
     """Set up a temporary project storage engine on the filesystem at module scope
 
@@ -71,7 +94,7 @@ def shared_project_storage():
         yield project_storage
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def finished_experiment(shared_db_engine, shared_project_storage):
     """A successfully-run experiment. Its database schemas and project storage can be queried.
 
@@ -89,7 +112,7 @@ def finished_experiment(shared_db_engine, shared_project_storage):
     return experiment
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def finished_experiment_without_predictions(shared_db_engine, shared_project_storage):
     """A successfully-run experiment. Its database schemas and project storage can be queried.
 
@@ -108,7 +131,7 @@ def finished_experiment_without_predictions(shared_db_engine, shared_project_sto
     return experiment
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def crosstabs_config():
     """Example crosstabs config.
 
@@ -150,7 +173,7 @@ select model_id,
     )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def sample_timechop_splits():
     return [
         {
@@ -228,7 +251,7 @@ def sample_timechop_splits():
     ]
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def sample_grid_config():
     return {
         "sklearn.tree.DecisionTreeClassifier": {
@@ -258,4 +281,13 @@ def sample_grid_config():
             "rules": [["feature_one > 3", "feature_two <= 5"]],
             "logical_operator": ["and"],
         },
+    }
+
+
+@pytest.fixture(scope="function")
+def postmodeling_config():
+    return {
+        "error_analysis": {"k": [100], 
+                           "model_params": {"max_depth": [5]}, 
+                           "view_plots": False}
     }

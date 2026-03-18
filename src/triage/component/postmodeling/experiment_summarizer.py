@@ -171,11 +171,11 @@ class ExperimentReport:
         # print(labels_table)
         cohort_query = f"""
             select 
-            label_name, 
-            label_timespan, 
-            as_of_date, 
-            count(distinct entity_id) as cohort_size, 
-            avg(label) as baserate 
+                label_name, 
+                label_timespan, 
+                as_of_date, 
+                count(distinct entity_id) as cohort_size, 
+                avg(label) as baserate 
             from public.{labels_table}
             group by 1,2,3 order by 1,2,3
         """
@@ -373,14 +373,14 @@ class ExperimentReport:
         
         column_names = dict()
         for table in feature_tables:
-            q = f'''
+            q = f"""
                 select 
                 column_name
                 FROM information_schema.columns
                 WHERE table_schema = 'features'
                 AND table_name   = '{table}'
                 and (column_name like '%%_imp')   
-            '''
+            """
 
             column_names[table] = pd.read_sql(q, self.engine).column_name.tolist()
             

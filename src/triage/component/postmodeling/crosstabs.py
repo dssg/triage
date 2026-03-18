@@ -1,15 +1,15 @@
 import ohio.ext.pandas
 import pandas as pd
+import yaml
 import verboselogs, logging
 
 logger = verboselogs.VerboseLogger(__name__)
 
+from sqlalchemy import text
 from scipy import stats
-import yaml
-import psycopg2
 from io import StringIO
 
-from triage.component.architect.database_reflection import table_exists
+from triage.database_reflection import table_exists
 from triage.component.catwalk.storage import ProjectStorage
 from triage.component.catwalk.utils import save_db_objects
 
@@ -328,16 +328,22 @@ def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type,
             if not df.empty:
                 if replace: 
                     logging.info(f'Exsiting crosstabs found for model {model_id} and matrix {matrix_uuid}. Replace is True. Deleting.')
-                    q = f'''
-                        delete from {table_schema}.{table_name}
-                        where model_id = {model_id}
-                        and matrix_uuid = '{matrix_uuid}'
-                        and threshold_type = '{threshold_type}'
-                        and threshold = {threshold}
-                    '''
+                    with db_engine.begin() as conn:
+                        q = f'''
+                            delete from {table_schema}.{table_name}
+                            where model_id = :model_id
+                            and matrix_uuid = :matrix_uuid
+                            and threshold_type = :threshold_type
+                            and threshold = :threshold
+                        '''
+                        conn.execute(text(q), 
+                                          {
+                                                'model_id': model_id,
+                                                'matrix_uuid': matrix_uuid,
+                                                'threshold_type': threshold_type,
+                                                'threshold': threshold
+                                          })
                     
-                    db_engine.execute(q)
-                                        
                 else:
                     logging.info(f'Existing crosstabs found for model {model_id} and matrix {matrix_uuid}. Replace flag is not set. Skipping')
                     continue
@@ -407,47 +413,13 @@ def run_crosstabs_from_matrix(db_engine, project_path, model_id, threshold_type,
     results['matrix_uuid'] = matrix_uuid
     
     if push_to_db:
-        logging.info(f'Pushing the results to the database, {len(results)} rows')
-                
+        logging.info('Pushing the results to the DB')
         results.set_index(
-            ['model_id', 'matrix_uuid', 'feature', 'metric', 'threshold_type', 'threshold'],
-            inplace=True
+            ['model_id', 'matrix_uuid', 'feature', 'metric', 'threshold_type', 'threshold'], inplace=True
         )
-        
-        results = results.reset_index()
-        
-        if not table_exists(f'{table_schema}.{table_name}', db_engine):
-            q = f'''
-                create schema if not exists {table_schema};
-                
-                create table {table_schema}.{table_name} (
-                  model_id INTEGER,
-                  matrix_uuid TEXT,
-                  feature TEXT,
-                  metric TEXT,
-                  threshold_type TEXT,
-                  threshold FLOAT,
-                  value FLOAT  
-                );
-            
-            '''
-            # q = _generate_create_table_sql_statement_from_df(results, f'{table_schema}.{table_name}')
-            db_engine.execute(q)
-        
-        conn = db_engine.raw_connection()
-        cursor = conn.cursor()
-        
-        buffer = StringIO()
-        results.to_csv(buffer, index=False, header=False)
-        buffer.seek(0)
-        
-        columns = ', '.join(results.columns)
-        print(columns)
-        cursor.copy_expert(f"COPY {table_schema}.{table_name} ({columns}) FROM STDIN WITH CSV", buffer)
-        # results.to_sql(con=db_engine, schema=table_schema, name=table_name, if_exists='append')
-        conn.commit()
-        cursor.close()
-        conn.close()
+
+        # TODO: Figure out to change the owner of the table
+        results.to_sql(schema='test_results', name=table_name, con=db_engine, if_exists='append')
         
     return results
         

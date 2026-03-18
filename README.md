@@ -28,10 +28,10 @@ Triage is designed to:
 To install Triage locally, you need:
 
 - Ubuntu/RedHat
-- Python 3.9+
-- A PostgreSQL 9.6+ database with your source data (events,
+- Python 3.10+
+- A PostgreSQL 13+ database with your source data (events,
   geographical data, etc) loaded.
-  - **NOTE**: If your database is PostgreSQL 11+ you will get some
+  - **NOTE**: If your database is PostgreSQL 13+ you will get some
     speed improvements. We recommend updating to a recent
     version of PostgreSQL.
 - Ample space on an available disk (or for example in Amazon Web
@@ -90,7 +90,7 @@ There are a plethora of options available for experiment running, affecting thin
 
 ## Development
 
-Triage was initially developed at [University of Chicago's Center For Data Science and Public Policy](http://dsapp.uchicago.edu) and is now being maintained at Carnegie Mellon University.
+Triage was initially developed at [University of Chicago's Center For Data Science and Public Policy](http://dsapp.uchicago.edu) and is now being maintained at [Carnegie Mellon University](https://datasciencepublicpolicy.org/).
 
 To build this package (without installation), its dependencies may
 alternatively be installed from the terminal using `pip`:

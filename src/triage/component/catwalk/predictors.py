@@ -5,8 +5,8 @@ import math
 
 import numpy as np
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import or_
-from sklearn.utils import parallel_backend
+from sqlalchemy import or_, select
+from joblib import parallel_backend
 
 from .utils import db_retry, retrieve_model_hash_from_id, save_db_objects, sort_predictions_and_labels, AVAILABLE_TIEBREAKERS
 from triage.component.results_schema import Model
@@ -45,7 +45,7 @@ class Predictor:
 
     @property
     def sessionmaker(self):
-        return sessionmaker(bind=self.db_engine)
+        return sessionmaker(self.db_engine, future=True)
 
     @db_retry
     def load_model(self, model_id):
@@ -96,18 +96,26 @@ class Predictor:
         """
         if not self.save_predictions:
             return False
-        session = self.sessionmaker()
+        
         prediction_obj = matrix_store.matrix_type.prediction_obj
+
+        with self.sessionmaker() as session:
+            stmt = (
+                select(prediction_obj.as_of_date)
+                .where(
+                    prediction_obj.model_id == model_id,
+                    prediction_obj.matrix_uuid == matrix_store.uuid,
+                )
+                .distinct()
+            )
         as_of_dates_in_db = set(
             as_of_date.date()
-            for (as_of_date,) in session.query(prediction_obj).filter_by(
-                model_id=model_id,
-                matrix_uuid=matrix_store.uuid
-            ).distinct(prediction_obj.as_of_date).values("as_of_date")
+            for as_of_date in session.execute(stmt).scalars()
         )
+        
         as_of_dates_needed = set(matrix_store.as_of_dates)
         needed = bool(as_of_dates_needed - as_of_dates_in_db)
-        session.close()
+        
         return needed
 
     @db_retry

@@ -19,8 +19,7 @@ from sqlalchemy import (
     event,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, declarative_base
 from sqlalchemy.types import ARRAY, Enum
 from sqlalchemy.sql import func
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -302,7 +301,7 @@ class FeatureImportance(Base):
     rank_abs = Column(Integer)
     rank_pct = Column(Float)
 
-    model_rel = relationship("Model")
+    #model_rel = relationship("Model")
 
 
 class TestPrediction(Base):

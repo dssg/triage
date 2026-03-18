@@ -70,7 +70,7 @@ def _summary_of_models(models_df):
         
     
 def add_predictions(db_engine, model_groups, project_path, experiment_hashes=None, train_end_times_range=None, rank_order='worst', replace=True):
-    """ For a set of modl_groups generate test predictions and write to DB
+    """ For a set of model_groups generate test predictions and write to DB
         Args:
             db_engine: Sqlalchemy engine
             model_groups (list): The list of model group ids we are interested in (ideally, chosen through audition)

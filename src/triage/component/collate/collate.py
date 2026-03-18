@@ -1,10 +1,13 @@
+import re
+import sqlalchemy.sql.expression as ex
 import verboselogs, logging
 logger = verboselogs.VerboseLogger(__name__)
 
+
 from numbers import Number
 from itertools import product, chain
-import sqlalchemy.sql.expression as ex
-import re
+from sqlalchemy import text, literal_column
+from sqlalchemy.sql import select, column
 from descriptors import cachedproperty
 
 from .sql import make_sql_clause, to_sql_name, CreateTableAs, InsertFromSelect
@@ -116,7 +119,7 @@ class AggregateExpression:
         columns2 = self.aggregate2.get_columns(when)
 
         for c1, c2 in product(columns1, columns2):
-            c = ex.literal_column(
+            c = literal_column(
                 "({}{} {} {})".format(c1, self.cast, self.operator, c2)
             )
             yield c.label(
@@ -264,7 +267,7 @@ class Aggregate(AggregateExpression):
             column = column_template.format(**kwargs).format(**format_kwargs)
             name = name_template.format(**kwargs)
 
-            yield ex.literal_column(column).label(to_sql_name(name))
+            yield literal_column(column).label(to_sql_name(name))
 
     def column_imputation_lookup(self, prefix=None):
         """
@@ -476,7 +479,7 @@ class Aggregation:
         of aggregation.
         """
         self.aggregates = aggregates
-        self.from_obj = make_sql_clause(from_obj, ex.text)
+        self.from_obj = make_sql_clause(from_obj, text)
         self.groups = (
             groups if isinstance(groups, dict) else {str(g): g for g in groups}
         )
@@ -547,11 +550,11 @@ class Aggregation:
         queries = {}
 
         for group, groupby in self.groups.items():
-            columns = [make_sql_clause(groupby, ex.text)]
+            columns = [make_sql_clause(groupby, text)]
             columns += self._get_aggregates_sql(group)
 
-            gb_clause = make_sql_clause(groupby, ex.literal_column)
-            query = ex.select(columns=columns, from_obj=make_sql_clause(self.from_obj, ex.text)).group_by(
+            gb_clause = make_sql_clause(groupby, literal_column)
+            query = select(*columns).select_from(make_sql_clause(self.from_obj, text)).group_by(
                 gb_clause
             )
 
@@ -633,7 +636,7 @@ class Aggregation:
             drop is a raw drop table query for the corresponding table
         """
         return {
-            group: "DROP TABLE IF EXISTS %s;" % self.get_table_name(group)
+            group: text("DROP TABLE IF EXISTS %s;" % self.get_table_name(group))
             for group in self.groups
         }
 
@@ -646,7 +649,7 @@ class Aggregation:
             index is a raw create index query for the corresponding table
         """
         return {
-            group: "CREATE INDEX ON %s (%s);" % (self.get_table_name(group), groupby)
+            group: text("CREATE INDEX ON %s (%s);" % (self.get_table_name(group), groupby))
             for group, groupby in self.groups.items()
         }
 
@@ -654,10 +657,8 @@ class Aggregation:
         """
         Generate a query for a join table
         """
-        return ex.Select(
-            columns=[make_sql_clause(group, ex.column) for group in self.groups.values()],
-            from_obj=self.from_obj
-        ).group_by(
+        columns=[make_sql_clause(group, column) for group in self.groups.values()]
+        return select(*columns).select_from(self.from_obj).group_by(
             *self.groups.values()
         )
 
@@ -674,14 +675,14 @@ class Aggregation:
         for group, groupby in self.groups.items():
             query += "LEFT JOIN %s USING (%s)" % (self.get_table_name(group), groupby)
 
-        return "CREATE TABLE %s AS (%s);" % (self.get_table_name(), query)
+        return text(f"CREATE TABLE {self.get_table_name()} AS ({query});")
 
     def get_drop(self, imputed=False):
         """
         Generate a drop table statement for the aggregation table
         Returns: string sql query
         """
-        return "DROP TABLE IF EXISTS %s" % self.get_table_name(imputed=imputed)
+        return text(f"DROP TABLE IF EXISTS {self.get_table_name(imputed=imputed)}")
 
     def get_create_schema(self):
         """
@@ -805,15 +806,15 @@ class Aggregation:
             self.state_group,
         )
 
-        return "CREATE TABLE %s AS (%s)" % (self.get_table_name(imputed=True), query)
+        return text(f"CREATE TABLE {self.get_table_name(imputed=True)} AS ({query})")
 
-    def execute(self, conn, join_table=None):
+    def execute(self, conn_, join_table=None):
         """
         Execute all SQL statements to create final aggregation table.
         Args:
             conn: the SQLAlchemy connection on which to execute
         """
-        self.validate(conn)
+        self.validate(conn_)
         create_schema = self.get_create_schema()
         creates = self.get_creates()
         drops = self.get_drops()
@@ -822,41 +823,39 @@ class Aggregation:
         drop = self.get_drop()
         create = self.get_create(join_table=join_table)
 
-        trans = conn.begin()
+        with conn_.begin() as conn:
+            if create_schema is not None:
+                conn.execute(text(create_schema))
 
-        if create_schema is not None:
-            conn.execute(create_schema)
+            for group in self.groups:
+                conn.execute(drops[group]) # already has a text wrap in self.get_drops()
+                conn.execute(creates[group]) # already returns a Text wrap stmt 
+                for insert in inserts[group]:
+                    conn.execute(insert) # already returns a Text wrap stmt
+                conn.execute(indexes[group]) # already returns a Text wrap stmt
 
-        for group in self.groups:
-            conn.execute(drops[group])
-            conn.execute(creates[group])
-            for insert in inserts[group]:
-                conn.execute(insert)
-            conn.execute(indexes[group])
+            # create the aggregation table
+            conn.execute(drop) # already has a text wrap in self.get_drop()
+            conn.execute(create) # already has a text wrap in self.get_create()
 
-        # create the aggregation table
-        conn.execute(drop)
-        conn.execute(create)
+            # excute query to find columns with null values and create lists of columns
+            # that do and do not need imputation when creating the imputation table
+            res = conn.execute(text(self.find_nulls()))
+            null_counts = list(zip(res.keys(), res.fetchone()))
+            impute_cols = [col for col, val in null_counts if val > 0]
+            nonimpute_cols = [col for col, val in null_counts if val == 0]
+            res.close()
 
-        # excute query to find columns with null values and create lists of columns
-        # that do and do not need imputation when creating the imputation table
-        res = conn.execute(self.find_nulls())
-        null_counts = list(zip(res.keys(), res.fetchone()))
-        impute_cols = [col for col, val in null_counts if val > 0]
-        nonimpute_cols = [col for col, val in null_counts if val == 0]
-        res.close()
+            # sql to drop and create the imputation table
+            drop_imp = self.get_drop(imputed=True)
+            create_imp = self.get_impute_create(
+                impute_cols=impute_cols, nonimpute_cols=nonimpute_cols
+            )
 
-        # sql to drop and create the imputation table
-        drop_imp = self.get_drop(imputed=True)
-        create_imp = self.get_impute_create(
-            impute_cols=impute_cols, nonimpute_cols=nonimpute_cols
-        )
+            # create the imputation table
+            conn.execute(drop_imp) # already has a text wrap in self.get_drop()
+            conn.execute(create_imp) # already has a text wrap in self.get_impute_create()
 
-        # create the imputation table
-        conn.execute(drop_imp)
-        conn.execute(create_imp)
-
-        trans.commit()
 
     def validate(self, conn):
         """

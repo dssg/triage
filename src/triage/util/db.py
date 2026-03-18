@@ -1,13 +1,15 @@
 # coding: utf-8
-
 import sqlalchemy
 import wrapt
-from contextlib import contextmanager
-from sqlalchemy.orm import Session
-from sqlalchemy.engine.url import make_url
-
 import json
 import functools
+import verboselogs, logging
+logger = verboselogs.VerboseLogger(__name__)
+
+from contextlib import contextmanager
+from sqlalchemy.orm import Session
+from sqlalchemy.engine import make_url
+from sqlalchemy import inspect, select
 
 from psycopg2.extras import DateRange, DateTimeRange
 from datetime import date, datetime
@@ -52,6 +54,9 @@ class SerializableDbEngine(wrapt.ObjectProxy):
     def __reduce_ex__(self, protocol):
         # wrapt requires reduce_ex to be implemented
         return self.__reduce__()
+    
+    def get_inspector(self):
+        return inspect(self.__wrapped__)
 
     @classmethod
     def __reconstruct__(cls, url, creator, kwargs):
@@ -63,11 +68,17 @@ create_engine = functools.partial(SerializableDbEngine, json_serializer=json_dum
 @contextmanager
 def scoped_session(db_engine):
     """Provide a transactional scope around a series of operations."""
-    session = Session(bind=db_engine)
+    #session = sessionmaker(db_engine, future=True)
+    session = Session(
+        bind=db_engine,
+        future=True,
+        expire_on_commit=False,
+        )
+    
     try:
         yield session
         session.commit()
-    except:
+    except Exception:
         session.rollback()
         raise
     finally:
@@ -78,6 +89,7 @@ def scoped_session(db_engine):
 def get_for_update(db_engine, orm_class, primary_key):
     """ Gets object from the database to updated it """
     with scoped_session(db_engine) as session:
-        obj = session.query(orm_class).get(primary_key)
+        obj = session.get(orm_class, primary_key)
+        logger.spam(f"obj from get_for_update: {obj}")
         yield obj
         session.merge(obj)

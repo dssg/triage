@@ -1,5 +1,5 @@
 from triage.component.catwalk.model_trainers import NO_FEATURE_IMPORTANCE
-
+from sqlalchemy import text
 
 def _entity_feature_values(matrix, feature_name, as_of_date):
     """Finds the value of the given feature for each entity in a matrix
@@ -42,16 +42,23 @@ def uniform_distribution(db_engine, model_id, as_of_date, test_matrix_store, n_r
 
     Returns: (list) dicts with entity_id, feature_value, feature_name, score
     """
-    global_feature_importances = [
-        row
-        for row in db_engine.execute(
-            """select feature, feature_importance
-        from train_results.feature_importances where model_id = %s
-        order by feature_importance desc limit %s""",
-            model_id,
-            n_ranks,
-        )
-    ]
+    with db_engine.connect() as conn:
+        global_feature_importances = [
+            row
+            for row in conn.execute(
+                text(
+                    f"""
+                        select feature, feature_importance
+                        from train_results.feature_importances where model_id = :model_id
+                        order by feature_importance desc limit :n_ranks
+                    """
+                ),
+                {
+                    "model_id": model_id,
+                    "n_ranks": n_ranks,
+                }
+            )
+        ]
 
     results = []
 

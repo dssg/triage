@@ -50,8 +50,6 @@ def test_ordered_aggregate_when():
     ]
 
 
-
-
 def test_aggregate_tuple_quantity():
     agg = Aggregate(("x", "y"), "corr", {})
     assert list(map(str, agg.get_columns())) == ["corr(x, y)"]

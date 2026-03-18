@@ -1,23 +1,17 @@
+import pandas as pd
+import datetime
+import pytest
+
 from contextlib import contextmanager
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import make_transient
-import datetime
 from unittest.mock import Mock
+from sqlalchemy import text
 from numpy.testing import assert_array_almost_equal
-import pandas as pd
 
 from triage.component.results_schema import TestPrediction, Matrix, Model
-from triage.component.catwalk.storage import TestMatrixType
-from triage.component.catwalk.db import ensure_db
-from tests.results_tests.factories import (
-    MatrixFactory,
-    ModelFactory,
-    PredictionFactory,
-    init_engine,
-    session as factory_session
-)
-from triage.database_reflection import table_has_data
 
+from triage.database_reflection import table_has_data
 from triage.component.catwalk.predictors import Predictor
 from tests.utils import (
     MockTrainedModel,
@@ -26,7 +20,6 @@ from tests.utils import (
     get_matrix_store,
     rig_engines,
 )
-import pytest
 
 
 with_matrix_types = pytest.mark.parametrize(
@@ -92,7 +85,7 @@ def prediction_results(matrix_type, predictor, predict_setup_args):
 
     matrix = pd.DataFrame.from_dict(source_dict)
     metadata = matrix_metadata_creator(matrix_type=matrix_type)
-    matrix_store = get_matrix_store(project_storage, matrix, metadata)
+    matrix_store = get_matrix_store(project_storage, db_engine, matrix, metadata)
 
     predict_proba = predictor.predict(
         model_id,
@@ -112,20 +105,19 @@ def test_predictor(predict_proba):
 @with_matrix_types
 def test_predictions_table(predictor, predict_proba, matrix_type):
     """assert that the predictions table entries are present, linked to the original models"""
-    records = [
-        row
-        for row in predictor.db_engine.execute(
-            """select entity_id, as_of_date
-        from {}_results.predictions
-        join triage_metadata.models using (model_id)""".format(
-                matrix_type, matrix_type
+    with predictor.db_engine.connect() as conn:
+        records = [
+            row
+            for row in conn.execute(
+                text(f"""
+                        select entity_id, as_of_date
+                        from {matrix_type}_results.predictions
+                        join triage_metadata.models using (model_id)
+                     """
+                )
             )
-        )
-    ]
+        ]
     assert len(records) == 6
-
-
-
 
 
 @with_matrix_types
@@ -138,7 +130,7 @@ def test_predictor_save_predictions(matrix_type, predict_setup_args):
     # if save_predictions is sent as False, don't save
     predictor = Predictor(project_storage.model_storage_engine(), db_engine, rank_order='worst', save_predictions=False)
 
-    matrix_store = get_matrix_store(project_storage)
+    matrix_store = get_matrix_store(project_storage, db_engine)
     train_matrix_columns = matrix_store.columns()
 
     predict_proba = predictor.predict(
@@ -166,7 +158,7 @@ def test_predictor_needs_predictions(matrix_type, predict_setup_args):
     predictor = Predictor(project_storage.model_storage_engine(), db_engine, 'worst')
 
     metadata = matrix_metadata_creator(matrix_type=matrix_type)
-    matrix_store = get_matrix_store(project_storage, metadata=metadata)
+    matrix_store = get_matrix_store(project_storage, db_engine, metadata=metadata)
     train_matrix_columns = matrix_store.columns()
 
     # we haven't done anything yet, this should definitely need predictions
@@ -188,6 +180,7 @@ def test_predictor_get_train_columns(predict_setup_args):
     predictor = Predictor(project_storage.model_storage_engine(), db_engine, 'worst')
     train_store = get_matrix_store(
         project_storage=project_storage,
+        db_engine=db_engine,
         matrix=matrix_creator(),
         metadata=matrix_metadata_creator(matrix_type="train"),
     )
@@ -199,6 +192,7 @@ def test_predictor_get_train_columns(predict_setup_args):
     other_order_matrix = other_order_matrix[order]
     test_store = get_matrix_store(
         project_storage=project_storage,
+        db_engine=db_engine,
         matrix=other_order_matrix,
         metadata=matrix_metadata_creator(matrix_type="test"),
     )
@@ -217,17 +211,19 @@ def test_predictor_get_train_columns(predict_setup_args):
 
         # 2. that the predictions table entries are present and
         # can be linked to the original models
-        records = [
-            row
-            for row in db_engine.execute(
-                """select entity_id, as_of_date
-            from {}_results.predictions
-            join triage_metadata.models using (model_id)""".format(
-                    mat_type, mat_type
+        with db_engine.connect() as conn: 
+            records = [
+                row
+                for row in conn.execute(
+                    text(f"""
+                            select entity_id, as_of_date
+                            from {mat_type}_results.predictions
+                            join triage_metadata.models using (model_id)
+                        """
+                    )
                 )
-            )
-        ]
-        assert len(records) > 0
+            ]
+            assert len(records) > 0
 
 
 def test_predictor_retrieve(predict_setup_args):
@@ -238,7 +234,7 @@ def test_predictor_retrieve(predict_setup_args):
     )
 
     # create prediction set
-    matrix_store = get_matrix_store(project_storage)
+    matrix_store = get_matrix_store(project_storage, db_engine)
 
     predict_proba = predictor.predict(
         model_id,

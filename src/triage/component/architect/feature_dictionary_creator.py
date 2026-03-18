@@ -1,6 +1,7 @@
 import verboselogs, logging
 logger = verboselogs.VerboseLogger(__name__)
 
+from sqlalchemy import text
 from triage.component.architect.utils import str_in_sql
 from triage.util.structs import FeatureNameList
 
@@ -27,16 +28,19 @@ class FeatureDictionaryCreator:
         feature_dictionary = {}
 
         # iterate! store each table name + features names as key-value pair
-        for feature_table_name in self._tables_to_include(feature_table_names):
-            feature_names = [
-                row[0]
-                for row in self.db_engine.execute(
-                    self._build_feature_names_query(
-                        feature_table_name, index_column_lookup[feature_table_name]
+        with self.db_engine.connect() as conn:
+            for feature_table_name in self._tables_to_include(feature_table_names):
+                feature_names = [
+                    row[0]
+                    for row in conn.execute(
+                        text(
+                            self._build_feature_names_query(
+                                feature_table_name, index_column_lookup[feature_table_name]
+                            )
+                        )
                     )
-                )
-            ]
-            feature_dictionary[feature_table_name] = FeatureNameList(feature_names)
+                ]
+                feature_dictionary[feature_table_name] = FeatureNameList(feature_names)
         logger.spam(f"Feature dictionary built: {feature_dictionary}")
         return feature_dictionary
 

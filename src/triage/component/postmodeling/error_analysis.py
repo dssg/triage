@@ -286,7 +286,8 @@ def generate_error_analysis(model_id, db_conn, project_path):
     k_set = error_analysis_config['k']
     grid = error_analysis_config['model_params']
     view_plots = error_analysis_config['view_plots']
-    
+    logger.debug(f"Starting error analysis for model id {model_id} with parameters k:{k_set}, grid: {grid}, and view_plots: {view_plots}")
+
     matrix_data = _fetch_matrices(model_id, project_path, db_conn)
     error_analysis_results = []
     for k in k_set:

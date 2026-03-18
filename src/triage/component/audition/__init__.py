@@ -415,7 +415,9 @@ class AuditionRunner:
         query_end_times = self.config["time_stamps"]["query"].format(
             ", ".join(map(str, model_group_ids))
         )
+        logger.spam(f"query to get end times: {query_end_times}")
         end_times = pre_aud.get_train_end_times(query=query_end_times)
+        logger.spam(f"end times: {end_times}")
 
         aud = Auditioner(
             db_engine=self.db_engine,

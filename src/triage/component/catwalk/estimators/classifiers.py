@@ -1,12 +1,15 @@
 # coding: utf-8
+import verboselogs, logging
 
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.multiclass import OneVsRestClassifier
 from sklearn.linear_model import LogisticRegression
 
 from .transformers import CutOff
 
+logger = verboselogs.VerboseLogger(__name__)
 
 class ScaledLogisticRegression(BaseEstimator, ClassifierMixin):
     """
@@ -28,7 +31,7 @@ class ScaledLogisticRegression(BaseEstimator, ClassifierMixin):
         random_state=None,
         solver="saga",
         max_iter=100,
-        multi_class="ovr",
+        #multi_class="ovr", # deprecated since sklearn 1.5
         verbose=0,
         warm_start=False,
         n_jobs=1,
@@ -43,28 +46,30 @@ class ScaledLogisticRegression(BaseEstimator, ClassifierMixin):
         self.random_state = random_state
         self.solver = solver
         self.max_iter = max_iter
-        self.multi_class = multi_class
+        #self.multi_class = multi_class # deprecated since sklearn 1.5
         self.verbose = verbose
         self.warm_start = warm_start
         self.n_jobs = n_jobs
 
         self.minmax_scaler = MinMaxScaler()
         self.dsapp_cutoff = CutOff()
-        self.lr = LogisticRegression(
-            penalty=penalty,
-            dual=dual,
-            tol=tol,
-            C=C,
-            fit_intercept=fit_intercept,
-            intercept_scaling=intercept_scaling,
-            class_weight=class_weight,
-            random_state=random_state,
-            solver=solver,
-            max_iter=max_iter,
-            multi_class=multi_class,
-            verbose=verbose,
-            warm_start=warm_start,
-            n_jobs=n_jobs,
+        self.lr = OneVsRestClassifier(
+            LogisticRegression(
+                penalty=penalty,
+                dual=dual,
+                tol=tol,
+                C=C,
+                fit_intercept=fit_intercept,
+                intercept_scaling=intercept_scaling,
+                class_weight=class_weight,
+                random_state=random_state,
+                solver=solver,
+                max_iter=max_iter,
+                #multi_class=multi_class, # deprecated since sklearn 1.5
+                verbose=verbose,
+                warm_start=warm_start,
+                n_jobs=n_jobs,
+            )
         )
 
         self.pipeline = Pipeline(
@@ -84,10 +89,14 @@ class ScaledLogisticRegression(BaseEstimator, ClassifierMixin):
         self.data_max_ = self.pipeline.named_steps["minmax_scaler"].data_max_
         self.data_range_ = self.pipeline.named_steps["minmax_scaler"].data_range_
 
-        self.coef_ = self.pipeline.named_steps["lr"].coef_
-        self.intercept_ = self.pipeline.named_steps["lr"].intercept_
+        # now we have OneVsRestClassifier, we need to iterate over estimators_
+        # to get coef_ and intercept_
+        logger.debug(f"Getting coef_ and intercept_ from OneVsRestClassifier. Estimators: {len(self.pipeline.named_steps['lr'].estimators_)}")
 
-        self.classes_ = self.pipeline.named_steps["lr"].classes_
+        self.coef_ = self.pipeline.named_steps["lr"].estimators_[0].coef_
+        self.intercept_ = self.pipeline.named_steps["lr"].estimators_[0].intercept_
+
+        self.classes_ = self.pipeline.named_steps["lr"].estimators_[0].classes_
 
         return self
 

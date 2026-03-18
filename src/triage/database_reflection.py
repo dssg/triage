@@ -1,5 +1,5 @@
 """Functions to retrieve basic information about tables in a Postgres database"""
-from sqlalchemy import MetaData, Table
+from sqlalchemy import MetaData, Table, text, quoted_name
 
 
 def split_table(table_name):
@@ -19,7 +19,7 @@ def split_table(table_name):
         raise ValueError("Table name in unknown format")
 
 
-def table_object(table_name, db_engine):
+def table_object(table_name):
     """Produce a table object for the given table name
 
     This does not load data about the table from the engine yet,
@@ -32,7 +32,7 @@ def table_object(table_name, db_engine):
     Returns: (sqlalchemy.Table)
     """
     schema, table = split_table(table_name)
-    meta = MetaData(schema=schema, bind=db_engine)
+    meta = MetaData(schema=schema)
     return Table(table, meta)
 
 
@@ -49,8 +49,12 @@ def reflected_table(table_name, db_engine):
     Returns: (sqlalchemy.Table) A loaded table object
     """
     schema, table = split_table(table_name)
-    meta = MetaData(schema=schema, bind=db_engine)
-    return Table(table, meta, autoload=True, autoload_from=db_engine)
+    meta = MetaData(schema=schema)
+
+    # Unwrap if it's a SerializableDbEngine
+    engine = getattr(db_engine, '__wrapped__', db_engine)
+
+    return Table(table, meta, autoload_with=engine)
 
 
 def table_exists(table_name, db_engine):
@@ -62,7 +66,9 @@ def table_exists(table_name, db_engine):
 
     Returns: (boolean) Whether or not the table exists in the database
     """
-    return table_object(table_name, db_engine).exists()
+    schema, table = split_table(table_name)
+    inspector = db_engine.get_inspector() # get the inspector from SerializableDbEngine
+    return inspector.has_table(table, schema=schema)
 
 
 def table_has_data(table_name, db_engine):
@@ -76,12 +82,11 @@ def table_has_data(table_name, db_engine):
     """
     if not table_exists(table_name, db_engine):
         return False
-    results = [
-        row for row in db_engine.execute("select * from {} limit 1".format(table_name))
-    ]
-
-    return len(results) > 0
-
+    
+    sql = text(f"select * from {quoted_name(table_name, quote=True)} limit 1")
+    with db_engine.connect() as conn:
+        return conn.execute(sql).first() is not None
+   
 
 def table_row_count(table_name, db_engine):
     """Return the length of the table.
@@ -94,10 +99,10 @@ def table_row_count(table_name, db_engine):
 
     Returns: (int) The number of rows in the table
     """
-    return next(
-        row for row in db_engine.execute("select count(*) from {}".format(table_name))
-    )
-
+    sql = text(f"select count(*) from {quoted_name(table_name, quote=True)}")
+    with db_engine.connect() as conn:
+        return conn.execute(sql).scalar_one()
+   
 
 def table_has_duplicates(table_name, column_list, db_engine):
     """Check whether the table has duplicate rows on the set of columns.
@@ -114,19 +119,21 @@ def table_has_duplicates(table_name, column_list, db_engine):
     if not table_has_data(table_name, db_engine):
         return False
 
-    cols = ','.join(['"%s"' % c for c in column_list])
-    sql = f"""
-    WITH counts AS (
-        SELECT {cols}
-        , COUNT(*) AS num_records
-        FROM {table_name}
-        GROUP BY {cols}
-    )
-    SELECT MAX(num_records) FROM counts
-    """
-    result = next(db_engine.execute(sql))[0]
-    return result > 1
-
+    cols = ", ".join(str(quoted_name(c, quote=True)) for c in column_list)
+    sql = text(f"""
+        WITH counts AS (
+            SELECT 
+               {cols}, 
+               COUNT(*) AS num_records
+            FROM {quoted_name(table_name, quote=True)}
+            GROUP BY {cols}
+        )
+        SELECT MAX(num_records) FROM counts
+    """)
+ 
+    with db_engine.connect() as conn: 
+        return conn.execute(sql).scalar_one() > 1
+    
 
 def table_has_column(table_name, column, db_engine):
     """Check whether the table contains a column of the given name
@@ -140,7 +147,11 @@ def table_has_column(table_name, column, db_engine):
 
     Returns: (boolean) Whether or not the table contains the column
     """
-    return column in reflected_table(table_name, db_engine).columns
+    schema, table = split_table(table_name)
+    inspector = db_engine.get_inspector() # get inspector from SerializableDbEngine
+    columns = inspector.get_columns(table, schema=schema)
+    # inspect returns column metadata dictionaries 
+    return any(col['name'] == column for col in columns)
 
 
 def column_type(table_name, column, db_engine):
@@ -157,10 +168,15 @@ def column_type(table_name, column, db_engine):
         sqlalchemy.types.BOOLEAN instead of
         sqlalchemy.types.Boolean
     """
-    return type(reflected_table(table_name, db_engine).columns[column].type)
-
+    schema, table = split_table(table_name)
+    inspector = db_engine.get_inspector() # get inspector from SerializableDbEngine
+    columns = inspector.get_columns(table, schema=schema)
+    for col in columns: 
+        if col['name'] == column:
+            return type(col['type'])
+    raise KeyError(f"Column {column} not found")
+    
 
 def schema_tables(schema_name, db_engine):
-    meta = MetaData(schema=schema_name, bind=db_engine)
-    meta.reflect()
-    return meta.tables
+    inspector = db_engine.get_inspector()
+    return inspector.get_table_names(schema=schema_name)

@@ -2,7 +2,7 @@ import testing.postgresql
 import datetime
 from copy import copy
 
-from sqlalchemy import create_engine
+from triage import create_engine
 from triage.component.catwalk.db import ensure_db
 
 from triage.component.catwalk.model_grouping import ModelGrouper

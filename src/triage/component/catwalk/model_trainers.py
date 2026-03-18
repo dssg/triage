@@ -13,9 +13,9 @@ import numpy as np
 import pandas as pd
 
 from sklearn.model_selection import ParameterGrid
-from sklearn.utils import parallel_backend
+from joblib import parallel_backend
 from sqlalchemy.orm import sessionmaker
-
+from sqlalchemy import text
 from triage.util.random import generate_python_random_seed
 from triage.component.results_schema import Model, FeatureImportance
 from triage.component.catwalk.exceptions import BaselineFeatureNotInMatrix
@@ -144,10 +144,12 @@ class ModelTrainer:
                 for the model
             feature_names (list) Feature names for the corresponding entries in feature_importances
         """
-        self.db_engine.execute(
-            "delete from train_results.feature_importances where model_id = %s",
-            model_id,
-        )
+        with self.db_engine.begin() as conn:
+            conn.execute(
+                text(
+                    f"delete from train_results.feature_importances where model_id = {model_id}",
+                )
+            )
         db_objects = []
         if isinstance(feature_importances, np.ndarray):
             temp_df = pd.DataFrame({"feature_importance": feature_importances})

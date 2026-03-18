@@ -1,66 +1,79 @@
-from triage.component.architect.features import FeatureDictionaryCreator
 import testing.postgresql
-from sqlalchemy import create_engine
+
+from sqlalchemy import text 
+from triage import create_engine
+from triage.component.architect.features import FeatureDictionaryCreator
 
 
 def test_feature_dictionary_creator():
     with testing.postgresql.Postgresql() as postgresql:
         engine = create_engine(postgresql.url())
-        engine.execute("create schema features")
-        engine.execute(
-            """
-            create table features.prefix1_entity_id (
-                entity_id int,
-                as_of_date date,
-                feature_one float,
-                feature_two float
+        with engine.begin() as conn:
+            conn.execute(text("create schema features"))
+            conn.execute(
+                text(
+                    """
+                    create table features.prefix1_entity_id (
+                        entity_id int,
+                        as_of_date date,
+                        feature_one float,
+                        feature_two float
+                    )
+                    """
+                )
             )
-        """
-        )
-        engine.execute(
-            """
-            create table features.prefix1_zipcode (
-                zipcode text,
-                as_of_date date,
-                feature_three float,
-                feature_four float
+            conn.execute(
+                text(
+                    """
+                    create table features.prefix1_zipcode (
+                        zipcode text,
+                        as_of_date date,
+                        feature_three float,
+                        feature_four float
+                    )
+                    """
+                )
             )
-        """
-        )
-        engine.execute(
-            """
-            create table features.prefix1_aggregation (
-                entity_id int,
-                as_of_date date,
-                zipcode text,
-                feature_one float,
-                feature_two float,
-                feature_three float,
-                feature_four float
+            conn.execute(
+                text(
+                """
+                create table features.prefix1_aggregation (
+                    entity_id int,
+                    as_of_date date,
+                    zipcode text,
+                    feature_one float,
+                    feature_two float,
+                    feature_three float,
+                    feature_four float
+                )
+                """
+                )
             )
-        """
-        )
-        engine.execute(
-            """
-            create table features.prefix1_aggregation_imputed (
-                entity_id int,
-                as_of_date date,
-                zipcode text,
-                feature_one float,
-                feature_two float,
-                feature_three float,
-                feature_three_imp int,
-                feature_four float
+            conn.execute(
+                text(
+                    """
+                    create table features.prefix1_aggregation_imputed (
+                        entity_id int,
+                        as_of_date date,
+                        zipcode text,
+                        feature_one float,
+                        feature_two float,
+                        feature_three float,
+                        feature_three_imp int,
+                        feature_four float
+                    )
+                    """
+                )
             )
-        """
-        )
-        engine.execute(
-            """
-            create table features.random_other_table (
-                another_column float
+            conn.execute(
+                text(
+                    """
+                    create table features.random_other_table (
+                        another_column float
+                    )
+                    """
+                )
             )
-        """
-        )
 
         creator = FeatureDictionaryCreator(
             features_schema_name="features", db_engine=engine

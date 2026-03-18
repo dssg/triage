@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-from itertools import chain
-import sqlalchemy.sql.expression as ex
-from descriptors import cachedproperty
 
+from sqlalchemy import text, literal_column
+from sqlalchemy.sql import select, column
+from descriptors import cachedproperty
+from itertools import chain
 from .sql import make_sql_clause
 from .collate import Aggregation
 
@@ -169,8 +170,8 @@ class SpacetimeAggregation(Aggregation):
             queries[group] = []
             for date in self.dates:
                 columns = [
-                    make_sql_clause(groupby, ex.text),
-                    ex.literal_column("'%s'::date" % date).label(
+                    make_sql_clause(groupby, text),
+                    literal_column("'%s'::date" % date).label(
                         self.output_date_column
                     ),
                 ]
@@ -180,9 +181,9 @@ class SpacetimeAggregation(Aggregation):
                     )
                 )
 
-                gb_clause = make_sql_clause(groupby, ex.literal_column)
+                gb_clause = make_sql_clause(groupby, literal_column)
                 if self.join_with_cohort_table:
-                    from_obj = ex.text(
+                    from_obj = text(
                         f"(select from_obj.* from ("
                         f"(select * from {self.from_obj}) from_obj join {self.state_table} cohort on ( "
                         "cohort.entity_id = from_obj.entity_id and "
@@ -190,7 +191,7 @@ class SpacetimeAggregation(Aggregation):
                         ")) cohorted_from_obj")
                 else:
                     from_obj = self.from_obj
-                query = ex.select(columns=columns, from_obj=make_sql_clause(from_obj, ex.text)).group_by(
+                query = select(*columns).select_from(make_sql_clause(from_obj, text)).group_by(
                     gb_clause
                 )
                 query = query.where(self.where(date, intervals))
@@ -244,7 +245,7 @@ class SpacetimeAggregation(Aggregation):
             w += "AND {date_column} >= '{bot}'::date".format(
                 date_column=self.date_column, bot=self.input_min_date
             )
-        return ex.text(w)
+        return text(w)
 
     def get_indexes(self):
         """
@@ -255,8 +256,8 @@ class SpacetimeAggregation(Aggregation):
             index is a raw create index query for the corresponding table
         """
         return {
-            group: "CREATE INDEX ON %s (%s, %s);"
-            % (self.get_table_name(group), groupby, self.output_date_column)
+            group: text("CREATE INDEX ON %s (%s, %s);"
+            % (self.get_table_name(group), groupby, self.output_date_column))
             for group, groupby in self.groups.items()
         }
 
@@ -265,16 +266,16 @@ class SpacetimeAggregation(Aggregation):
         Generates a join table, consisting of an entry for each combination of
         groups and dates in the from_obj
         """
-        groups = [make_sql_clause(group, ex.text) for group in self.groups.values()]
+        groups = [make_sql_clause(group, text) for group in self.groups.values()]
         intervals = list(set(chain(*self.intervals.values())))
 
         queries = []
         for date in self.dates:
             columns = groups + [
-                ex.literal_column("'%s'::date" % date).label(self.output_date_column)
+                literal_column("'%s'::date" % date).label(self.output_date_column)
             ]
             queries.append(
-                ex.select(columns, from_obj=make_sql_clause(self.from_obj, ex.text))
+                select(*columns).select_from(make_sql_clause(self.from_obj, text))
                 .where(self.where(date, intervals))
                 .group_by(*groups)
             )
@@ -297,9 +298,9 @@ class SpacetimeAggregation(Aggregation):
                 self.output_date_column,
             )
 
-        return "CREATE TABLE %s AS (%s);" % (self.get_table_name(), query)
+        return text("CREATE TABLE %s AS (%s);" % (self.get_table_name(), query))
 
-    def validate(self, conn):
+    def validate(self, conn_):
         """
         SpacetimeAggregations ensure that no intervals extend beyond the absolute
         minimum time.
@@ -312,27 +313,33 @@ class SpacetimeAggregation(Aggregation):
                         continue
                     # This could be done more efficiently all at once, but doing
                     # it this way allows for nicer error messages.
-                    r = conn.execute(
-                        "select ('%s'::date - '%s'::interval) < '%s'::date"
-                        % (date, interval, self.input_min_date)
-                    )
-                    if r.fetchone()[0]:
-                        raise ValueError(
-                            "date '%s' - '%s' is before input_min_date ('%s')"
-                            % (date, interval, self.input_min_date)
+                    with conn_.connect() as conn:
+                        r = conn.execute(
+                            text(f"select {date::date} - {interval::interval} < cast(:input_min_date as date)"),
+                            {
+                                "input_min_date": self.input_min_date
+                            }
                         )
-                    r.close()
-        for date in self.dates:
-            r = conn.execute(
-                "select count(*) from %s where %s = '%s'::date"
-                % (self.state_table, self.output_date_column, date)
-            )
-            if r.fetchone()[0] == 0:
-                raise ValueError(
-                    "date '%s' is not present in states table ('%s')"
-                    % (date, self.state_table)
-                )
-            r.close()
+                        if r.first()[0]:
+                            raise ValueError(
+                                "date '%s' - '%s' is before input_min_date ('%s')"
+                                % (date, interval, self.input_min_date)
+                            )
+        
+        with conn_.connect() as conn:
+            for date in self.dates:
+                r = conn.execute(
+                    text(f"select count(*) from {self.state_table} where {self.output_date_column} = cast(:date_ as date)"),
+                    {
+                        "date_": date,
+                    }
+                ).scalar_one()
+                if r == 0:
+                    raise ValueError(
+                        "date '%s' is not present in states table ('%s')"
+                        % (date, self.state_table)
+                    )
+                
 
     def find_nulls(self, imputed=False):
         """
@@ -392,4 +399,4 @@ class SpacetimeAggregation(Aggregation):
             self.output_date_column,
         )
 
-        return "CREATE TABLE %s AS (%s)" % (self.get_table_name(imputed=True), query)
+        return text(f"CREATE TABLE {self.get_table_name(imputed=True)} AS ({query})")
